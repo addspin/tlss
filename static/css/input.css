@@ -1,0 +1,43 @@
+.core {
+    padding-left: 30%;
+    padding-right: 30%;
+}
+.form_center {
+    padding-left: 5%;
+    padding-right: 5%;
+}
+.c_input {
+    border: 1px solid #a99ee8;
+    border-color: rgb(128, 119, 176);
+    color: #ffffff;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    background-color: transparent;
+    
+}
+
+.c_input:focus {
+    outline: none;
+    border-color: #bcb0ff;
+
+}
+
+.input_border {
+    text-align: left;
+    border: 2px solid #a99ee8;
+    border-color: rgb(128, 119, 176);
+    padding: 2%;
+    border-radius: 5px;
+    /* border-left: none;
+    border-right: none; */
+
+}
+.form_lable {
+    position: relative;
+    left: 20px;
+    top: 10px; 
+    z-index: 1;
+    background-color: #222326;
+
+}

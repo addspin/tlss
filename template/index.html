@@ -1,0 +1,32 @@
+{{define "index"}}
+<!DOCTYPE html>
+<html class="" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="css/custom.min.css" />
+    <link rel="stylesheet" href="css/input.css" />
+    <script src="js/bootstrap.bundle.js"></script> 
+    <script src="js/htmx.min.js"></script>
+</head>
+<body>
+    <div class="container mx-auto mb-3">
+      <ul class="nav justify-content-center nav-underline">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="/add_server">Add server</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/">Link</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/">Link</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+        </li>
+      </ul>
+
+    </div>
+ 
+  {{end}}

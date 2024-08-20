@@ -6,8 +6,8 @@ import (
 
 	"github.com/addspin/tlss/crypts"
 
-	models "github.com/addspin/tlss/models"
-	routes "github.com/addspin/tlss/routes"
+	"github.com/addspin/tlss/models"
+	"github.com/addspin/tlss/routes"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/template/html/v2"
 	"github.com/jmoiron/sqlx"

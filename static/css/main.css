@@ -1,0 +1,28 @@
+.tables_lable {
+    
+    font-weight: bold;
+    border-bottom: 1px solid #a99ee8;
+    color: #ffffff;
+}
+
+.th_servers {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #a99ee8;
+    color: #ffffff;
+    text-align: center;
+    padding: 5%;
+}
+.servers_table {
+    padding-left: 20%;
+    padding-right: 20%;
+    align-content: center;
+    padding-top: 3%;
+
+}
+
+.table td, .table th {
+    border-bottom: 1px solid #757575;
+    color: #ffffff;
+}

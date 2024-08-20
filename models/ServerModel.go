@@ -1,6 +1,6 @@
 package models
 
-type AddServer struct {
+type Server struct {
 	Id             int    `db:"id"`
 	Hostname       string `db:"hostname"`
 	CertConfigPath string `db:"cert_config_path"`
@@ -8,15 +8,7 @@ type AddServer struct {
 	CertName       string `db:"cert_name"`
 }
 
-type Data struct {
-	Hostname    string `json:"hostname"`
-	Username    string `json:"username"`
-	Password    string `json:"password"`
-	TlssSSHport string `json:"tlssSSHport"`
-	Path        string `json:"path"`
-}
-
-var SchemaAddServer = `
+var Schema = `
 CREATE TABLE add_server (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 	hostname TEXT,

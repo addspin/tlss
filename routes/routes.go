@@ -9,7 +9,8 @@ import (
 func Setup(app *fiber.App) {
 
 	app.Get("/", Controllers.Index)
-	app.Use("/*", static.New("static"))
+	// app.Use("/*", static.New("static"))
+	app.Get("/*", static.New("./static"))
 	app.Get("/add_server", Controllers.AddServerControll)
 	app.Post("/add_server", Controllers.AddServerControll)
 

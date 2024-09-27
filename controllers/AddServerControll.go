@@ -92,8 +92,8 @@ func AddServerControll(c fiber.Ctx) error {
 		}
 		log.Println(datas)
 		return c.Render("add_server/main", fiber.Map{
-			"Title":    "Hello, World!+",
-			"hostname": datas,
+			"Title": "Hello, World!+",
+			"data":  datas,
 		})
 	}
 

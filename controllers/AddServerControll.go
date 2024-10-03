@@ -61,8 +61,15 @@ func AddServerControll(c fiber.Ctx) error {
 			}
 			if t.Next() {
 				// if values in database exists then udate
+				aesCrypt := crypts.AesEncryptor{}
+				// aesCrypt := crypts.AEScrypt{}
+				cryptPath, _ := aesCrypt.encrypt([]byte(data.Path))
+				// cryptPath, _ := crypts.AEScrypt([]byte(data.Path))
+				// cryptPath, _ := aesCrypt.AEScrypt.encrypt([]byte(data.Path))
+				// crypts.NewAESCrypt().Decrypt(cryptPath)
 				dataInsert := `UPDATE add_server SET cert_config_path = ? WHERE hostname = ?`
-				_, err = tx.Exec(dataInsert, data.Path, data.Hostname)
+				// _, err = tx.Exec(dataInsert, data.Path, data.Hostname)
+				_, err = tx.Exec(dataInsert, cryptPath, data.Hostname)
 				if err != nil {
 					log.Fatal(err.Error())
 				}
@@ -85,15 +92,15 @@ func AddServerControll(c fiber.Ctx) error {
 			Hostname       string `db:"hostname"`
 			CertConfigPath string `db:"cert_config_path"`
 		}
-		var datas []data
-		err := db.Select(&datas, "SELECT hostname, cert_config_path FROM add_server")
+		var serverList []data
+		err := db.Select(&serverList, "SELECT hostname, cert_config_path FROM add_server")
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println(datas)
+		log.Println(serverList)
 		return c.Render("add_server/main", fiber.Map{
-			"Title": "Hello, World!+",
-			"data":  datas,
+			"Title":      "Hello, World!+",
+			"serverList": serverList,
 		})
 	}
 

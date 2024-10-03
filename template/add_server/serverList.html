@@ -15,7 +15,7 @@
         <th>
           <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
         </th>
-        {{ range .data }}
+        {{ range .serverList }}
           <td>{{ .Hostname }}</td>
           <td>{{ .CertConfigPath }}</td>
         {{ end }}

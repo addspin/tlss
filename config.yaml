@@ -1,2 +1,4 @@
 database:
   path: ./db/database.db
+checkServer:
+  time: 5

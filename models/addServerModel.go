@@ -1,14 +1,16 @@
 package models
 
-type AddServer struct {
+type Server struct {
 	Id             int    `db:"id"`
 	Hostname       string `db:"hostname"`
+	Port           string `db:"port"`
 	CertConfigPath string `db:"cert_config_path"`
-	CertCaName     string `db:"cert_ca_name"`
-	CertName       string `db:"cert_name"`
+	ServerStatus   string `db:"server_status"`
 }
 
-type Data struct {
+// структура для добавления сервера
+type ServerData struct {
+	Id          string `json:"id"`
 	Hostname    string `json:"hostname"`
 	Username    string `json:"username"`
 	Password    string `json:"password"`
@@ -16,11 +18,11 @@ type Data struct {
 	Path        string `json:"path"`
 }
 
-var SchemaAddServer = `
-CREATE TABLE add_server (
+var SchemaServer = `
+CREATE TABLE server (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 	hostname TEXT,
+	port TEXT,
 	cert_config_path TEXT,
-	cert_ca_name TEXT,
-	cert_name TEXT
+	server_status TEXT DEFAULT 'offline'
 );`

@@ -26,3 +26,49 @@
     border-bottom: 1px solid #757575;
     color: #ffffff;
 }
+
+.trash {
+    fill: #fff;
+}
+
+.trash:hover {
+    fill: #bcb0ff;
+}
+
+.btn-trash {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+}
+/* библиотека для кастомного аллерта */
+.custom-alert {
+    container: 'swal2-container',
+    popup: 'swal2-popup',
+    header: 'swal2-header',
+    title: 'swal2-title',
+    closeButton: 'swal2-close',
+    icon: 'swal2-icon',
+    image: 'swal2-image',
+    htmlContainer: 'swal2-html-container',
+    input: 'swal2-input',
+    inputLabel: 'swal2-input-label',
+    validationMessage: 'swal2-validation-message',
+    actions: 'swal2-actions',
+    confirmButton: 'swal2-confirm',
+    denyButton: 'swal2-deny',
+    cancelButton: 'swal2-cancel',
+    loader: 'swal2-loader',
+    footer: 'swal2-footer',
+    timerProgressBar: 'swal2-timer-progress-bar',
+}
+
+.swal2-popup {
+    background-color: #222326;
+    border: 1px solid #a99ee8;
+    border-color: rgb(128, 119, 176);
+    width: fit-content;
+    font-size: smaller;
+    color: #ffffff;
+}

@@ -1,0 +1,45 @@
+{{define "serverList"}}
+
+    <div class="accordion" id="accordionExample">
+      {{ range .serverList }}
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+            {{ .Hostname }}
+          </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionExample">
+          <div class="accordion-body">
+
+            <table class="table">
+              <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col">Hostname</th>
+                <th scope="col">Path certs</th>
+                <th scope="col">Cert create time</th>
+                <th scope="col">Cert expire time</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                
+                <th>
+                  <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
+                </th>
+                  <td>{{ .Hostname }}</td>
+                  <td>{{ .CertConfigPath }}</td>
+                
+              </tr>
+            </tbody>
+            </table>
+
+          </div>
+        </div>
+        {{ end }}
+      </div>
+    
+
+
+{{end}}

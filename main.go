@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/addspin/tlss/check"
 	"github.com/addspin/tlss/crypts"
 
 	"github.com/addspin/tlss/models"
@@ -31,7 +32,6 @@ func main() {
 	}
 
 	database := viper.GetString("database.path")
-
 	//---------------------------------------Database inicialization
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
@@ -40,10 +40,73 @@ func main() {
 	fmt.Println("Connected to database: ", database)
 	defer db.Close()
 
-	// create tables in db
-	_, err = db.Exec(models.SchemaAddServer)
+	// create add_server tables in db (хранит данные серверов)
+	_, err = db.Exec(models.SchemaServer)
 	if err != nil {
 		log.Println(err.Error())
+	}
+	// create SchemaKey tables in db (хранит данные ключа)
+	_, err = db.Exec(models.SchemaKey)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	// create SchemaCerts tables in db (хранит данные сертификатов)
+	_, err = db.Exec(models.SchemaCerts)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// запрос ввода пароля
+	var pwd []byte
+	fmt.Print("Enter password: ")
+	fmt.Scanln(&pwd)
+	//если пароль меньше 16 байт то дополняем его нулями
+	var maxPwd = make([]byte, 16)
+	for len(pwd) < len(maxPwd) {
+		pwd = append(pwd, 0)
+	}
+
+	//проверяем, есть ли в таблице хотя  бы одно значение key
+	var exists bool
+	err = db.Get(&exists, "SELECT EXISTS (SELECT 1 FROM secret_key)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	//если нету то просим ввести ключ
+	aes := crypts.Aes{}
+	if !exists {
+		var key []byte
+		fmt.Print("Enter key: ")
+		fmt.Scanln(&key)
+		//если ключ меньше 32 байт то дополняем его нулями
+		var maxKey = make([]byte, 32)
+		for len(key) < len(maxKey) {
+			key = append(key, 0)
+		}
+		// шифруем ключ паролем
+		cryptoKey, err := aes.Encrypt(key, pwd) // cryptoKey - зашифрованный ключ
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		tx := db.MustBegin()
+		// записываем в таблицу key зашифрованный ключ
+		keyInsert := `INSERT INTO secret_key (key_data) VALUES ($1)`
+		_, err = tx.Exec(keyInsert, cryptoKey)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		tx.Commit()
+	}
+	//если в базе есть ключ то расшифровываем и передаем в переменную
+	var keyData []models.Key
+	db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
+	for _, keyData := range keyData {
+		decryptKey, err := aes.Decrypt([]byte(keyData.Key), pwd)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		//записываем расшифрованный ключ в переменную
+		crypts.AesSecretKey.Key = decryptKey
 	}
 
 	//---------------------------------------Generate ssh key pair
@@ -63,6 +126,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	checkServerTime := viper.GetInt("checkServer.time")
+	// запускаем проверку доступности серверов
+	check := check.StatusCodeTcp{}
+	go check.TCPPortAvailable(checkServerTime)
 
 	//---------------------------------------Create a new engine Template
 	engine := html.New("./template", ".html")

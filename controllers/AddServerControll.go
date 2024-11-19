@@ -13,6 +13,7 @@ import (
 )
 
 func AddServerControll(c fiber.Ctx) error {
+
 	//---------------------------------------Database inicialization for add server
 	database := viper.GetString("database.path")
 
@@ -24,7 +25,7 @@ func AddServerControll(c fiber.Ctx) error {
 	defer db.Close()
 
 	if c.Method() == "POST" {
-		data := new(models.Data)
+		data := new(models.ServerData)
 
 		c.Bind().JSON(data)
 		log.Println(data.Hostname, data.Username, data.Password, data.TlssSSHport, data.Path)
@@ -43,7 +44,7 @@ func AddServerControll(c fiber.Ctx) error {
 				"message": "Missing required fields",
 			})
 		}
-
+		// Добавить ключ доступа на удленный сервер
 		err = crypts.AddAuthorizedKeys(data.Hostname, data.TlssSSHport, data.Username, data.Password)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
@@ -51,24 +52,23 @@ func AddServerControll(c fiber.Ctx) error {
 				"message": err.Error(),
 			})
 		} else {
-
+			// Проверяем есть ли в таблице значение hostname
 			tx := db.MustBegin()
 
-			dataTest := `SELECT * FROM add_server WHERE hostname = $1`
+			dataTest := `SELECT * FROM server WHERE hostname = $1`
 			t, err := tx.Query(dataTest, data.Hostname)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			if t.Next() {
-				// if values in database exists then udate
-				aesCrypt := crypts.AesEncryptor{}
-				// aesCrypt := crypts.AEScrypt{}
-				cryptPath, _ := aesCrypt.encrypt([]byte(data.Path))
-				// cryptPath, _ := crypts.AEScrypt([]byte(data.Path))
-				// cryptPath, _ := aesCrypt.AEScrypt.encrypt([]byte(data.Path))
-				// crypts.NewAESCrypt().Decrypt(cryptPath)
-				dataInsert := `UPDATE add_server SET cert_config_path = ? WHERE hostname = ?`
-				// _, err = tx.Exec(dataInsert, data.Path, data.Hostname)
+			if t.Next() { //Если предыдущий запрос выполнился успешно, проверяется есть ли хотябы одна строка с таким именем
+				// Если значение в таблице существует, то обновляем его
+				aes := &crypts.Aes{}
+				cryptPath, err := aes.Encrypt([]byte(data.Path), []byte(aes.Key))
+				if err != nil {
+					log.Fatal(err.Error())
+				}
+				// Переделать!!!! Для обновления всех значений
+				dataInsert := `UPDATE server SET cert_config_path = ? WHERE hostname = ?`
 				_, err = tx.Exec(dataInsert, cryptPath, data.Hostname)
 				if err != nil {
 					log.Fatal(err.Error())
@@ -76,9 +76,9 @@ func AddServerControll(c fiber.Ctx) error {
 				tx.Commit()
 
 			} else {
-				// else insert new data
-				dataInsert := `INSERT INTO add_server (hostname, cert_config_path) VALUES ($1, $2)`
-				_, err = tx.Exec(dataInsert, data.Hostname, data.Path)
+				// Иначе вставляем новое значение
+				dataInsert := `INSERT INTO server (hostname, port, cert_config_path) VALUES ($1, $2, $3)`
+				_, err = tx.Exec(dataInsert, data.Hostname, data.TlssSSHport, data.Path)
 				if err != nil {
 					log.Fatal(err.Error())
 				}
@@ -87,25 +87,25 @@ func AddServerControll(c fiber.Ctx) error {
 		}
 	}
 	if c.Method() == "GET" {
-		// var hostname = []string{}
-		type data struct {
-			Hostname       string `db:"hostname"`
-			CertConfigPath string `db:"cert_config_path"`
-		}
-		var serverList []data
-		err := db.Select(&serverList, "SELECT hostname, cert_config_path FROM add_server")
+		serverList := []models.Server{}
+		err := db.Select(&serverList, "SELECT id, hostname, cert_config_path, server_status FROM server")
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println(serverList)
-		return c.Render("add_server/main", fiber.Map{
-			"Title":      "Hello, World!+",
-			"serverList": serverList,
+		log.Println("serverList", serverList)
+		return c.Render("add_server/addServer", fiber.Map{
+			"Title":      "Add server",
+			"serverList": &serverList,
 		})
 	}
-
-	return c.Render("add_server/main", fiber.Map{
-		"Title": "Hello, World!+",
+	serverList := []models.Server{}
+	error := db.Select(&serverList, "SELECT id, hostname, cert_config_path, server_status FROM server")
+	if error != nil {
+		log.Fatal(err)
+	}
+	log.Println("serverList", serverList)
+	return c.Render("add_server/addServer", fiber.Map{
+		"Title":      "Add server",
+		"serverList": &serverList,
 	})
-
 }

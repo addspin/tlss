@@ -13,5 +13,6 @@ func Setup(app *fiber.App) {
 	app.Get("/*", static.New("./static"))
 	app.Get("/add_server", Controllers.AddServerControll)
 	app.Post("/add_server", Controllers.AddServerControll)
+	app.Post("/remove_server", Controllers.RemoveServer)
 
 }

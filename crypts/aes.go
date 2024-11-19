@@ -8,22 +8,28 @@ import (
 	"io"
 )
 
-const (
-	key = "your_secret_key_here" // замените на свой секретный ключ
-)
+// const (
+// 	key = "your_secret_key_here" // замените на свой секретный ключ
+// )
 
-type AesEncryptor struct {
-	plaintext  []byte
-	ciphertext []byte
+type Aes struct {
+	Key []byte // ключ шифрования
 }
 
-// type AEScrypt interface {
-// 	encrypt(plaintext []byte) ([]byte, error)
-// 	decrypt(ciphertext []byte) ([]byte, error)
-// }
+// создаем глобальну переменную для хранения расышированного ключа
+var AesSecretKey = Aes{}
 
-func (a *AesEncryptor) encrypt(plaintext []byte) ([]byte, error) {
-	block, err := aes.NewCipher([]byte(key))
+func (a *Aes) Encrypt(plaintext, key []byte) ([]byte, error) {
+	return a.encrypt(plaintext, key)
+}
+
+func (a *Aes) Decrypt(ciphertext, key []byte) ([]byte, error) {
+	return a.decrypt(ciphertext, key)
+}
+
+func (a *Aes) encrypt(plaintext, key []byte) ([]byte, error) {
+	a.Key = key
+	block, err := aes.NewCipher(a.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +49,8 @@ func (a *AesEncryptor) encrypt(plaintext []byte) ([]byte, error) {
 	return append(nonce, ciphertext...), nil
 }
 
-func (a *AesEncryptor) decrypt(ciphertext []byte) ([]byte, error) {
+func (a *Aes) decrypt(ciphertext, key []byte) ([]byte, error) {
+	a.Key = key
 	block, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		return nil, err

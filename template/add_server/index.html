@@ -1,6 +1,6 @@
 {{define "index"}}
 <!DOCTYPE html>
-<html class="" lang="en">
+<html class=""  data-bs-theme="dark" lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,16 +22,13 @@
     <div class="container mx-auto mb-3">
       <ul class="nav justify-content-center nav-underline">
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="/add_server">Add server</a>
+          <a class="nav-link {{if eq .Title "Add server"}}active{{else}}{{end}}" aria-current="page" href="/add_server">Add server</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/">Add certs</a>
+          <a class="nav-link disabled" aria-disabled="true" href="/add_server">Add certs</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/">Link</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+          <a class="nav-link disabled" aria-disabled="true" href="/add_server">Link</a>
         </li>
       </ul>
 

@@ -42,6 +42,29 @@
     margin: 0;
     cursor: pointer;
 }
+
+
+.state-online {
+    background: #2ba03d;
+    border-radius: 30px;
+    text-align: center;
+    width: 90px;
+    height: 35px;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+.state-offline {
+    background: #983636;
+    border-radius: 30px;
+    text-align: center;
+    width: 90px;
+    height: 35px;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
 /* библиотека для кастомного аллерта */
 .custom-alert {
     container: 'swal2-container',

@@ -50,5 +50,5 @@ func RemoveServer(c fiber.Ctx) error {
 		}
 		tx.Commit()
 	}
-	return c.Render("add_server/serverList", fiber.Map{})
+	return c.Render("add_server/serverList-tpl", fiber.Map{})
 }

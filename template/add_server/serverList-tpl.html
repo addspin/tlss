@@ -36,11 +36,6 @@
                   }).then((result) => {
                     if (result.isConfirmed) {
                       htmx.trigger(this, 'remove'); 
-                      Swal.fire({
-                        title: 'Deleted!',
-                        text: 'Your file has been deleted',
-                        icon: 'success'
-                      });
                     }
                   });"
                   >

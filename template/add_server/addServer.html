@@ -1,6 +1,8 @@
-{{template "index" .}}
+{{template "header-tpl" .}}
+{{template "menu-tpl" .}}
+{{template "body-tpl" .}}
 
-<div class="containers">
+<!-- <div class="containers"> -->
   <div class="core">
     <form class="" hx-post="/add_server" hx-target="#body" hx-ext="json-enc">
       <label for="inputUser" id= "" class="form_lable" >Connect new server</label>
@@ -32,10 +34,11 @@
     
   
   <div id="response" class="servers_table">
-  {{template "serverList" .}}
+  {{template "serverList-tpl" .}}
   </div>
 
 <!-- index end template -->
-</div>
+{{template "footer-tpl" .}}
+<!-- </div>
 </body>
-</html>
+</html> -->

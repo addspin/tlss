@@ -1,4 +1,4 @@
-{{define "index"}}
+{{define "header-tpl"}}
 <!DOCTYPE html>
 <html class=""  data-bs-theme="dark" lang="en">
 <head>
@@ -18,9 +18,12 @@
     <!-- <script  src="/js/ext/json-enc.js"></script> -->
     
 </head>
-<body id="body">
-    <div class="container mx-auto mb-3">
+<!-- <body id="body"> -->
+    <!-- <div class="container mx-auto mb-3">
       <ul class="nav justify-content-center nav-underline">
+        <li class="nav-item">
+          <a class="nav-link {{if eq .Title "Index"}}active{{else}}{{end}}" aria-current="page" href="/index">Index</a>
+        </li>
         <li class="nav-item">
           <a class="nav-link {{if eq .Title "Add server"}}active{{else}}{{end}}" aria-current="page" href="/add_server">Add server</a>
         </li>
@@ -31,7 +34,6 @@
           <a class="nav-link disabled" aria-disabled="true" href="/add_server">Link</a>
         </li>
       </ul>
-
-    </div>
+    </div> -->
  
   {{end}}

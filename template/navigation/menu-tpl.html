@@ -1,0 +1,20 @@
+{{define "menu-tpl"}}
+
+<div class="container mx-auto mb-3">
+    <ul class="nav justify-content-center nav-underline">
+      <li class="nav-item">
+        <a class="nav-link {{if eq .Title "Index"}}active{{else}}{{end}}" aria-current="page" hx-get="/index" hx-target="#body">Index</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{if eq .Title "Add server"}}active{{else}}{{end}}" aria-current="page"  hx-get="/add_server" hx-target="#body">Add server</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link disabled" aria-disabled="true" href="/add_server">Add certs</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link disabled" aria-disabled="true" href="/add_server">Link</a>
+      </li>
+    </ul>
+  </div>
+
+{{end}}

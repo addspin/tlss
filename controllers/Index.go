@@ -5,7 +5,7 @@ import (
 )
 
 func Index(c fiber.Ctx) error {
-	return c.Render("Index", fiber.Map{
-		"Title": "Hello, World!",
+	return c.Render("index/index", fiber.Map{
+		"Title": "Index",
 	})
 }

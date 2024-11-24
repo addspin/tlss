@@ -48,21 +48,44 @@
     background: #2ba03d;
     border-radius: 30px;
     text-align: center;
-    width: 90px;
-    height: 35px;
+    width: 4em;
     border: none;
     padding: 0;
-    margin: 0;
+    /* margin-top: 12px;
+    margin-bottom: 12px; */
+    /* margin-left: 10px; */
+    /* box-shadow: 0px 0px 3px 3px rgba(97, 252, 124, 0.25); */
+    /* animation: colorPulse 2s infinite alternate; */
+}
+
+@keyframes colorPulse {
+    from {
+        background: #2ba03d;
+    }
+    to {    
+        background: #3cff5a;
+    }
 }
 .state-offline {
     background: #983636;
     border-radius: 30px;
     text-align: center;
-    width: 90px;
-    height: 35px;
+    width: 4em;
     border: none;
     padding: 0;
-    margin: 0;
+    /* margin-top: 12px; */
+    /* margin-left: 10px; */
+    /* box-shadow: 0px 0px 3px 3px #9836368f; */
+    /* animation: colorPulseRed 2s infinite alternate; */
+}
+
+@keyframes colorPulseRed {
+    from {
+        background: #983636;
+    }
+    to {
+        background: #c51717;
+    }
 }
 
 /* библиотека для кастомного аллерта */

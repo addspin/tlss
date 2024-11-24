@@ -1,4 +1,4 @@
-{{define "serverList"}}
+{{define "serverList-tpl"}}
 
             <table class="table">
               <thead>
@@ -6,7 +6,7 @@
                 <th scope="col">Hostname</th>
                 <th scope="col">Path certs</th>
                 <th scope="col">Status</th>
-                <th scope="col"></th>
+                <th scope="col">Remove</th>
               </tr>
             </thead>
             <tbody>
@@ -14,7 +14,9 @@
               <tr class="server_id_{{ .Id }}">
                   <td>{{ .Hostname }}</td>
                   <td>{{ .CertConfigPath }}</td>
-                  <td><div class="state-{{ if eq .ServerStatus "online" }}online{{ else }}offline{{ end }}">{{ .ServerStatus }}</div></td>
+                  <td>
+                      <div class="state-{{ if eq .ServerStatus "online" }}online{{ else }}offline{{ end }}" >{{ .ServerStatus }}</div>
+                  </td>
                   <td>
                     <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_server" hx-target=".server_id_{{ .Id }}" hx-ext="json-enc" 
                     onClick="const { value: hostname } = Swal.fire({

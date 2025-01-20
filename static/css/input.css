@@ -1,6 +1,7 @@
 .core {
-    padding-left: 30%;
-    padding-right: 30%;
+    padding-left: 25%;
+    padding-right: 25%;
+    font-size: 0.8rem;
 }
 .form_center {
     padding-left: 5%;
@@ -14,7 +15,9 @@
     border-left: none;
     border-right: none;
     background-color: transparent;
-    
+    width: 100%;
+    /* font: -webkit-small-control; */
+    /* flex: 100%; */
 }
 
 .c_input:focus {
@@ -38,6 +41,31 @@
     left: 20px;
     top: 10px; 
     z-index: 1;
-    background-color: #222326;
+    background-color: #212529;
 
+}
+
+.select {
+    border: 1px solid #a99ee8;
+    border-color: rgb(128, 119, 176);
+    color: #ffffff;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    background-color: transparent;
+    margin-top: 5px;
+    width: 100%;
+}
+.select_title {
+    
+}
+.indent-line {
+    margin-top: 5%;
+    margin-bottom: 5%;
+}
+.indent-40 {
+    margin-top: 40%;
+}
+.indent-5 {
+    margin-top: 5%;
 }

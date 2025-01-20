@@ -2,3 +2,16 @@ database:
   path: ./db/database.db
 checkServer:
   time: 30
+
+root_ca_tlss:
+  path: ./root_ca_tlss/root_ca_tlss.pem
+  key: ./root_ca_tlss/root_ca_tlss.key
+  ttl: 24855
+  commonName: TLSS Root CA
+  countryName: RU
+  stateProvince: Moscow
+  localityName: Moscow
+  organization: TLSS
+  organizationUnit: TLSS
+  email: tlss@tlss.ru
+  key_size: 4096

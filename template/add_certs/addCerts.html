@@ -1,0 +1,95 @@
+{{template "header-tpl" .}}
+{{template "menu-tpl" .}}
+{{template "body-tpl" .}}
+
+<!-- <div class="containers"> -->
+  <div class="core">
+    <form class="" hx-post="/add_certs" hx-target="#body" hx-ext="json-enc">
+      <label for="inputUser" id= "" class="form_lable" >Certs configuration</label>
+      <div class="input_border">
+        <div class="row g-3 form_center">
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Тип алгоритма</label>
+              <select id="standard-select" class="select">
+                <option value="RSA">RSA</option>
+                <option value="ECDSA">ECDSA</option>
+                <option value="Ed25519">Ed25519 </option>
+              </select>
+          </div>
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Длина ключа</label>
+              <select id="standard-select" class="select">
+                <option value="512">512</option>
+                <option value="1024">1024</option>
+                <option value="2048">2048</option>
+                <option value="4096">4096</option>
+              </select>
+          </div>
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Время жизни</label>
+            <input type="text" class="c_input" id="ttl" name="ttl" placeholder="TTL" required>
+          </div>
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Домен:</label>
+            <input type="text" class="c_input" id="domain" name="domain" placeholder="Domain" required>
+          </div>
+        </div>
+        <div class="indent-5"></div>
+        <div class="row g-1 form_center">
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title" title="Обязательное поле">Common Name</label>
+            <input title="Обязательное поле" type="text" class="c_input" id="Common" name="Common" placeholder="CA" required>
+          </div>
+          <div class="indent-5"></div>
+        </div>
+        <div class="row g-3 form_center">
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Country Name</label>
+            <input type="text" class="c_input" id="Country" name="Country" placeholder="RU" required>
+          </div>
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">State or Province</label>
+            <input type="text" class="c_input" id="State" name="State" placeholder="Udmurt Republic" required>
+          </div>
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Locality Name</label>
+            <input type="text" class="c_input" id="Locality" name="Locality" placeholder="Izhevsk" required>
+          </div>
+        </div>
+        <div class="indent-5"></div> 
+        <div class="row g-3 form_center">
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Organization Name</label>
+            <input type="text" class="c_input" id="Organization" name="Organization" placeholder="LV Inc." required>
+          </div>
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Organizational Unit</label>
+            <input type="text" class="c_input" id="Unit" name="Unit" placeholder="IT" required>
+          </div>
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Email Address</label>
+            <input type="email" class="c_input" id="Email" name="Email" placeholder="tdv@test.ru" required>
+          </div>
+          <div class="col-md-3">
+            <label for="standard-select" class="select_title">Password key</label>
+            <input type="password" class="c_input" id="Password" name="Password" placeholder="" required>
+          </div>
+          <!-- <div>Создайте пользователя на сервере и используйте его логин и пароль для подключения</div> -->
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary mt-2">Add</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+    
+  
+  <div id="response" class="servers_table">
+  <!-- {{template "serverList-tpl" .}} -->
+  </div>
+
+<!-- index end template -->
+{{template "footer-tpl" .}}
+<!-- </div>
+</body>
+</html> -->

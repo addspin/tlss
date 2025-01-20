@@ -22,9 +22,13 @@ go.work
 go.work.sum
 tailwindcss
 db/*
+*.idea
 air
 tmp
 bootstrap_scss
 info.txt
 air.toml
 vendor
+/sheme
+ca_tlss/*
+root_ca_tlss/*

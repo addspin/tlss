@@ -55,6 +55,11 @@ func main() {
 	if err != nil {
 		log.Println(err.Error())
 	}
+	// create SchemaStateCA tables in db (хранит данные состояния CA_TLSS, создан или нет)
+	_, err = db.Exec(models.SchemaStateCA)
+	if err != nil {
+		log.Println(err.Error())
+	}
 
 	// запрос ввода пароля
 	var pwd []byte
@@ -125,6 +130,12 @@ func main() {
 	err = crypts.WriteKeyToFile(privateKeyBytes, []byte(publicKeyBytes), savePrivateFileTo, savePublicFileTo)
 	if err != nil {
 		log.Fatal(err.Error())
+	}
+
+	//---------------------------------------Generate root CA
+	err = crypts.GenerateRootCA()
+	if err != nil {
+		log.Printf("Error generating root CA: %v", err)
 	}
 
 	checkServerTime := viper.GetInt("checkServer.time")

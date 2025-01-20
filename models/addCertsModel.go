@@ -23,7 +23,7 @@ type CertsData struct {
 }
 
 var SchemaCerts = `
-CREATE TABLE certs (
+CREATE TABLE IF NOT EXISTS  certs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 	algorithm TEXT,
 	key_length INTEGER,

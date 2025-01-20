@@ -37,7 +37,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
+	log.Println("Connected to database: ", database)
 	defer db.Close()
 
 	// create add_server tables in db (хранит данные серверов)
@@ -55,12 +55,16 @@ func main() {
 	if err != nil {
 		log.Println(err.Error())
 	}
-	// create SchemaStateCA tables in db (хранит данные состояния CA_TLSS, создан или нет)
-	_, err = db.Exec(models.SchemaStateCA)
+	// create SchemaRootCAtlss tables in db (хранит данные корневого CA)
+	_, err = db.Exec(models.SchemaRootCAtlss)
 	if err != nil {
 		log.Println(err.Error())
 	}
-
+	// create SchemaSubCAtlss tables in db (хранит данные подчиненного CA используемый для подписания конечных сертификатов)
+	_, err = db.Exec(models.SchemaSubCAtlss)
+	if err != nil {
+		log.Println(err.Error())
+	}
 	// запрос ввода пароля
 	var pwd []byte
 	fmt.Print("Enter password: ")
@@ -136,6 +140,12 @@ func main() {
 	err = crypts.GenerateRootCA()
 	if err != nil {
 		log.Printf("Error generating root CA: %v", err)
+	}
+
+	//---------------------------------------Generate sub CA
+	err = crypts.GenerateSubCA()
+	if err != nil {
+		log.Printf("Error generating sub CA: %v", err)
 	}
 
 	checkServerTime := viper.GetInt("checkServer.time")

@@ -15,3 +15,16 @@ root_ca_tlss:
   organizationUnit: TLSS
   email: tlss@tlss.ru
   key_size: 4096
+  crl_url: http://example.com/crl/intermediate.crl
+  
+sub_ca_tlss:
+  ttl: 24855
+  commonName: TLSS Sub CA
+  countryName: RU
+  stateProvince: Moscow
+  localityName: Moscow
+  organization: TLSS
+  organizationUnit: TLSS
+  email: tlss@tlss.ru
+  key_size: 4096
+  crl_url: http://example.com/crl/intermediate.crl

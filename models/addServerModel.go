@@ -19,7 +19,7 @@ type ServerData struct {
 }
 
 var SchemaServer = `
-CREATE TABLE server (
+CREATE TABLE IF NOT EXISTS server (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 	hostname TEXT,
 	port TEXT,

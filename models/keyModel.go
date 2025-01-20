@@ -6,7 +6,7 @@ type Key struct {
 }
 
 var SchemaKey = `
-CREATE TABLE secret_key (
+CREATE TABLE IF NOT EXISTS secret_key (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 	key_data TEXT
 );`

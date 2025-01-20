@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"database/sql"
 	"encoding/pem"
 	"fmt"
 	"log"
@@ -27,20 +26,20 @@ func GenerateRootCA() error {
 	defer db.Close()
 
 	// First, try to insert if not exists
-	_, err = db.Exec(`INSERT OR IGNORE INTO state_ca (id, state) VALUES (1, false)`)
+	_, err = db.Exec(`INSERT OR IGNORE INTO root_ca_tlss (id, state) VALUES (1, false)`)
 	if err != nil {
 		return err
 	}
 
-	// Check certificate state in database
-	var state sql.NullBool
-	err = db.QueryRow("SELECT state FROM state_ca WHERE id = ?", 1).Scan(&state)
-	if err != nil && err != sql.ErrNoRows {
+	// Check certificate state in database using sqlx
+	var state bool
+	err = db.Get(&state, "SELECT COALESCE(state, false) FROM root_ca_tlss WHERE id = 1")
+	if err != nil {
 		return err
 	}
 
 	// If state is true, certificate already exists
-	if state.Valid && state.Bool {
+	if state {
 		return nil
 	}
 
@@ -72,7 +71,10 @@ func GenerateRootCA() error {
 		KeyUsage:              x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature | x509.KeyUsageCRLSign,
 		BasicConstraintsValid: true,
 		IsCA:                  true,
-		MaxPathLen:            0,
+		MaxPathLen:            1,
+		CRLDistributionPoints: []string{
+			viper.GetString("root_ca_tlss.crl_url"),
+		},
 	}
 
 	// Create certificate
@@ -120,7 +122,16 @@ func GenerateRootCA() error {
 	}
 
 	// After successful certificate creation, ensure the state is updated
-	result, err := db.Exec("UPDATE state_ca SET state = true WHERE id = 1")
+	result, err := db.Exec("UPDATE root_ca_tlss SET state = true, common_name = ?, country_name = ?, state_province = ?, locality_name = ?, organization = ?, organization_unit = ?, email = ?, ttl = ? WHERE id = 1",
+		viper.GetString("root_ca_tlss.commonName"),
+		viper.GetString("root_ca_tlss.countryName"),
+		viper.GetString("root_ca_tlss.stateProvince"),
+		viper.GetString("root_ca_tlss.localityName"),
+		viper.GetString("root_ca_tlss.organization"),
+		viper.GetString("root_ca_tlss.organizationUnit"),
+		viper.GetString("root_ca_tlss.email"),
+		viper.GetInt("root_ca_tlss.ttl"),
+	)
 	if err != nil {
 		return err
 	}

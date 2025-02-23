@@ -5,12 +5,12 @@
 <!-- <div class="containers"> -->
   <div class="core">
     <form class="" hx-post="/add_certs" hx-target="#body" hx-ext="json-enc">
-      <label for="inputUser" id= "" class="form_lable" >Certs configuration</label>
+      <label for="inputUser" id= "" class="form_lable" >Create certificate  </label>
       <div class="input_border">
         <div class="row g-3 form_center">
           <div class="col-md-3">
             <label for="standard-select" class="select_title">Тип алгоритма</label>
-              <select id="standard-select" class="select">
+              <select id="select-type" class="select">
                 <option value="RSA">RSA</option>
                 <option value="ECDSA">ECDSA</option>
                 <option value="Ed25519">Ed25519 </option>
@@ -18,7 +18,7 @@
           </div>
           <div class="col-md-3">
             <label for="standard-select" class="select_title">Длина ключа</label>
-              <select id="standard-select" class="select">
+              <select id="select-key-length" class="select">
                 <option value="512">512</option>
                 <option value="1024">1024</option>
                 <option value="2048">2048</option>
@@ -32,6 +32,15 @@
           <div class="col-md-3">
             <label for="standard-select" class="select_title">Домен:</label>
             <input type="text" class="c_input" id="domain" name="domain" placeholder="Domain" required>
+            <div class="form-check form-switch switch_label">
+              <label class="form-check-label" for="SwitchWildcard">Wildcard</label>
+              <input class="form-check-input" type="checkbox" role="switch" id="SwitchWildcard" checked>
+              
+            </div>
+            <div class="form-check form-switch">
+              <label class="form-check-label" for="SwitchRecreate">Recreate</label>
+              <input class="form-check-input" type="checkbox" role="switch" id="SwitchRecreate" checked>
+            </div>
           </div>
         </div>
         <div class="indent-5"></div>
@@ -75,15 +84,18 @@
             <input type="password" class="c_input" id="Password" name="Password" placeholder="" required>
           </div>
           <!-- <div>Создайте пользователя на сервере и используйте его логин и пароль для подключения</div> -->
-          <div class="col-12">
-            <button type="submit" class="btn btn-primary mt-2">Add</button>
+          <div class="btn-container btn-container-right">
+            <button type="submit" class="btn-custom btn-custom-certs">Create</button>
           </div>
         </div>
       </div>
     </form>
   </div>
     
-  
+  <div id="search-certs" class="search-input-container">
+    <input type="text" class="search-input" placeholder="Search certs">
+  </div>
+  <div id="search-certs" class="certs_table"></div>
   <div id="response" class="servers_table">
   <!-- {{template "serverList-tpl" .}} -->
   </div>

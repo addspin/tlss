@@ -69,3 +69,58 @@
 .indent-5 {
     margin-top: 5%;
 }
+
+.switch_label {
+    margin-top: 5%;
+}
+
+.btn-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.btn-container-right {
+    text-align: right;
+    justify-content: flex-end;
+}
+
+.btn-custom {
+    background-color: #007bff; /* Синий цвет фона */
+    color: white; /* Белый цвет текста */
+    border: none; /* Без рамки */
+    border-radius: 5px; /* Закругленные углы */
+    font-size: 16px; /* Размер шрифта */
+    cursor: pointer; /* Указатель при наведении */
+    transition: background-color 0.3s; /* Плавный переход цвета фона */
+}
+
+.btn-custom-certs {
+    padding: 1px 8%; /* Отступы */
+}
+
+.btn-custom:hover {
+    background-color: #0056b3; /* Темнее при наведении */
+}
+
+.search-input-container {
+    padding-left: 28%;
+    padding-right: 28%;
+    align-content: center;
+    padding-top: 1%;
+    font-size: 14px;
+}
+
+.search-input {
+    width: 100%; /* Ширина 100% */
+    border: none; /* Без рамки */
+    border-bottom: 1px solid #a99ee8; /* Нижняя рамка */
+    background-color: transparent; /* Прозрачный фон */
+    color: #ffffff; /* Цвет текста */
+    font-size: 1rem; /* Размер шрифта */
+    transition: border-color 0.3s; /* Плавный переход цвета рамки */
+}
+
+.search-input:focus {
+    outline: none; /* Убираем обводку */
+    border-color: #bcb0ff; /* Цвет рамки при фокусе */
+}

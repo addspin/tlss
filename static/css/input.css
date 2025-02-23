@@ -1,8 +1,19 @@
-.core {
+.core-servers {
     padding-left: 25%;
     padding-right: 25%;
     font-size: 0.8rem;
 }
+.core-certs {
+    padding-left: 0%;
+    padding-right: 0%;
+    font-size: 0.8rem;
+}
+.left-core {
+    padding-left: 55%;
+    padding-right: 0%;
+    font-size: 0.8rem;
+}
+
 .form_center {
     padding-left: 5%;
     padding-right: 5%;
@@ -42,7 +53,8 @@
     top: 10px; 
     z-index: 1;
     background-color: #212529;
-
+    padding-left: 1%;
+    padding-right: 1%;
 }
 
 .select {
@@ -107,7 +119,7 @@
     padding-right: 28%;
     align-content: center;
     padding-top: 1%;
-    font-size: 14px;
+    font-size: 0.8rem;
 }
 
 .search-input {
@@ -116,11 +128,22 @@
     border-bottom: 1px solid #a99ee8; /* Нижняя рамка */
     background-color: transparent; /* Прозрачный фон */
     color: #ffffff; /* Цвет текста */
-    font-size: 1rem; /* Размер шрифта */
     transition: border-color 0.3s; /* Плавный переход цвета рамки */
 }
 
 .search-input:focus {
     outline: none; /* Убираем обводку */
     border-color: #bcb0ff; /* Цвет рамки при фокусе */
+}
+
+.search-input-container-server {
+    padding-left: 0%;
+    padding-right: 0%;
+    align-content: center;
+    margin-bottom: 10%;
+}
+
+[class^="server_id_"] {
+
+
 }

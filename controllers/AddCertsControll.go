@@ -78,7 +78,40 @@ func AddCertsControll(c fiber.Ctx) error {
 	// 	log.Fatal(err)
 	// }
 	// log.Println("serverList", serverList)
+	if c.Method() == "GET" {
+		serverList := []models.Server{}
+		err := db.Select(&serverList, "SELECT id, hostname, server_status FROM server")
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println("serverList-certs", serverList)
+		onlineServers := []models.Server{}
+		for _, list := range serverList {
+			// Записываем только онлайн сервера, чтобы не было ошибки при добавлении сертификата
+			if list.ServerStatus == "online" {
+				onlineServers = append(onlineServers, list)
+				log.Println("onlineServerList-certs", onlineServers)
+			}
+		}
+		return c.Render("add_certs/addCerts", fiber.Map{
+			"Title":      "Add certs",
+			"serverList": onlineServers,
+		})
+	}
+	serverList := []models.Server{}
+	error := db.Select(&serverList, "SELECT id, hostname, server_status FROM server")
+	if error != nil {
+		log.Fatal(err)
+	}
+	onlineServers := []models.Server{}
+	for _, list := range serverList {
+		if list.ServerStatus == "online" {
+			onlineServers = append(onlineServers, list)
+			log.Println("serverList-certs", onlineServers)
+		}
+	}
 	return c.Render("add_certs/addCerts", fiber.Map{
-		"Title": "Add certs",
+		"Title":      "Add certs",
+		"serverList": onlineServers,
 	})
 }

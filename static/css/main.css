@@ -58,6 +58,25 @@
     /* animation: colorPulse 2s infinite alternate; */
 }
 
+.state-online-certs {
+    width: 10px;
+    height: 10px;
+    background-color: #2ba03d;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 50%;
+
+}
+
+.state-offline-certs {
+    width: 10px;
+    height: 10px;
+    background-color: #983636;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 50%;
+}
+
 @keyframes colorPulse {
     from {
         background: #2ba03d;

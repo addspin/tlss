@@ -1,0 +1,16 @@
+{{define "serverList-certs-tpl"}}
+  {{ range .serverList }}
+    <div class="input_border mt-1">
+      <table class="">
+        <tr class="server_id_{{ .Id }}">
+          <td>{{ .Hostname }}</td>
+          <td>
+          <div class="state-{{ if eq .ServerStatus "online" }}online-certs{{ else }}offline-certs{{ end }}"></div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  {{ end }}
+
+
+{{end}}

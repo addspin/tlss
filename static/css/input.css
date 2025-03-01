@@ -43,10 +43,31 @@
     border-color: rgb(128, 119, 176);
     padding: 2%;
     border-radius: 5px;
+    background-color: transparent;
+    width: 100%;
     /* border-left: none;
     border-right: none; */
-
 }
+
+.input_border_button {
+    text-align: left;
+    border: 2px solid #a99ee8;
+    border-color: rgb(128, 119, 176);
+    padding: 2%;
+    border-radius: 5px;
+    background-color: transparent;
+    width: 100%;
+}
+
+.input_border_button:active {
+    background-color: #30363B;
+}
+
+.input_border_button:focus {
+    background-color: #30363B;
+}
+
+
 .form_lable {
     position: relative;
     left: 20px;

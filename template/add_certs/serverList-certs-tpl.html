@@ -1,16 +1,15 @@
 {{define "serverList-certs-tpl"}}
   {{ range .serverList }}
-    <div class="input_border mt-1">
-      <table class="">
-        <tr class="server_id_{{ .Id }}">
-          <td>{{ .Hostname }}</td>
-          <td>
-          <div class="state-{{ if eq .ServerStatus "online" }}online-certs{{ else }}offline-certs{{ end }}"></div>
-          </td>
-        </tr>
-      </table>
+    <div class="row-auto">
+      <div class="col-auto">
+        <button id="server-{{ .Id }}" class="input_border_button mt-1" 
+                onclick="var input = document.getElementById('serverId'); 
+                         input.value = '{{ .Id }}'; 
+                         input.setAttribute('value', '{{ .Id }}'); ">
+          {{ .Hostname }}
+          <span class="state-{{ if eq .ServerStatus "online" }}online-certs{{ else }}offline-certs{{ end }}"></span>
+        </button>
+      </div>
     </div>
   {{ end }}
-
-
 {{end}}

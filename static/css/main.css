@@ -64,7 +64,7 @@
     background-color: #2ba03d;
     border-radius: 50%;
     display: inline-block;
-    margin-left: 50%;
+    margin-left: 5%;
 
 }
 
@@ -74,7 +74,7 @@
     background-color: #983636;
     border-radius: 50%;
     display: inline-block;
-    margin-left: 50%;
+    margin-left: 5%;
 }
 
 @keyframes colorPulse {

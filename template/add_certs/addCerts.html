@@ -16,41 +16,41 @@
       <div class="col-md-6">
         <!-- Правая панель с формой для создания сертификата -->
         <div class="core-certs">
-          <form class="" hx-post="/add_certs" hx-target="#body" hx-ext="json-enc">
+          <form class="" hx-post="/add_certs" hx-target="#body" hx-ext="json-enc-custom" parse-types="true">
             <label for="inputUser" id= "" class="form_lable" >Create certificate</label>
             <div class="input_border">
               <div class="row g-3 form_center">
                 <div class="col-md-3">
-                  <label for="standard-select" class="select_title">Тип алгоритма</label>
-                    <select id="select-type" class="select">
-                      <option value="RSA">RSA</option>
+                  <label class="select_title">Algorithm</label>
+                    <select id="select-type" name="algorithm" class="select">
+                      <option value="RSA" selected>RSA</option>
                       <option value="ECDSA">ECDSA</option>
                       <option value="Ed25519">Ed25519 </option>
                     </select>
                 </div>
                 <div class="col-md-3">
-                  <label for="standard-select" class="select_title">Длина ключа</label>
-                    <select id="select-key-length" class="select">  
+                  <label class="select_title">Lenght</label>
+                    <select id="select-key-length" name="keyLength" class="select" type="number">  
                       <option value="1024">1024</option>
                       <option value="2048">2048</option>
-                      <option value="4096" selected >4096</option>
+                      <option value="4096" selected>4096</option>
                     </select>
                 </div>
                 <div class="col-md-3">
-                  <label for="standard-select" class="select_title">Время жизни</label>
-                  <input type="text" class="c_input" id="ttl" name="ttl" placeholder="TTL" required>
+                  <label for="standard-select" class="select_title">TTL</label>
+                  <input type="number" class="c_input" id="ttl" name="ttl" placeholder="TTL" value="365" required>
                 </div>
                 <div class="col-md-3">
-                  <label for="standard-select" class="select_title">Домен:</label>
-                  <input type="text" class="c_input" id="domain" name="domain" placeholder="Domain" required>
+                  <label for="standard-select" class="select_title">Domain</label>
+                  <input type="text" class="c_input" id="domain" name="domain" placeholder="Domain" value="test.ru" required>
                   <div class="form-check form-switch switch_label">
                     <label class="form-check-label" for="SwitchWildcard">Wildcard</label>
-                    <input class="form-check-input" type="checkbox" role="switch" id="SwitchWildcard" checked>
+                    <input class="form-check-input" type="checkbox" role="switch" id="SwitchWildcard" name="wildcard" checked>
                     
                   </div>
                   <div class="form-check form-switch">
                     <label class="form-check-label" for="SwitchRecreate">Recreate</label>
-                    <input class="form-check-input" type="checkbox" role="switch" id="SwitchRecreate" checked>
+                    <input class="form-check-input" type="checkbox" role="switch" id="SwitchRecreate" name="recreate" checked>
                   </div>
                 </div>
               </div>
@@ -58,42 +58,46 @@
               <div class="row g-1 form_center">
                 <div class="col-md-3">
                   <label for="standard-select" class="select_title" title="Обязательное поле">Common Name</label>
-                  <input title="Обязательное поле" type="text" class="c_input" id="Common" name="Common" placeholder="CA" required>
+                  <input title="Обязательное поле" type="text" class="c_input" id="Common" name="CommonName" placeholder="CA" value="TEST WEB" required>
                 </div>
                 <div class="indent-5"></div>
               </div>
               <div class="row g-3 form_center">
                 <div class="col-md-3">
                   <label for="standard-select" class="select_title">Country Name</label>
-                  <input type="text" class="c_input" id="Country" name="Country" placeholder="RU" required>
+                  <input type="text" class="c_input" id="Country" name="CountryName" placeholder="RU" value="RU" required>
                 </div>
                 <div class="col-md-3">
                   <label for="standard-select" class="select_title">State or Province</label>
-                  <input type="text" class="c_input" id="State" name="State" placeholder="Udmurt Republic" required>
+                  <input type="text" class="c_input" id="State" name="StateProvince" placeholder="Udmurt Republic" value="Udmurt Republic" required>
                 </div>
                 <div class="col-md-3">
                   <label for="standard-select" class="select_title">Locality Name</label>
-                  <input type="text" class="c_input" id="Locality" name="Locality" placeholder="Izhevsk" required>
+                  <input type="text" class="c_input" id="Locality" name="LocalityName" placeholder="Izhevsk" value="Izhevsk" required>
                 </div>
               </div>
               <div class="indent-5"></div> 
               <div class="row g-3 form_center">
                 <div class="col-md-3">
                   <label for="standard-select" class="select_title">Organization Name</label>
-                  <input type="text" class="c_input" id="Organization" name="Organization" placeholder="LV Inc." required>
+                  <input type="text" class="c_input" id="Organization" name="Organization" placeholder="LV Inc." value="LV Inc." required>
                 </div>
                 <div class="col-md-3">
                   <label for="standard-select" class="select_title">Organizational Unit</label>
-                  <input type="text" class="c_input" id="Unit" name="Unit" placeholder="IT" required>
+                  <input type="text" class="c_input" id="Unit" name="OrganizationUnit" placeholder="IT" value="IT" required>
                 </div>
                 <div class="col-md-3">
                   <label for="standard-select" class="select_title">Email Address</label>
-                  <input type="email" class="c_input" id="Email" name="Email" placeholder="tdv@test.ru" required>
+                  <input type="email" class="c_input" id="Email" name="Email" placeholder="tdv@test.ru" value="tdv@test.ru" required>
                 </div>
-                <div class="col-md-3">
+
+                <div class="col-md-3" style="display: none;">
+                  <input type="number" id="serverId" name="serverId" value="">
+                </div>
+                <!-- <div class="col-md-3">
                   <label for="standard-select" class="select_title">Password key</label>
                   <input type="password" class="c_input" id="Password" name="Password" placeholder="****" required>
-                </div>
+                </div> -->
                 <!-- <div>Создайте пользователя на сервере и используйте его логин и пароль для подключения</div> -->
                 <div class="btn-container btn-container-right">
                   <button type="submit" class="btn-custom btn-custom-certs">Create</button>

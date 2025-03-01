@@ -94,12 +94,12 @@ func GenerateSubCA() error {
 	template := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			CommonName:         viper.GetString("sub_ca_tlss.common_name"),
-			Country:            []string{viper.GetString("sub_ca_tlss.country_name")},
-			Province:           []string{viper.GetString("sub_ca_tlss.state_province")},
-			Locality:           []string{viper.GetString("sub_ca_tlss.locality_name")},
+			CommonName:         viper.GetString("sub_ca_tlss.commonName"),
+			Country:            []string{viper.GetString("sub_ca_tlss.countryName")},
+			Province:           []string{viper.GetString("sub_ca_tlss.stateProvince")},
+			Locality:           []string{viper.GetString("sub_ca_tlss.localityName")},
 			Organization:       []string{viper.GetString("sub_ca_tlss.organization")},
-			OrganizationalUnit: []string{viper.GetString("sub_ca_tlss.organization_unit")},
+			OrganizationalUnit: []string{viper.GetString("sub_ca_tlss.organizationUnit")},
 			ExtraNames: []pkix.AttributeTypeAndValue{
 				{
 					Type:  []int{1, 2, 840, 113549, 1, 9, 1},

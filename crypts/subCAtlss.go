@@ -25,23 +25,48 @@ func GenerateSubCA() error {
 	defer db.Close()
 
 	// First, try to insert if not exists
-	_, err = db.Exec(`INSERT OR IGNORE INTO sub_ca_tlss (id, state) VALUES (1, false)`)
+	_, err = db.Exec(`INSERT OR IGNORE INTO sub_ca_tlss (id, sub_ca_status) VALUES (1, 1)`)
 	if err != nil {
 		return err
 	}
 
-	// Check certificate state in database using sqlx
-	var state bool
-	err = db.Get(&state, "SELECT COALESCE(state, false) FROM sub_ca_tlss WHERE id = 1")
+	// Check if root CA certificate is newer than sub CA certificate
+	var rootCACreationTime, subCACreationTime string
+
+	// Get root CA creation time from database
+	err = db.Get(&rootCACreationTime, "SELECT COALESCE(create_time, strftime('%d.%m.%Y %H:%M:%S', 'now', 'localtime')) FROM root_ca_tlss WHERE id = 1")
 	if err != nil {
 		return err
 	}
 
-	// If state is true, certificate already exists
-	if state {
+	// Get sub CA creation time from database
+	err = db.Get(&subCACreationTime, "SELECT COALESCE(create_time, strftime('%d.%m.%Y %H:%M:%S', '1970-01-01')) FROM sub_ca_tlss WHERE id = 1")
+	if err != nil {
+		return err
+	}
+	// If root CA is newer than sub CA, force recreation by setting sub_ca_status to 1
+	rootTime, _ := time.Parse("02.01.2006 15:04:05", rootCACreationTime)
+	subTime, _ := time.Parse("02.01.2006 15:04:05", subCACreationTime)
+	if rootTime.After(subTime) {
+		_, err = db.Exec("UPDATE sub_ca_tlss SET sub_ca_status = 1 WHERE id = 1")
+		if err != nil {
+			return err
+		}
+	}
+
+	// Check certificate sub_ca_status in database using sqlx
+	var sub_ca_status int
+	err = db.Get(&sub_ca_status, "SELECT COALESCE(sub_ca_status, 0) FROM sub_ca_tlss WHERE id = 1")
+	if err != nil {
+		return err
+	}
+
+	// If status is 0, certificate is valid and we don't need to create a new one
+	if sub_ca_status == 0 {
 		return nil
 	}
 
+	// Otherwise, we need to create a new certificate
 	// Load root CA certificate and private key
 	rootCertPath := viper.GetString("root_ca_tlss.path")
 	rootKeyPath := viper.GetString("root_ca_tlss.key")
@@ -115,7 +140,7 @@ func GenerateSubCA() error {
 		IsCA:                  true,
 		MaxPathLen:            0,
 		CRLDistributionPoints: []string{
-			viper.GetString("sub_ca_tlss.crl_url"),
+			viper.GetString("crl.crlURL"),
 		},
 	}
 
@@ -143,7 +168,8 @@ func GenerateSubCA() error {
 	}
 
 	// Update the final database insert to use UPDATE instead of INSERT
-	result, err := db.Exec("UPDATE sub_ca_tlss SET state = true, common_name = ?, country_name = ?, state_province = ?, locality_name = ?, organization = ?, organization_unit = ?, email = ?, public_key = ?, private_key = ?, ttl = ? WHERE id = 1",
+	result, err := db.Exec("UPDATE sub_ca_tlss SET sub_ca_status = 0, create_time = ?, common_name = ?, country_name = ?, state_province = ?, locality_name = ?, organization = ?, organization_unit = ?, email = ?, public_key = ?, private_key = ?, ttl = ?, serial_number = ?, data_revoke = ?, reason_revoke = ? WHERE id = 1",
+		time.Now().Format("02.01.2006 15:04:05"),
 		viper.GetString("sub_ca_tlss.commonName"),
 		viper.GetString("sub_ca_tlss.countryName"),
 		viper.GetString("sub_ca_tlss.stateProvince"),
@@ -154,6 +180,9 @@ func GenerateSubCA() error {
 		string(subCACertPEM),
 		string(encryptedKey),
 		viper.GetInt("sub_ca_tlss.ttl"),
+		template.SerialNumber.String(),
+		"",
+		"",
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update sub CA in database: %w", err)

@@ -61,28 +61,34 @@ func AddServerControll(c fiber.Ctx) error {
 				log.Fatal(err.Error())
 			}
 			if t.Next() { //Если предыдущий запрос выполнился успешно, проверяется есть ли хотябы одна строка с таким именем
-				// Если значение в таблице существует, то обновляем его
-				aes := &crypts.Aes{}
-				cryptPath, err := aes.Encrypt([]byte(data.Path), []byte(aes.Key))
-				if err != nil {
-					log.Fatal(err.Error())
-				}
-				// Переделать!!!! Для обновления всех значений
-				dataInsert := `UPDATE server SET cert_config_path = ? WHERE hostname = ?`
-				_, err = tx.Exec(dataInsert, cryptPath, data.Hostname)
-				if err != nil {
-					log.Fatal(err.Error())
-				}
-				tx.Commit()
-
+				// Закрываем результат запроса
+				t.Close()
+				// Если значение в таблице существует, то возвращаем ошибку
+				tx.Rollback() // Откатываем транзакцию
+				return c.Status(400).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Сервер с таким именем уже существует",
+				})
 			} else {
+				// Закрываем результат запроса
+				t.Close()
 				// Иначе вставляем новое значение
 				dataInsert := `INSERT INTO server (hostname, port, cert_config_path) VALUES ($1, $2, $3)`
 				_, err = tx.Exec(dataInsert, data.Hostname, data.TlssSSHport, data.Path)
 				if err != nil {
-					log.Fatal(err.Error())
+					tx.Rollback() // Откатываем транзакцию при ошибке
+					return c.Status(500).JSON(fiber.Map{
+						"status":  "error",
+						"message": "Ошибка при добавлении данных в базу данных: " + err.Error(),
+					})
 				}
-				tx.Commit()
+				err = tx.Commit() // Проверяем ошибку при коммите
+				if err != nil {
+					return c.Status(500).JSON(fiber.Map{
+						"status":  "error",
+						"message": "Ошибка при сохранении данных: " + err.Error(),
+					})
+				}
 			}
 		}
 	}

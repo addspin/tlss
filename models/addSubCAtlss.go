@@ -1,28 +1,28 @@
 package models
 
-import "time"
-
 type SubCA struct {
-	Id               int       `db:"id"`
-	State            bool      `db:"state"`
-	CreatedAt        time.Time `db:"create_time"`
-	TTL              int       `db:"ttl"`
-	CommonName       string    `db:"common_name"`
-	CountryName      string    `db:"country_name"`
-	StateProvince    string    `db:"state_province"`
-	LocalityName     string    `db:"locality_name"`
-	Organization     string    `db:"organization"`
-	OrganizationUnit string    `db:"organization_unit"`
-	Email            string    `db:"email"`
-	PublicKey        string    `db:"public_key"`
-	PrivateKey       string    `db:"private_key"`
+	Id               int    `db:"id"`
+	CreatedAt        string `db:"create_time"`
+	TTL              int    `db:"ttl"`
+	CommonName       string `db:"common_name"`
+	CountryName      string `db:"country_name"`
+	StateProvince    string `db:"state_province"`
+	LocalityName     string `db:"locality_name"`
+	Organization     string `db:"organization"`
+	OrganizationUnit string `db:"organization_unit"`
+	Email            string `db:"email"`
+	PublicKey        string `db:"public_key"`
+	PrivateKey       string `db:"private_key"`
+	SerialNumber     string `db:"serial_number"`
+	DataRevoke       string `db:"data_revoke"`
+	ReasonRevoke     string `db:"reason_revoke"`
+	SubCAStatus      int    `db:"sub_ca_status"` // 0 - valid, 1 - expired, 2 - revoked
 }
 
 var SchemaSubCAtlss = `
 CREATE TABLE IF NOT EXISTS sub_ca_tlss (
     id INTEGER PRIMARY KEY,
-    state BOOLEAN,
-    create_time DATETIME DEFAULT (datetime('now', 'localtime')),
+    create_time TEXT,
     ttl INTEGER,
     common_name TEXT,
     country_name TEXT,
@@ -32,5 +32,9 @@ CREATE TABLE IF NOT EXISTS sub_ca_tlss (
     organization_unit TEXT,
     email TEXT,
     public_key TEXT,
-    private_key TEXT
+    private_key TEXT,
+    sub_ca_status INTEGER,
+	serial_number TEXT,
+	data_revoke TEXT,
+	reason_revoke TEXT
 );`

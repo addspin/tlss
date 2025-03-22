@@ -26,20 +26,20 @@ func GenerateRootCA() error {
 	defer db.Close()
 
 	// First, try to insert if not exists
-	_, err = db.Exec(`INSERT OR IGNORE INTO root_ca_tlss (id, state) VALUES (1, false)`)
+	_, err = db.Exec(`INSERT OR IGNORE INTO root_ca_tlss (id, root_ca_status) VALUES (1, 1)`)
 	if err != nil {
 		return err
 	}
 
-	// Check certificate state in database using sqlx
-	var state bool
-	err = db.Get(&state, "SELECT COALESCE(state, false) FROM root_ca_tlss WHERE id = 1")
+	// Check certificate root_ca_status in database using sqlx
+	var root_ca_status int
+	err = db.Get(&root_ca_status, "SELECT COALESCE(root_ca_status, 0) FROM root_ca_tlss WHERE id = 1")
 	if err != nil {
 		return err
 	}
 
-	// If state is true, certificate already exists
-	if state {
+	// If status is 0, certificate is valid and we don't need to create a new one
+	if root_ca_status == 0 {
 		return nil
 	}
 
@@ -73,7 +73,7 @@ func GenerateRootCA() error {
 		IsCA:                  true,
 		MaxPathLen:            1,
 		CRLDistributionPoints: []string{
-			viper.GetString("root_ca_tlss.crl_url"),
+			viper.GetString("crl.crlURL"),
 		},
 	}
 
@@ -122,7 +122,8 @@ func GenerateRootCA() error {
 	}
 
 	// After successful certificate creation, ensure the state is updated
-	result, err := db.Exec("UPDATE root_ca_tlss SET state = true, common_name = ?, country_name = ?, state_province = ?, locality_name = ?, organization = ?, organization_unit = ?, email = ?, ttl = ? WHERE id = 1",
+	result, err := db.Exec("UPDATE root_ca_tlss SET root_ca_status = 0, create_time = ?, common_name = ?, country_name = ?, state_province = ?, locality_name = ?, organization = ?, organization_unit = ?, email = ?, ttl = ?, serial_number = ?, data_revoke = ?, reason_revoke = ? WHERE id = 1",
+		time.Now().Format("02.01.2006 15:04:05"),
 		viper.GetString("root_ca_tlss.commonName"),
 		viper.GetString("root_ca_tlss.countryName"),
 		viper.GetString("root_ca_tlss.stateProvince"),
@@ -131,6 +132,9 @@ func GenerateRootCA() error {
 		viper.GetString("root_ca_tlss.organizationUnit"),
 		viper.GetString("root_ca_tlss.email"),
 		viper.GetInt("root_ca_tlss.ttl"),
+		template.SerialNumber.String(),
+		"",
+		"",
 	)
 	if err != nil {
 		return err
@@ -144,6 +148,10 @@ func GenerateRootCA() error {
 	if rowsAffected == 0 {
 		return fmt.Errorf("failed to update state in database")
 	}
-
+	// Generate sub CA
+	err = GenerateSubCA()
+	if err != nil {
+		return err
+	}
 	return nil
 }

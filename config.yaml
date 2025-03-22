@@ -15,7 +15,6 @@ root_ca_tlss:
   organizationUnit: TLSS
   email: tlss@tlss.ru
   key_size: 4096
-  crl_url: http://example.com/crl/intermediate.crl
   
 sub_ca_tlss:
   ttl: 24855
@@ -27,4 +26,8 @@ sub_ca_tlss:
   organizationUnit: TLSS
   email: tlss@tlss.ru
   key_size: 4096
-  crl_url: http://example.com/crl/intermediate.crl
+
+crl:
+  crlURL: http://example.com/crl/revoked.crl
+  updateInterval: 24 # hours
+  version: 2

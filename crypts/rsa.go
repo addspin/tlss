@@ -13,6 +13,7 @@ import (
 
 	"github.com/addspin/tlss/models"
 	"github.com/jmoiron/sqlx"
+	"github.com/spf13/viper"
 )
 
 // Генерирует RSA ключевую пару
@@ -53,7 +54,7 @@ func EncodeRSAPublicKeyToPEM(publicKey *rsa.PublicKey) []byte {
 
 // Генерирует RSA сертификат, подписанный промежуточным CA,
 // и сохраняет его в базу данных
-func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) error {
+func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 
 	// Получаем промежуточный CA сертификат из базы данных
 	var subCA models.SubCA
@@ -62,7 +63,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) error {
 		return fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}
 
-	if !subCA.State {
+	if subCA.SubCAStatus != 0 {
 		return fmt.Errorf("промежуточный CA сертификат недоступен")
 	}
 
@@ -105,6 +106,9 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) error {
 		return fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
 	}
 
+	// Присваиваем серийный номер структуре data
+	data.SerialNumber = serialNumber.String()
+
 	// Подготавливаем шаблон сертификата
 	dnsNames := []string{data.Domain}
 	if data.Wildcard {
@@ -137,6 +141,9 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) error {
 		BasicConstraintsValid: true,
 		IsCA:                  false,
 		DNSNames:              dnsNames,
+		CRLDistributionPoints: []string{
+			viper.GetString("crl.crlURL"),
+		},
 	}
 
 	// Создаем сертификат
@@ -169,17 +176,21 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) error {
 		encryptedKey = keyPEM
 	}
 
+	// Вычисляем количество дней до истечения сертификата
+	daysLeft := int(expiry.Sub(now).Hours() / 24)
+	data.DaysLeft = daysLeft
+
 	// Сохраняем сертификат в базу данных (без сохранения пароля)
 	_, err = db.Exec(`
 		INSERT INTO certs (
 			server_id, algorithm, key_length, ttl, domain, wildcard, recreate,
 			common_name, country_name, state_province, locality_name, organization, organization_unit, email,
-			public_key, private_key, cert_create_time, cert_expire_time
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			public_key, private_key, cert_create_time, cert_expire_time, serial_number, data_revoke, reason_revoke, cert_status, days_left
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`,
 		data.ServerId, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.Wildcard, data.Recreate,
 		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email,
-		string(certPEM), string(encryptedKey), now.Format("02.01.2006 15:04:05"), expiry.Format("02.01.2006 15:04:05"),
+		string(certPEM), string(encryptedKey), now.Format("02.01.2006 15:04:05"), expiry.Format("02.01.2006 15:04:05"), data.SerialNumber, "", "", 0, data.DaysLeft,
 	)
 	if err != nil {
 		return fmt.Errorf("не удалось сохранить сертификат в базу данных: %w", err)

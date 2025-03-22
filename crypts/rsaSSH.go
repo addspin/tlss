@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -196,13 +197,13 @@ func AddAuthorizedKeys(hostname, tlssSSHport, username, password string) error {
 	}
 	client, err := ssh.Dial("tcp", hostname+":"+tlssSSHport, config)
 	if err != nil {
-		log.Fatal("Failed to dial: ", err)
+		return fmt.Errorf("failed to dial: %v", err)
 	}
 	defer client.Close()
 
 	sessionTestCert, err := client.NewSession()
 	if err != nil {
-		log.Fatal("Failed to create session: ", err)
+		return fmt.Errorf("failed to create session: %v", err)
 	}
 	defer sessionTestCert.Close()
 
@@ -220,7 +221,7 @@ func AddAuthorizedKeys(hostname, tlssSSHport, username, password string) error {
 
 	output, err := sessionTestCert.CombinedOutput(cmdTestCert)
 	if err != nil {
-		log.Fatal("Failed to run command: ", err)
+		return fmt.Errorf("failed to run command sessionTestCert: %v", err)
 	}
 	sessionTestCert.Close()
 
@@ -229,14 +230,14 @@ func AddAuthorizedKeys(hostname, tlssSSHport, username, password string) error {
 	outputString = strings.TrimSpace(outputString)
 	sessionAddCert, err := client.NewSession()
 	if err != nil {
-		log.Fatal("Failed to create session: ", err)
+		return fmt.Errorf("failed to create session: %v", err)
 	}
 	defer sessionAddCert.Close()
 
 	if outputString == "0" {
 		err := sessionAddCert.Run(cmdAddCert)
 		if err != nil {
-			log.Fatal("Failed to run: " + err.Error())
+			return fmt.Errorf("failed to run sessionAddCert: %v", err)
 		}
 		sessionAddCert.Close()
 	}

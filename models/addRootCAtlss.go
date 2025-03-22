@@ -1,26 +1,26 @@
 package models
 
-import "time"
-
 type RootCA struct {
-	Id               int       `db:"id"`
-	State            bool      `db:"state"`
-	CreatedAt        time.Time `db:"create_time"`
-	TTL              int       `db:"ttl"`
-	CommonName       string    `db:"common_name"`
-	CountryName      string    `db:"country_name"`
-	StateProvince    string    `db:"state_province"`
-	LocalityName     string    `db:"locality_name"`
-	Organization     string    `db:"organization"`
-	OrganizationUnit string    `db:"organization_unit"`
-	Email            string    `db:"email"`
+	Id               int    `db:"id"`
+	CreatedAt        string `db:"create_time"`
+	TTL              int    `db:"ttl"`
+	CommonName       string `db:"common_name"`
+	CountryName      string `db:"country_name"`
+	StateProvince    string `db:"state_province"`
+	LocalityName     string `db:"locality_name"`
+	Organization     string `db:"organization"`
+	OrganizationUnit string `db:"organization_unit"`
+	Email            string `db:"email"`
+	SerialNumber     string `db:"serial_number"`
+	DataRevoke       string `db:"data_revoke"`
+	ReasonRevoke     string `db:"reason_revoke"`
+	RootCAStatus     int    `db:"root_ca_status"` // 0 - valid, 1 - expired, 2 - revoked
 }
 
 var SchemaRootCAtlss = `
 CREATE TABLE IF NOT EXISTS root_ca_tlss (
     id INTEGER PRIMARY KEY,
-    state BOOLEAN,
-    create_time DATETIME DEFAULT (datetime('now', 'localtime')),
+    create_time TEXT,
     ttl INTEGER,
     common_name TEXT,
     country_name TEXT,
@@ -28,5 +28,9 @@ CREATE TABLE IF NOT EXISTS root_ca_tlss (
     locality_name TEXT,
     organization TEXT,
     organization_unit TEXT,
-    email TEXT
+    email TEXT,
+    root_ca_status INTEGER,
+	serial_number TEXT,
+	data_revoke TEXT,
+	reason_revoke TEXT
 );`

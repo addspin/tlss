@@ -1,7 +1,7 @@
 {{define "menu-tpl"}}
 
 <div class="container mx-auto mb-3">
-    <ul class="nav justify-content-center nav-underline">
+    <ul class="nav-menu nav justify-content-center nav-underline">
       <li class="nav-item">
         <a class="nav-link {{if eq .Title "Index"}}active{{else}}{{end}}" aria-current="page" hx-get="/index" hx-target="#body">Overview</a>
       </li>
@@ -12,9 +12,9 @@
         <a class="nav-link {{if eq .Title "Add certs"}}active{{else}}{{end}}" aria-current="page"  hx-get="/add_certs" hx-target="#body">Certs</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link disabled" aria-disabled="true" href="/add_server">Link</a>
+        <a class="nav-link {{if eq .Title "Revoke certs"}}active{{else}}{{end}}" aria-current="page"  hx-get="/revoke_certs" hx-target="#body">Revoke certs</a>
       </li>
     </ul>
-  </div>
+  </div> 
 
 {{end}}

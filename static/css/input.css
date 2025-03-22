@@ -1,17 +1,47 @@
+@font-face {
+    font-family: 'Inter';
+    src: url('/fonts/Inter/static/Inter_18pt-ExtraLight.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap; /* Улучшает производительность загрузки */
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('/fonts/Roboto/static/Roboto_Condensed-Light.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap; /* Улучшает производительность загрузки */
+}
+
+.color-form-certs {
+    color: #a99ee8;
+}
+
+.color-form-servers {
+    color: #a99ee8;
+}
+
 .core-servers {
-    padding-left: 25%;
-    padding-right: 25%;
+    padding-left: 30%;
+    padding-right: 30%;
     font-size: 0.8rem;
+    font-family: Inter;
+    font-weight: 100; /* regular weight */
 }
 .core-certs {
     padding-left: 0%;
     padding-right: 0%;
     font-size: 0.8rem;
+    font-family: Inter;
+    font-weight: 100;
 }
 .left-core {
     padding-left: 55%;
     padding-right: 0%;
     font-size: 0.8rem;
+    font-family: Inter;
+    font-weight: 100;
 }
 
 .form_center {
@@ -34,12 +64,11 @@
 .c_input:focus {
     outline: none;
     border-color: #bcb0ff;
-
 }
 
 .input_border {
     text-align: left;
-    border: 2px solid #a99ee8;
+    border: 1px solid #a99ee8;
     border-color: rgb(128, 119, 176);
     padding: 2%;
     border-radius: 5px;
@@ -51,7 +80,7 @@
 
 .input_border_button {
     text-align: left;
-    border: 2px solid #a99ee8;
+    border: 1px solid #a99ee8;
     border-color: rgb(128, 119, 176);
     padding: 2%;
     border-radius: 5px;
@@ -60,13 +89,25 @@
 }
 
 .input_border_button:active {
-    background-color: #30363B;
+    background-color: #30363B !important;
 }
 
 .input_border_button:focus {
-    background-color: #30363B;
+    background-color: #30363B !important;
 }
 
+.select_cert_revoke { 
+    background: #007bff;
+    border-radius: 30px;
+    text-align: center;
+    width: 4em;
+    border: none;
+    padding: 0;
+}
+
+.select_cert_revoke:hover {
+    background: #0056b3;
+}
 
 .form_lable {
     position: relative;
@@ -91,6 +132,19 @@
 }
 .select_title {
     
+}
+
+.select_certs_revoke {
+    border: 1px solid #a99ee8;
+    border-color: rgb(128, 119, 176);
+    color: #ffffff;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    background-color: transparent;
+    margin-top: 5px;
+    width: 100%;
 }
 .indent-line {
     margin-top: 5%;
@@ -118,17 +172,23 @@
 }
 
 .btn-custom {
-    background-color: #007bff; /* Синий цвет фона */
-    color: white; /* Белый цвет текста */
-    border: none; /* Без рамки */
-    border-radius: 5px; /* Закругленные углы */
-    font-size: 16px; /* Размер шрифта */
-    cursor: pointer; /* Указатель при наведении */
-    transition: background-color 0.3s; /* Плавный переход цвета фона */
+    background-color: #007bff; 
+    color: white; 
+    border: none; 
+    border-radius: 5px; 
+    font-size: 16px; 
+    cursor: pointer; 
+    transition: background-color 0.3s; 
+    
 }
 
 .btn-custom-certs {
-    padding: 1px 8%; /* Отступы */
+    /* padding: 1px 8%;  */
+    width: 20%;
+}
+
+.btn-custom-servers {
+    /* padding: 1px 8%;  */
 }
 
 .btn-custom:hover {
@@ -140,6 +200,12 @@
     padding-right: 28%;
     align-content: center;
     padding-top: 1%;
+    font-size: 0.8rem;
+}
+.search-input-container-revoke {
+    padding-left: 28%;
+    padding-right: 28%;
+    align-content: center;
     font-size: 0.8rem;
 }
 
@@ -167,4 +233,29 @@
 [class^="server_id_"] {
 
 
+}
+
+/* Стили для анимации загрузки */
+
+
+.time-svg{
+    display: none;
+    opacity:0;
+    transition: opacity 500ms ease-in;
+    margin-left: 40%;
+}
+.htmx-request .time-svg{
+    display: block;
+    opacity:1;
+}
+.htmx-request.time-svg{
+    display: block;
+    opacity:1;
+}
+.btn-spinner{
+    display: none;
+}
+.htmx-request .btn-spinner{
+    display: block;
+    
 }

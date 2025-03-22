@@ -18,16 +18,31 @@
                       <div class="state-{{ if eq .ServerStatus "online" }}online{{ else }}offline{{ end }}" >{{ .ServerStatus }}</div>
                   </td>
                   <td>
-                    <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_server" hx-target=".server_id_{{ .Id }}" hx-ext="json-enc" 
+                    <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_server" hx-target=".server_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
                     onClick="const { value: hostname } = Swal.fire({
+                    showClass: {
+                    popup: `
+                      animate__animated
+                      animate__fadeInUp
+                      animate__fast
+                    `
+                    },
+                    hideClass: {
+                      popup: `
+                        animate__animated
+                        animate__fadeOutDown
+                        animate__fast
+                      `
+                    },
                     customClass: 'custom-alert',
                     input: 'text',
                     title: 'Вы уверены, что хотите удалить сервер - {{ .Hostname }}?', 
                     text: 'Для подтверждения введите {{ .Hostname }}', 
                     showCancelButton: true,
-                    confirmButtonColor: '#d33',
+                    confirmButtonColor: '#983636',
                     cancelButtonColor: '#3085d6',
                     confirmButtonText: 'Yes, delete it!',
+                    
                     inputValidator: (value) => {
                     if (value != {{ .Hostname }}) {
                       return 'Вы ввели не верное имя сервера, введите {{ .Hostname }}';

@@ -43,12 +43,34 @@ func RemoveServer(c fiber.Ctx) error {
 		}
 		tx := db.MustBegin()
 
+		// Сначала удаляем все сертификаты, принадлежащие серверу
+		dataRemoveCerts := `DELETE FROM certs WHERE server_id = ?`
+		_, err = tx.Exec(dataRemoveCerts, data.Id)
+		if err != nil {
+			tx.Rollback() // Откатываем транзакцию при ошибке
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка при удалении сертификатов сервера: " + err.Error(),
+			})
+		}
+
+		// Затем удаляем сам сервер
 		dataRemove := `DELETE FROM server WHERE id = ?`
 		_, err = tx.Exec(dataRemove, data.Id)
 		if err != nil {
-			log.Fatal(err.Error())
+			tx.Rollback() // Откатываем транзакцию при ошибке
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка при удалении сервера: " + err.Error(),
+			})
 		}
-		tx.Commit()
+		err = tx.Commit() // Проверяем ошибку при коммите
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка при сохранении изменений: " + err.Error(),
+			})
+		}
 	}
 	return c.Render("add_server/serverList-tpl", fiber.Map{})
 }

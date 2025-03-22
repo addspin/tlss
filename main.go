@@ -65,6 +65,13 @@ func main() {
 	if err != nil {
 		log.Println(err.Error())
 	}
+
+	// create SchemaCrlInfo tables in db (хранит данные CRL)
+	_, err = db.Exec(models.SchemaCrlInfo)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
 	// запрос ввода пароля
 	var pwd []byte
 	fmt.Print("Enter password: ")

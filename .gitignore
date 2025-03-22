@@ -24,6 +24,8 @@ tailwindcss
 db/*
 !/db/.gitkeep
 *.idea
+*.vscode
+/info
 air
 tmp
 bootstrap_scss

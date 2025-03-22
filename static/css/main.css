@@ -1,5 +1,16 @@
+.nav-menu {
+    font-size: 0.8rem;
+    font-family: Inter;
+    font-weight: 100;
+}
+
+.nav-menu a {
+    cursor: pointer;
+}
+
+
+
 .tables_lable {
-    
     font-weight: bold;
     border-bottom: 1px solid #a99ee8;
     color: #ffffff;
@@ -20,6 +31,21 @@
     align-content: center;
     padding-top: 3%;
     font-size: 14px;
+    font-family: Inter;
+    font-weight: 100;
+}
+.certs_revoke_table {
+    align-content: center;
+    padding-top: 3%;
+    font-size: 14px;
+    font-family: Inter;
+    font-weight: 100;
+}
+.table th {
+    font-weight: bold;
+    font-family: Inter;
+    font-variant: all-small-caps;
+    font-size: small;
 }
 
 .table td, .table th {
@@ -58,23 +84,49 @@
     /* animation: colorPulse 2s infinite alternate; */
 }
 
-.state-online-certs {
+.state-online-server-certs {
     width: 10px;
     height: 10px;
     background-color: #2ba03d;
     border-radius: 50%;
     display: inline-block;
     margin-left: 5%;
-
 }
 
-.state-offline-certs {
+.state-offline-server-certs {
     width: 10px;
     height: 10px;
     background-color: #983636;
     border-radius: 50%;
     display: inline-block;
     margin-left: 5%;
+}
+
+
+.state-valid-certs {
+    background: #2ba03d;
+    border-radius: 30px;
+    text-align: center;
+    width: 4em;
+    border: none;
+    padding: 0;
+}
+
+.state-revoked-certs     {
+    background-color: #983636;
+    border-radius: 30px;
+    text-align: center;
+    width: 4em;
+    border: none;
+}
+
+.state-expired-certs {
+    background: #efa70c;
+    border-radius: 30px;
+    text-align: center;
+    width: 4em;
+    border: none;
+    padding: 0;
 }
 
 @keyframes colorPulse {
@@ -128,13 +180,94 @@
     footer: 'swal2-footer',
     timerProgressBar: 'swal2-timer-progress-bar',
 }
+.swal2-backdrop-show {
+    backdrop-filter: blur(3px);
+}
+.swal2-confirm {
+    background-color: #983636 !important; /* Синий цвет фона */
+    color: white ; /* Белый цвет текста */
+    border: none ; /* Без рамки */
+    border-radius: 5px ; /* Закругленные углы */
+    font-size: 16px ; /* Размер шрифта */
+    cursor: pointer; /* Указатель при наведении */
+    transition: background-color 0.3s;
+    font-family: Inter;
+    padding: 0.1em 3em;
+}
+.swal2-cancel {
+    background-color: #007bff !important; /* Синий цвет фона */
+    color: white ; /* Белый цвет текста */
+    border: none ; /* Без рамки */
+    border-radius: 5px !important; /* Закругленные углы */
+    font-size: 16px !important; /* Размер шрифта */
+    cursor: pointer !important; /* Указатель при наведении */
+    transition: background-color 0.3s;
+    font-family: Inter;
+    padding: 0.1em 3em;
+}
+.swal2-container {
+    font-family: Inter;
+    font-size: 0.7rem;
+    color: #ffffff;
+    padding: 0 !important;
+     /* height: 0 !important; */
+}
+
+.swal2-input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #a99ee8;
+    background-color: transparent;
+    border-radius: 0;
+    padding: 0 !important;
+    /* height: 0 !important; */
+}   
+
+.swal2-input:focus {
+    outline: none;
+    box-shadow: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #bcb0ff;
+    background-color: transparent;
+}
+
+.swal2-input:active {
+    outline: none;
+    box-shadow: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #bcb0ff;
+    background-color: transparent;
+}
+
+.swal2-input:hover {
+    outline: none;
+    box-shadow: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-bottom: 1px solid #bcb0ff;
+    background-color: transparent;
+}
+
+.swal2-title {
+    font-size: 0.9rem;
+    font-family: Inter;
+    color: crimson
+}
 
 .swal2-popup {
-    background-color: #222326;
+    /* background-color: #222326; */
+    background-color: #212529;
     border: 1px solid #a99ee8;
     border-color: rgb(128, 119, 176);
     width: fit-content;
-    font-size: smaller;
+    font-size: 0.7rem;
     color: #ffffff;
+    font-family: Inter;
 }
 

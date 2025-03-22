@@ -1,0 +1,22 @@
+{{define "serverListRevokeCerts-tpl"}}
+<div class="server-list-container">
+  {{ range .serverList }}
+    <div class="row-auto">
+      <div class="col-auto">
+        <button id="server-{{ .Id }}" class="input_border_button mt-1" 
+                hx-get="/cert_list_revoke" 
+                hx-target="#response" 
+                hx-ext="json-enc-custom" 
+                parse-types="false"
+                hx-vals='{"serverId": "{{ .Id }}"}'
+                onclick="var input = document.getElementById('serverId'); 
+                         input.value = '{{ .Id }}'; 
+                         input.setAttribute('value', '{{ .Id }}'); ">
+          {{ .Hostname }}
+          <span class="state-{{ if eq .ServerStatus "online" }}online-server-certs{{ else }}offline-server-certs{{ end }}"></span>
+        </button>
+      </div>
+    </div>
+  {{ end }}
+</div>
+{{end}}

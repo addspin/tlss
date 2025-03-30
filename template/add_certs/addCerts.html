@@ -126,6 +126,13 @@
                   <label class="select_title">Locality Name</label>
                   <input type="text" class="c_input" id="Locality" name="LocalityName" placeholder="Izhevsk" value="Izhevsk" required>
                 </div>
+                <div class="col-md-3">
+                  <label class="select_title">App type</label>
+                    <select id="select-app-type" name="appType" class="select" type="number" placeholder="pub.pem \ priv.key">  
+                      <option value="nginx">nginx</option>
+                      <option value="haproxy" selected>haproxy</option>
+                    </select>
+                </div>
               </div>
               <div class="indent-5"></div> 
               <div class="row g-3 form_center">

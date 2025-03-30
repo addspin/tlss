@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/addspin/tlss/check"
+	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/crypts"
-
 	"github.com/addspin/tlss/models"
+	"github.com/addspin/tlss/ocsp"
 	"github.com/addspin/tlss/routes"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/template/html/v2"
@@ -68,6 +70,12 @@ func main() {
 
 	// create SchemaCrlInfo tables in db (хранит данные CRL)
 	_, err = db.Exec(models.SchemaCrlInfo)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// create SchemaOCSPCertificate tables in db (хранит данные OCSP)
+	_, err = db.Exec(models.SchemaOCSPCertificate)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -155,6 +163,16 @@ func main() {
 		log.Printf("Error generating sub CA: %v", err)
 	}
 
+	//---------------------------------------Generate CRL
+	updateInterval := time.Duration(viper.GetInt("crl.updateInterval")) * time.Hour
+	// запускаем генерацию CRL через заданный интервал времени
+	go crl.StartCRLGeneration(updateInterval)
+
+	//---------------------------------------Start OCSP Responder
+	// OCSP-респондер работает отдельно от контроллера, обновляя базу данных
+	ocspUpdateInterval := time.Duration(viper.GetInt("ocsp.updateInterval")) * time.Hour
+	go ocsp.StartOCSPResponder(ocspUpdateInterval)
+
 	checkServerTime := viper.GetInt("checkServer.time")
 	// запускаем проверку доступности серверов
 	check := check.StatusCodeTcp{}
@@ -168,7 +186,8 @@ func main() {
 		Views: engine,
 	})
 
-	routes.Setup(app)
+	// Настраиваем маршруты, передавая соединение с БД
+	routes.Setup(app, db)
 
 	log.Fatal(app.Listen(":43000"))
 }

@@ -27,7 +27,7 @@ func AddCertsControll(c fiber.Ctx) error {
 		data := new(models.Certs)
 
 		c.Bind().JSON(data)
-		log.Println(data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email)
+		log.Println(data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.AppType, data.Organization, data.OrganizationUnit, data.Email)
 
 		err := c.Bind().JSON(data)
 		if err != nil {
@@ -47,6 +47,7 @@ func AddCertsControll(c fiber.Ctx) error {
 			data.CountryName == "" || // Country Name
 			data.StateProvince == "" || // State Province
 			data.LocalityName == "" || // Locality Name
+			data.AppType == "" || // App Type
 			data.Organization == "" || // Organization
 			data.OrganizationUnit == "" || // Organization Unit
 			data.Email == "" { // Email

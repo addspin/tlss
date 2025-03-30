@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"os"
+	"os/exec"
 	"time"
 
 	"github.com/addspin/tlss/models"
@@ -106,8 +108,8 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		return fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
 	}
 
-	// Присваиваем серийный номер структуре data
-	data.SerialNumber = serialNumber.String()
+	// Присваиваем серийный номер структуре data как строку в hex формате
+	data.SerialNumber = fmt.Sprintf("%X", serialNumber)
 
 	// Подготавливаем шаблон сертификата
 	dnsNames := []string{data.Domain}
@@ -176,26 +178,169 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		encryptedKey = keyPEM
 	}
 
+	// Начинаем транзакцию
+	tx, err := db.Beginx()
+	if err != nil {
+		return fmt.Errorf("не удалось начать транзакцию: %w", err)
+	}
+
+	// Отложенная функция для отката транзакции в случае ошибки
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+			log.Printf("Транзакция отменена из-за ошибки: %v", err)
+		}
+	}()
+
 	// Вычисляем количество дней до истечения сертификата
 	daysLeft := int(expiry.Sub(now).Hours() / 24)
 	data.DaysLeft = daysLeft
 
-	// Сохраняем сертификат в базу данных (без сохранения пароля)
-	_, err = db.Exec(`
-		INSERT INTO certs (
-			server_id, algorithm, key_length, ttl, domain, wildcard, recreate,
-			common_name, country_name, state_province, locality_name, organization, organization_unit, email,
-			public_key, private_key, cert_create_time, cert_expire_time, serial_number, data_revoke, reason_revoke, cert_status, days_left
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`,
-		data.ServerId, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.Wildcard, data.Recreate,
-		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email,
-		string(certPEM), string(encryptedKey), now.Format("02.01.2006 15:04:05"), expiry.Format("02.01.2006 15:04:05"), data.SerialNumber, "", "", 0, data.DaysLeft,
-	)
+	// Проверяем существование сертификата с такими же domain, wildcard и server_id
+	var existingCerts []models.Certs
+
+	err = tx.Select(&existingCerts, `
+		SELECT id FROM certs 
+		WHERE domain = ? AND wildcard = ? AND server_id = ?
+	`, data.Domain, data.Wildcard, data.ServerId)
+
 	if err != nil {
-		return fmt.Errorf("не удалось сохранить сертификат в базу данных: %w", err)
+		return fmt.Errorf("ошибка при проверке существования сертификата: %w", err)
 	}
 
-	log.Printf("Успешно сгенерирован RSA сертификат для домена %s", data.Domain)
+	certExists := len(existingCerts) > 0
+
+	if certExists {
+		// Сертификат существует, обновляем его
+		data.Id = existingCerts[0].Id // Получаем ID из существующего сертификата
+		_, err = tx.Exec(`
+			UPDATE certs SET 
+				algorithm = ?, key_length = ?, ttl = ?, recreate = ?,
+				common_name = ?, country_name = ?, state_province = ?, locality_name = ?, 
+				organization = ?, organization_unit = ?, email = ?,
+				public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?, 
+				serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?
+			WHERE id = ?
+		`,
+			data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
+			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
+			data.Organization, data.OrganizationUnit, data.Email,
+			string(certPEM), string(encryptedKey), now.Format("02.01.2006 15:04:05"), expiry.Format("02.01.2006 15:04:05"),
+			data.SerialNumber, "", "", 0, data.DaysLeft,
+			data.Id,
+		)
+		if err != nil {
+			return fmt.Errorf("не удалось обновить существующий сертификат в базе данных: %w", err)
+		}
+		log.Printf("Сертификат для домена %s обновлен в базе данных (ID: %d)", data.Domain, data.Id)
+	} else {
+		// Сертификат не существует, добавляем новый
+		_, err = tx.Exec(`
+			INSERT INTO certs (
+				server_id, algorithm, key_length, ttl, domain, wildcard, recreate,
+				common_name, country_name, state_province, locality_name, organization, organization_unit, email,
+				public_key, private_key, cert_create_time, cert_expire_time, serial_number, data_revoke, reason_revoke, cert_status, days_left
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`,
+			data.ServerId, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.Wildcard, data.Recreate,
+			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email,
+			string(certPEM), string(encryptedKey), now.Format("02.01.2006 15:04:05"), expiry.Format("02.01.2006 15:04:05"), data.SerialNumber, "", "", 0, data.DaysLeft,
+		)
+		if err != nil {
+			return fmt.Errorf("не удалось добавить новый сертификат в базу данных: %w", err)
+		}
+		log.Printf("Новый сертификат для домена %s добавлен в базу данных", data.Domain)
+	}
+
+	// Получаем информацию о сервере для сохранения сертификата
+	var serverInfo models.Server
+	err = tx.Get(&serverInfo, "SELECT id, hostname, port, username, cert_config_path, server_status FROM server WHERE id = ?", data.ServerId)
+	if err != nil {
+		return fmt.Errorf("не удалось получить информацию о сервере: %w", err)
+	}
+
+	// Получаем домашний каталог пользователя
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("не удалось определить домашний каталог пользователя: %w", err)
+	}
+
+	// Сохраняем сертификат на сервере в зависимости от типа приложения
+	switch data.AppType {
+	case "nginx":
+		// Создаем пути для файлов сертификата и ключа на удаленном сервере
+		certPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
+		keyPath := fmt.Sprintf("%s/%s.key", serverInfo.CertConfigPath, data.Domain)
+
+		// Используем ssh клиент для передачи сертификата и ключа
+		certCmd := exec.Command("ssh",
+			"-i", fmt.Sprintf("%s/.ssh/id_rsa_tlss", homeDir),
+			"-p", serverInfo.Port,
+			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
+			fmt.Sprintf("echo '%s' > %s", string(certPEM), certPath))
+
+		keyCmd := exec.Command("ssh",
+			"-i", fmt.Sprintf("%s/.ssh/id_rsa_tlss", homeDir),
+			"-p", serverInfo.Port,
+			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
+			fmt.Sprintf("echo '%s' > %s && chmod 600 %s", string(keyPEM), keyPath, keyPath))
+
+		// Выполняем команды и проверяем результат
+		if err = certCmd.Run(); err != nil {
+			return fmt.Errorf("не удалось сохранить сертификат на удаленном сервере: %w", err)
+		}
+
+		if err = keyCmd.Run(); err != nil {
+			return fmt.Errorf("не удалось сохранить ключ на удаленном сервере: %w", err)
+		}
+
+		log.Printf("Сертификат и ключ успешно сохранены на удаленном сервере %s:%s по путям %s и %s",
+			serverInfo.Hostname, serverInfo.Port, certPath, keyPath)
+
+	case "haproxy":
+		// Для HAProxy нужно объединить промежуточный сертификат, сертификат сервера и ключ в один файл
+		// Получаем промежуточный сертификат из таблицы sub_ca_tlss
+		var subCACert string
+		err = tx.Get(&subCACert, "SELECT public_key FROM sub_ca_tlss WHERE id = 1")
+		if err != nil {
+			return fmt.Errorf("не удалось получить промежуточный сертификат: %w", err)
+		}
+
+		// Объединяем промежуточный сертификат, сертификат сервера и его ключ в один файл
+		// Порядок: сертификат сервера, промежуточный сертификат, ключ
+		combinedContent := fmt.Sprintf("%s\n%s\n%s", string(certPEM), subCACert, string(keyPEM))
+
+		// Путь для сохранения объединенного файла на удаленном сервере
+		combinedPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
+
+		// Используем ssh клиент для передачи объединенного файла
+		combinedCmd := exec.Command("ssh",
+			"-i", fmt.Sprintf("%s/.ssh/id_rsa_tlss", homeDir),
+			"-p", serverInfo.Port,
+			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
+			fmt.Sprintf("echo '%s' > %s && chmod 600 %s", combinedContent, combinedPath, combinedPath))
+
+		// Выполняем команду и проверяем результат
+		if err = combinedCmd.Run(); err != nil {
+			return fmt.Errorf("не удалось сохранить объединенный файл сертификата и ключа на удаленном сервере: %w", err)
+		}
+
+		log.Printf("Объединенный файл сертификата и ключа успешно сохранен на удаленном сервере %s:%s по пути %s",
+			serverInfo.Hostname, serverInfo.Port, combinedPath)
+
+	default:
+		log.Printf("Тип приложения %s не поддерживается для сохранения сертификата", data.AppType)
+	}
+
+	// Если все операции прошли успешно, фиксируем транзакцию
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+	}
+
+	if certExists {
+		log.Printf("Успешно обновлен RSA сертификат для домена %s", data.Domain)
+	} else {
+		log.Printf("Успешно сгенерирован новый RSA сертификат для домена %s", data.Domain)
+	}
 	return nil
 }

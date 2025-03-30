@@ -28,6 +28,11 @@ sub_ca_tlss:
   key_size: 4096
 
 crl:
-  crlURL: http://example.com/crl/revoked.crl
+  crlURL: http://10.13.1.36:43000/api/v1/crl
+  updateInterval: 24 # hours
+  version: 2
+
+ocsp:
+  ocspURL: http://10.13.1.36:43000/api/v1/ocsp
   updateInterval: 24 # hours
   version: 2

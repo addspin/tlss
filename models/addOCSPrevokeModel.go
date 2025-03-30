@@ -1,6 +1,7 @@
 package models
 
-type Certs struct {
+// OCSPCertificate представляет модель для OCSP-сертификата
+type OCSPRevoke struct {
 	Id               int    `db:"id"`
 	ServerId         int    `db:"server_id"`
 	Algorithm        string `db:"algorithm"`
@@ -31,40 +32,10 @@ type Certs struct {
 	CertStatus       int    `db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
 }
 
-// структура для добавления сертификата
-type CertsData struct {
-	Id               string `json:"id"`
-	ServerId         string `json:"server_id"`
-	Algorithm        string `json:"algorithm"`
-	KeyLength        string `json:"key_length"`
-	TTL              string `json:"ttl"`
-	Domain           string `json:"domain"`
-	Wildcard         string `json:"wildcard"`
-	Recreate         string `json:"recreate"`
-	CommonName       string `json:"common_name"`
-	CountryName      string `json:"country_name"`
-	StateProvince    string `json:"state_province"`
-	LocalityName     string `json:"locality_name"`
-	Organization     string `json:"organization"`
-	OrganizationUnit string `json:"organization_unit"`
-	Email            string `json:"email"`
-	Password         string `json:"password"`
-	CaName           string `json:"cert_ca_name"`
-	CaKey            string `json:"cert_ca_key"`
-	PublicKey        string `json:"public_key"`
-	PrivateKey       string `json:"private_key"`
-	CertCreateTime   string `json:"cert_create_time"`
-	CertExpireTime   string `json:"cert_expire_time"`
-	DaysLeft         string `json:"days_left"`
-	SerialNumber     string `json:"serial_number"`
-	DataRevoke       string `json:"data_revoke"`
-	ReasonRevoke     string `json:"reason_revoke"`
-	CertStatus       string `json:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
-}
-
-var SchemaCerts = `
-CREATE TABLE IF NOT EXISTS  certs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+// SchemaOCSPRevoke определяет SQL-схему для таблицы OCSP-сертификатов
+var SchemaOCSPRevoke = `
+CREATE TABLE IF NOT EXISTS ocsp_revoke (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
 	server_id INTEGER,
 	algorithm TEXT,
 	key_length INTEGER,

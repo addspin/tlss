@@ -73,8 +73,8 @@ func AddServerControll(c fiber.Ctx) error {
 				// Закрываем результат запроса
 				t.Close()
 				// Иначе вставляем новое значение
-				dataInsert := `INSERT INTO server (hostname, port, cert_config_path) VALUES ($1, $2, $3)`
-				_, err = tx.Exec(dataInsert, data.Hostname, data.TlssSSHport, data.Path)
+				dataInsert := `INSERT INTO server (hostname, port, username, cert_config_path) VALUES ($1, $2, $3, $4)`
+				_, err = tx.Exec(dataInsert, data.Hostname, data.TlssSSHport, data.Username, data.Path)
 				if err != nil {
 					tx.Rollback() // Откатываем транзакцию при ошибке
 					return c.Status(500).JSON(fiber.Map{

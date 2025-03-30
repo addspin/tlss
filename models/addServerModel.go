@@ -4,6 +4,7 @@ type Server struct {
 	Id             int    `db:"id"`
 	Hostname       string `db:"hostname"`
 	Port           string `db:"port"`
+	Username       string `db:"username"`
 	CertConfigPath string `db:"cert_config_path"`
 	ServerStatus   string `db:"server_status"`
 }
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS server (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 	hostname TEXT,
 	port TEXT,
+	username TEXT,
 	cert_config_path TEXT,
 	server_status TEXT DEFAULT 'offline'
 );`

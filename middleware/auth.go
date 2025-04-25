@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/addspin/tlss/crypts"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/session"
 )
@@ -28,6 +29,12 @@ var staticExtensions = []string{
 // AuthMiddleware checks if the user is authenticated
 func AuthMiddleware() fiber.Handler {
 	return func(c fiber.Ctx) error {
+
+		// Проверка API ключа
+		apiKey := c.Get("X-API-Key")
+		if apiKey == crypts.GetInternalAPIKey() && apiKey != "" {
+			return c.Next() // Разрешаем доступ, если ключ верный
+		}
 		// Skip middleware for public routes
 		path := c.Path()
 

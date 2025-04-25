@@ -320,9 +320,9 @@
     font-weight: 100;
     /* font-family: Inter; */
     font-size: 0.7rem;
-    white-space: pre; /* Важно для сохранения форматирования */
+    white-space: pre; 
     /* letter-spacing: 0;  */
-    line-height: 1.2; /* Контролируем высоту строк */
+    line-height: 1.2; 
 }
 .qr {
     display: flex;

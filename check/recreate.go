@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
@@ -90,8 +91,22 @@ func checkRecreateCerts() {
 				continue
 			}
 
-			// Отправляем POST запрос
-			resp, err := http.Post("http://"+viper.GetString("app.hostname")+":"+viper.GetString("app.port")+"/add_certs", "application/json", bytes.NewBuffer(jsonData))
+			// Создаем HTTP запрос с API ключом
+			req, err := http.NewRequest("POST",
+				"http://"+viper.GetString("app.hostname")+":"+viper.GetString("app.port")+"/add_certs",
+				bytes.NewBuffer(jsonData))
+			if err != nil {
+				log.Printf("Ошибка создания запроса для сертификата %s: %v", cert.Domain, err)
+				continue
+			}
+
+			// Устанавливаем заголовки
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("X-API-Key", crypts.GetInternalAPIKey())
+
+			// Отправляем запрос
+			client := &http.Client{}
+			resp, err := client.Do(req)
 			if err != nil {
 				log.Printf("Ошибка отправки запроса для сертификата %s: %v", cert.Domain, err)
 				continue

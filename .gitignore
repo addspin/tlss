@@ -21,6 +21,7 @@
 .DS_Store
 /.idea
 /.vscode
+/https
 go.work
 go.work.sum
 tailwindcss

@@ -1,6 +1,7 @@
 package crypts
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -197,6 +198,14 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 
 	// Сохраняем сертификат в БД
 	tx := db.MustBegin()
+	var txCommitted bool
+	defer func() {
+		// Если произошла паника или транзакция не была зафиксирована, выполняем откат
+		if !txCommitted && tx != nil {
+			tx.Rollback()
+			log.Printf("Транзакция отменена из-за ошибки для домена %s", data.Domain)
+		}
+	}()
 
 	// Пробуем найти существующую запись для домена
 	var exists bool
@@ -272,26 +281,38 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		keyPath := fmt.Sprintf("%s/%s.key", serverInfo.CertConfigPath, data.Domain)
 
 		// Используем ssh клиент для передачи сертификата и ключа
-		certCmd := exec.Command("ssh",
+		// Создаём контекст с таймаутом для SSH-команд
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		certCmd := exec.CommandContext(ctx, "ssh",
 			"-i", fmt.Sprintf("%s/.ssh/id_rsa_tlss", homeDir),
+			"-o", "StrictHostKeyChecking=no",
 			"-p", serverInfo.Port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
 			fmt.Sprintf("echo '%s' > %s", string(certPEM), certPath))
 
-		keyCmd := exec.Command("ssh",
+		// Выполняем команды и проверяем результат
+		if err = certCmd.Run(); err != nil {
+			tx.Rollback()
+			if ctx.Err() == context.DeadlineExceeded {
+				return fmt.Errorf("таймаут при попытке сохранить сертификат на удаленном сервере: %w", err)
+			}
+			return fmt.Errorf("не удалось сохранить сертификат на удаленном сервере: %w", err)
+		}
+
+		keyCmd := exec.CommandContext(ctx, "ssh",
 			"-i", fmt.Sprintf("%s/.ssh/id_rsa_tlss", homeDir),
+			"-o", "StrictHostKeyChecking=no",
 			"-p", serverInfo.Port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
 			fmt.Sprintf("echo '%s' > %s && chmod 600 %s", string(keyPEM), keyPath, keyPath))
 
-		// Выполняем команды и проверяем результат
-		if err = certCmd.Run(); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("не удалось сохранить сертификат на удаленном сервере: %w", err)
-		}
-
 		if err = keyCmd.Run(); err != nil {
 			tx.Rollback()
+			if ctx.Err() == context.DeadlineExceeded {
+				return fmt.Errorf("таймаут при попытке сохранить ключ на удаленном сервере: %w", err)
+			}
 			return fmt.Errorf("не удалось сохранить ключ на удаленном сервере: %w", err)
 		}
 
@@ -316,8 +337,12 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		combinedPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
 
 		// Используем ssh клиент для передачи объединенного файла
-		combinedCmd := exec.Command("ssh",
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		combinedCmd := exec.CommandContext(ctx, "ssh",
 			"-i", fmt.Sprintf("%s/.ssh/id_rsa_tlss", homeDir),
+			"-o", "StrictHostKeyChecking=no",
 			"-p", serverInfo.Port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
 			fmt.Sprintf("echo '%s' > %s && chmod 600 %s", combinedContent, combinedPath, combinedPath))
@@ -325,6 +350,9 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		// Выполняем команду и проверяем результат
 		if err = combinedCmd.Run(); err != nil {
 			tx.Rollback()
+			if ctx.Err() == context.DeadlineExceeded {
+				return fmt.Errorf("таймаут при попытке сохранить объединенный файл сертификата и ключа на удаленном сервере: %w", err)
+			}
 			return fmt.Errorf("не удалось сохранить объединенный файл сертификата и ключа на удаленном сервере: %w", err)
 		}
 
@@ -340,6 +368,7 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
 	}
+	txCommitted = true
 
 	if exists {
 		log.Printf("Успешно обновлен RSA сертификат для домена %s", data.Domain)

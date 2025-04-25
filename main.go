@@ -253,5 +253,18 @@ func main() {
 	// Настраиваем маршруты
 	routes.Setup(app)
 
-	log.Fatal(app.Listen(viper.GetString("app.hostname") + ":" + viper.GetString("app.port")))
+	// Определяем, использовать ли HTTPS
+	if viper.GetBool("app.useHTTPS") {
+		// Запуск с TLS (HTTPS)
+		certFile := viper.GetString("app.certFile")
+		keyFile := viper.GetString("app.keyFile")
+
+		log.Fatal(app.Listen(viper.GetString("app.hostname")+":"+viper.GetString("app.port"), fiber.ListenConfig{
+			CertFile:    certFile,
+			CertKeyFile: keyFile,
+		}))
+	} else {
+		// Запуск без TLS (HTTP)
+		log.Fatal(app.Listen(viper.GetString("app.hostname") + ":" + viper.GetString("app.port")))
+	}
 }

@@ -3,6 +3,7 @@ package middleware
 import (
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/gofiber/fiber/v3"
@@ -10,7 +11,19 @@ import (
 )
 
 // Session store
-var Store = session.New()
+// var Store = session.New()
+
+// Используем явные настройки для совместимости со всеми браузерами, особенно Safari
+var Store = session.New(session.Config{
+	CookieSameSite:    "Lax",            // Для совместимости с Safari используем Lax
+	CookieSecure:      false,            // В production должно быть true если используется HTTPS
+	CookieHTTPOnly:    true,             // Важно для безопасности, куки только для HTTP запросов
+	Expiration:        30 * time.Minute, // Время жизни сессии
+	CookiePath:        "/",              // Доступность куки на всех путях
+	CookieDomain:      "",               // Пустой домен для локальной разработки
+	KeyLookup:         "cookie:session_id",
+	CookieSessionOnly: false, // Если true, куки будет удалена при закрытии браузера
+})
 
 // Public routes that don't require authentication
 var publicRoutes = []string{
@@ -37,6 +50,9 @@ func AuthMiddleware() fiber.Handler {
 		}
 		// Skip middleware for public routes
 		path := c.Path()
+		// логирование запроса
+		// userAgent := c.Get("User-Agent")
+		// log.Printf("Запрос: %s, путь: %s, User-Agent: %s", c.Method(), path, userAgent)
 
 		// Allow access to static files by extension
 		ext := filepath.Ext(path)

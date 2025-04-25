@@ -1,6 +1,9 @@
 app:
   port: 43000
-  hostname: 10.13.1.36
+  hostname: tlss.lv.local
+  useHTTPS: true
+  certFile: ./https/tlss.lv.local.pem
+  keyFile: ./https/tlss.lv.local.key
 
 database:
   path: ./db/database.db

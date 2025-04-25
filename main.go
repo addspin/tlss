@@ -12,6 +12,7 @@ import (
 	"github.com/addspin/tlss/ocsp"
 	"github.com/addspin/tlss/routes"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/template/html/v2"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -249,6 +250,10 @@ func main() {
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
+	//---------------------------------------Compress response
+	app.Use(compress.New(compress.Config{
+		Level: compress.LevelBestCompression,
+	}))
 
 	// Настраиваем маршруты
 	routes.Setup(app)

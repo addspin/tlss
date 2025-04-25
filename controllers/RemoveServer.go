@@ -43,7 +43,18 @@ func RemoveServer(c fiber.Ctx) error {
 		}
 		tx := db.MustBegin()
 
-		// Сначала удаляем все сертификаты, принадлежащие серверу
+		// удаляем все revoke сертификаты, принадлежащие серверу
+		dataRemoveOCSP := `DELETE FROM ocsp_revoke WHERE server_id = ?`
+		_, err = tx.Exec(dataRemoveOCSP, data.Id)
+		if err != nil {
+			tx.Rollback()
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка при удалении OCSP сертификатов: " + err.Error(),
+			})
+		}
+
+		// удаляем сертификаты сервера
 		dataRemoveCerts := `DELETE FROM certs WHERE server_id = ?`
 		_, err = tx.Exec(dataRemoveCerts, data.Id)
 		if err != nil {
@@ -54,7 +65,7 @@ func RemoveServer(c fiber.Ctx) error {
 			})
 		}
 
-		// Затем удаляем сам сервер
+		// В конце удаляем сам сервер
 		dataRemove := `DELETE FROM server WHERE id = ?`
 		_, err = tx.Exec(dataRemove, data.Id)
 		if err != nil {

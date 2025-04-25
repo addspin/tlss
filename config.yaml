@@ -1,7 +1,11 @@
+app:
+  port: 43000
+  hostname: 10.13.1.36
+
 database:
   path: ./db/database.db
 checkServer:
-  time: 30
+  time: 30 # seconds
 
 root_ca_tlss:
   path: ./root_ca_tlss/root_ca_tlss.pem
@@ -29,10 +33,16 @@ sub_ca_tlss:
 
 crl:
   crlURL: http://10.13.1.36:43000/api/v1/crl
-  updateInterval: 24 # hours
+  updateInterval: 720 # minutes 12 hours
   version: 2
 
 ocsp:
   ocspURL: http://10.13.1.36:43000/api/v1/ocsp
-  updateInterval: 24 # hours
+  updateInterval: 720 # minutes 12 hours
   version: 2
+
+certsValidation:
+  time: 30 # minutes
+
+recreateCerts:
+  time: 1 # minutes 12 hours

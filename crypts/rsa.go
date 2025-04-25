@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/addspin/tlss/models"
@@ -52,6 +53,13 @@ func EncodeRSAPublicKeyToPEM(publicKey *rsa.PublicKey) []byte {
 		},
 	)
 	return publicKeyPEM
+}
+
+// standardizeSerialNumber возвращает серийный номер в стандартизированном формате
+// верхний регистр без ведущих нулей
+func standardizeSerialNumber(serialNumber *big.Int) string {
+	hexStr := serialNumber.Text(16)
+	return strings.ToUpper(hexStr)
 }
 
 // Генерирует RSA сертификат, подписанный промежуточным CA,
@@ -108,10 +116,12 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		return fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
 	}
 
-	// Присваиваем серийный номер структуре data как строку в hex формате
-	data.SerialNumber = fmt.Sprintf("%X", serialNumber)
+	// Стандартизируем серийный номер и сохраняем
+	data.SerialNumber = standardizeSerialNumber(serialNumber)
+	log.Printf("Сгенерирован серийный номер для сертификата %s: %s", data.Domain, data.SerialNumber)
 
 	// Подготавливаем шаблон сертификата
+	//dnsNames = SAN
 	dnsNames := []string{data.Domain}
 	if data.Wildcard {
 		dnsNames = append(dnsNames, "*."+data.Domain)
@@ -146,6 +156,9 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		CRLDistributionPoints: []string{
 			viper.GetString("crl.crlURL"),
 		},
+		OCSPServer: []string{
+			viper.GetString("ocsp.ocspURL"),
+		},
 	}
 
 	// Создаем сертификат
@@ -178,75 +191,59 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		encryptedKey = keyPEM
 	}
 
-	// Начинаем транзакцию
-	tx, err := db.Beginx()
-	if err != nil {
-		return fmt.Errorf("не удалось начать транзакцию: %w", err)
-	}
-
-	// Отложенная функция для отката транзакции в случае ошибки
-	defer func() {
-		if err != nil {
-			tx.Rollback()
-			log.Printf("Транзакция отменена из-за ошибки: %v", err)
-		}
-	}()
-
 	// Вычисляем количество дней до истечения сертификата
 	daysLeft := int(expiry.Sub(now).Hours() / 24)
 	data.DaysLeft = daysLeft
 
-	// Проверяем существование сертификата с такими же domain, wildcard и server_id
-	var existingCerts []models.Certs
+	// Сохраняем сертификат в БД
+	tx := db.MustBegin()
 
-	err = tx.Select(&existingCerts, `
-		SELECT id FROM certs 
-		WHERE domain = ? AND wildcard = ? AND server_id = ?
-	`, data.Domain, data.Wildcard, data.ServerId)
-
+	// Пробуем найти существующую запись для домена
+	var exists bool
+	err = tx.Get(&exists, `SELECT EXISTS(SELECT 1 FROM certs WHERE domain = ? AND server_id = ?)`, data.Domain, data.ServerId)
 	if err != nil {
-		return fmt.Errorf("ошибка при проверке существования сертификата: %w", err)
+		tx.Rollback()
+		return fmt.Errorf("ошибка проверки существования домена: %v", err)
 	}
 
-	certExists := len(existingCerts) > 0
+	// Используем уже сохраненный стандартизированный серийный номер
+	// НЕ перезаписываем серийный номер!
+	// data.SerialNumber = getSerialNumber(now)
 
-	if certExists {
-		// Сертификат существует, обновляем его
-		data.Id = existingCerts[0].Id // Получаем ID из существующего сертификата
-		_, err = tx.Exec(`
-			UPDATE certs SET 
-				algorithm = ?, key_length = ?, ttl = ?, recreate = ?,
-				common_name = ?, country_name = ?, state_province = ?, locality_name = ?, 
-				organization = ?, organization_unit = ?, email = ?,
-				public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?, 
-				serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?
-			WHERE id = ?
-		`,
-			data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
+	if exists {
+		// Если запись существует, обновляем её
+		_, err = tx.Exec(`UPDATE certs SET 
+                algorithm = ?, key_length = ?, ttl = ?, wildcard = ?, recreate = ?,
+                common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
+                app_type = ?, organization = ?, organization_unit = ?, email = ?,
+                public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
+                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?
+            WHERE domain = ? AND server_id = ?`,
+			data.Algorithm, data.KeyLength, data.TTL, data.Wildcard, data.Recreate,
 			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
-			data.Organization, data.OrganizationUnit, data.Email,
-			string(certPEM), string(encryptedKey), now.Format("02.01.2006 15:04:05"), expiry.Format("02.01.2006 15:04:05"),
+			data.AppType, data.Organization, data.OrganizationUnit, data.Email,
+			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
 			data.SerialNumber, "", "", 0, data.DaysLeft,
-			data.Id,
-		)
+			data.Domain, data.ServerId)
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("не удалось обновить существующий сертификат в базе данных: %w", err)
 		}
 		log.Printf("Сертификат для домена %s обновлен в базе данных (ID: %d)", data.Domain, data.Id)
 	} else {
 		// Сертификат не существует, добавляем новый
-		_, err = tx.Exec(`
-			INSERT INTO certs (
-				server_id, algorithm, key_length, ttl, domain, wildcard, recreate,
-				common_name, country_name, state_province, locality_name, organization, organization_unit, email,
-				public_key, private_key, cert_create_time, cert_expire_time, serial_number, data_revoke, reason_revoke, cert_status, days_left
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		`,
+		_, err = tx.Exec(`INSERT INTO certs (
+			server_id, algorithm, key_length, ttl, domain, wildcard, recreate,  
+			common_name, country_name, state_province, locality_name,
+			app_type, organization, organization_unit, email, public_key, private_key,
+			cert_create_time, cert_expire_time, serial_number, data_revoke, reason_revoke, cert_status, days_left
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			data.ServerId, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.Wildcard, data.Recreate,
-			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email,
-			string(certPEM), string(encryptedKey), now.Format("02.01.2006 15:04:05"), expiry.Format("02.01.2006 15:04:05"), data.SerialNumber, "", "", 0, data.DaysLeft,
-		)
+			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
+			data.AppType, data.Organization, data.OrganizationUnit, data.Email,
+			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339), data.SerialNumber, "", "", 0, data.DaysLeft)
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("не удалось добавить новый сертификат в базу данных: %w", err)
 		}
 		log.Printf("Новый сертификат для домена %s добавлен в базу данных", data.Domain)
@@ -256,12 +253,14 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 	var serverInfo models.Server
 	err = tx.Get(&serverInfo, "SELECT id, hostname, port, username, cert_config_path, server_status FROM server WHERE id = ?", data.ServerId)
 	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("не удалось получить информацию о сервере: %w", err)
 	}
 
 	// Получаем домашний каталог пользователя
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("не удалось определить домашний каталог пользователя: %w", err)
 	}
 
@@ -287,10 +286,12 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 
 		// Выполняем команды и проверяем результат
 		if err = certCmd.Run(); err != nil {
+			tx.Rollback()
 			return fmt.Errorf("не удалось сохранить сертификат на удаленном сервере: %w", err)
 		}
 
 		if err = keyCmd.Run(); err != nil {
+			tx.Rollback()
 			return fmt.Errorf("не удалось сохранить ключ на удаленном сервере: %w", err)
 		}
 
@@ -303,6 +304,7 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		var subCACert string
 		err = tx.Get(&subCACert, "SELECT public_key FROM sub_ca_tlss WHERE id = 1")
 		if err != nil {
+			tx.Rollback()
 			return fmt.Errorf("не удалось получить промежуточный сертификат: %w", err)
 		}
 
@@ -322,6 +324,7 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 
 		// Выполняем команду и проверяем результат
 		if err = combinedCmd.Run(); err != nil {
+			tx.Rollback()
 			return fmt.Errorf("не удалось сохранить объединенный файл сертификата и ключа на удаленном сервере: %w", err)
 		}
 
@@ -329,6 +332,7 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 			serverInfo.Hostname, serverInfo.Port, combinedPath)
 
 	default:
+		tx.Rollback()
 		log.Printf("Тип приложения %s не поддерживается для сохранения сертификата", data.AppType)
 	}
 
@@ -337,7 +341,7 @@ func GenerateRSACertificate(data *models.Certs, db *sqlx.DB) error {
 		return fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
 	}
 
-	if certExists {
+	if exists {
 		log.Printf("Успешно обновлен RSA сертификат для домена %s", data.Domain)
 	} else {
 		log.Printf("Успешно сгенерирован новый RSA сертификат для домена %s", data.Domain)

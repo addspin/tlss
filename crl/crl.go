@@ -113,10 +113,17 @@ func GenerateCRL() error {
 	// Создаем записи CRL
 	var revokedEntries []pkix.RevokedCertificate
 	for _, cert := range revokedCerts {
-		// Разбираем время отзыва
-		revocationTime, err := time.Parse("02.01.2006 15:04:05", cert.DataRevoke)
-		if err != nil {
-			continue
+		// Парсим время отзыва
+		var revocationTime time.Time
+		if cert.DataRevoke != "" {
+			// Используем только формат RFC3339
+			revocationTime, err = time.Parse(time.RFC3339, cert.DataRevoke)
+			if err != nil {
+				log.Printf("Ошибка парсинга времени отзыва: %v, использую текущее время", err)
+				revocationTime = time.Now()
+			}
+		} else {
+			revocationTime = time.Now()
 		}
 
 		// Преобразуем серийный номер из hex строки в big.Int
@@ -151,8 +158,8 @@ func GenerateCRL() error {
 			Version:            viper.GetInt("crl.version"),
 			SignatureAlgorithm: "SHA256-RSA",
 			IssuerName:         subCACert.Subject.String(),
-			LastUpdate:         time.Now().Format("02.01.2006 15:04:05"),
-			NextUpdate:         time.Now().Add(time.Duration(viper.GetInt("crl.updateInterval")) * time.Hour).Format("02.01.2006 15:04:05"),
+			LastUpdate:         time.Now().Format(time.RFC3339),
+			NextUpdate:         time.Now().Add(time.Duration(viper.GetInt("crl.updateInterval")) * time.Hour).Format(time.RFC3339),
 			CrlNumber:          1,
 			CrlURL:             viper.GetString("crl.crlURL"),
 		}
@@ -171,8 +178,8 @@ func GenerateCRL() error {
 		return fmt.Errorf("не удалось получить информацию о CRL: %w", err)
 	} else {
 		// Обновляем существующую информацию о CRL
-		crlInfo.LastUpdate = time.Now().Format("02.01.2006 15:04:05")
-		crlInfo.NextUpdate = time.Now().Add(time.Duration(viper.GetInt("crl.updateInterval")) * time.Hour).Format("02.01.2006 15:04:05")
+		crlInfo.LastUpdate = time.Now().Format(time.RFC3339)
+		crlInfo.NextUpdate = time.Now().Add(time.Duration(viper.GetInt("crl.updateInterval")) * time.Hour).Format(time.RFC3339)
 		crlInfo.CrlNumber++
 		_, err = db.Exec(`
 			UPDATE crl_info SET

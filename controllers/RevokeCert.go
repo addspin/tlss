@@ -49,7 +49,7 @@ func RevokeCert(c fiber.Ctx) error {
 		tx := db.MustBegin()
 
 		// Выносим значения из запроса
-		currentTime := time.Now().Format("02.01.2006 15:04:05")
+		currentTime := time.Now().Format(time.RFC3339)
 		reasonRevoke := data.ReasonRevoke
 		certID := data.Id
 		serverID := data.ServerId

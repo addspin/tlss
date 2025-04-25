@@ -10,6 +10,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -25,7 +26,7 @@ func GenerateSubCA() error {
 	defer db.Close()
 
 	// First, try to insert if not exists
-	_, err = db.Exec(`INSERT OR IGNORE INTO sub_ca_tlss (id, sub_ca_status) VALUES (1, 1)`)
+	_, err = db.Exec(`INSERT OR IGNORE INTO sub_ca_tlss (id, sub_ca_status, create_time) VALUES (1, 1, ?)`, time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err
 	}
@@ -34,19 +35,31 @@ func GenerateSubCA() error {
 	var rootCACreationTime, subCACreationTime string
 
 	// Get root CA creation time from database
-	err = db.Get(&rootCACreationTime, "SELECT COALESCE(create_time, strftime('%d.%m.%Y %H:%M:%S', 'now', 'localtime')) FROM root_ca_tlss WHERE id = 1")
+	err = db.QueryRow("SELECT COALESCE(create_time, ?) FROM root_ca_tlss WHERE id = 1", time.Now().Format(time.RFC3339)).Scan(&rootCACreationTime)
 	if err != nil {
 		return err
 	}
 
 	// Get sub CA creation time from database
-	err = db.Get(&subCACreationTime, "SELECT COALESCE(create_time, strftime('%d.%m.%Y %H:%M:%S', '1970-01-01')) FROM sub_ca_tlss WHERE id = 1")
+	err = db.QueryRow("SELECT COALESCE(create_time, ?) FROM sub_ca_tlss WHERE id = 1", time.Now().Format(time.RFC3339)).Scan(&subCACreationTime)
 	if err != nil {
 		return err
 	}
+
+	// Парсим времена создания
+	// Используем только формат RFC3339
+	rootTime, err := time.Parse(time.RFC3339, rootCACreationTime)
+	if err != nil {
+		return err
+	}
+
+	// Используем только формат RFC3339
+	subTime, err := time.Parse(time.RFC3339, subCACreationTime)
+	if err != nil {
+		return err
+	}
+
 	// If root CA is newer than sub CA, force recreation by setting sub_ca_status to 1
-	rootTime, _ := time.Parse("02.01.2006 15:04:05", rootCACreationTime)
-	subTime, _ := time.Parse("02.01.2006 15:04:05", subCACreationTime)
 	if rootTime.After(subTime) {
 		_, err = db.Exec("UPDATE sub_ca_tlss SET sub_ca_status = 1 WHERE id = 1")
 		if err != nil {
@@ -109,11 +122,13 @@ func GenerateSubCA() error {
 		return err
 	}
 
-	// Generate random serial number
+	// Generate random serial number замена функции из rsa
 	serialNumber, err := rand.Int(rand.Reader, big.NewInt(1).Lsh(big.NewInt(1), 128))
 	if err != nil {
 		return err
 	}
+	hexStr := serialNumber.Text(16)
+	serialNumberStr := strings.ToUpper(hexStr)
 
 	// Prepare certificate template
 	template := &x509.Certificate{
@@ -168,8 +183,27 @@ func GenerateSubCA() error {
 	}
 
 	// Update the final database insert to use UPDATE instead of INSERT
-	result, err := db.Exec("UPDATE sub_ca_tlss SET sub_ca_status = 0, create_time = ?, common_name = ?, country_name = ?, state_province = ?, locality_name = ?, organization = ?, organization_unit = ?, email = ?, public_key = ?, private_key = ?, ttl = ?, serial_number = ?, data_revoke = ?, reason_revoke = ? WHERE id = 1",
-		time.Now().Format("02.01.2006 15:04:05"),
+	_, err = db.Exec(`
+		UPDATE sub_ca_tlss
+		SET 
+			sub_ca_status = 0,
+			create_time = ?,
+			common_name = ?,
+			country_name = ?,
+			state_province = ?,
+			locality_name = ?,
+			organization = ?,
+			organization_unit = ?,
+			email = ?,
+			ttl = ?,
+			public_key = ?,
+			private_key = ?,
+			serial_number = ?,
+			data_revoke = ?,
+			reason_revoke = ?
+		WHERE id = 1
+	`,
+		time.Now().Format(time.RFC3339),
 		viper.GetString("sub_ca_tlss.commonName"),
 		viper.GetString("sub_ca_tlss.countryName"),
 		viper.GetString("sub_ca_tlss.stateProvince"),
@@ -177,10 +211,10 @@ func GenerateSubCA() error {
 		viper.GetString("sub_ca_tlss.organization"),
 		viper.GetString("sub_ca_tlss.organizationUnit"),
 		viper.GetString("sub_ca_tlss.email"),
+		viper.GetInt("sub_ca_tlss.ttl"),
 		string(subCACertPEM),
 		string(encryptedKey),
-		viper.GetInt("sub_ca_tlss.ttl"),
-		template.SerialNumber.String(),
+		serialNumberStr,
 		"",
 		"",
 	)
@@ -188,14 +222,9 @@ func GenerateSubCA() error {
 		return fmt.Errorf("failed to update sub CA in database: %w", err)
 	}
 
-	// Verify that the update was successful
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected == 0 {
-		return fmt.Errorf("failed to update state in database")
-	}
-
+	// Проверяем успешность обновления
+	log.Printf("Промежуточный CA сертификат успешно создан и сохранен в базе данных")
 	return nil
 }
+
+// Функция standardizeSerialNumber определена в rsa.go

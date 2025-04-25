@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -26,7 +27,7 @@ func GenerateRootCA() error {
 	defer db.Close()
 
 	// First, try to insert if not exists
-	_, err = db.Exec(`INSERT OR IGNORE INTO root_ca_tlss (id, root_ca_status) VALUES (1, 1)`)
+	_, err = db.Exec(`INSERT OR IGNORE INTO root_ca_tlss (id, root_ca_status, create_time) VALUES (1, 1, ?)`, time.Now().Format(time.RFC3339))
 	if err != nil {
 		return err
 	}
@@ -49,9 +50,17 @@ func GenerateRootCA() error {
 		return err
 	}
 
+	// Генерируем случайный серийный номер замена функции из rsa
+	serialNumber, err := rand.Int(rand.Reader, big.NewInt(1).Lsh(big.NewInt(1), 128))
+	if err != nil {
+		return fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
+	}
+	hexStr := serialNumber.Text(16)
+	serialNumberStr := strings.ToUpper(hexStr)
+
 	// Prepare certificate template
 	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
+		SerialNumber: serialNumber,
 		Subject: pkix.Name{
 			CommonName:         viper.GetString("root_ca_tlss.commonName"),
 			Country:            []string{viper.GetString("root_ca_tlss.countryName")},
@@ -123,7 +132,7 @@ func GenerateRootCA() error {
 
 	// After successful certificate creation, ensure the state is updated
 	result, err := db.Exec("UPDATE root_ca_tlss SET root_ca_status = 0, create_time = ?, common_name = ?, country_name = ?, state_province = ?, locality_name = ?, organization = ?, organization_unit = ?, email = ?, ttl = ?, serial_number = ?, data_revoke = ?, reason_revoke = ? WHERE id = 1",
-		time.Now().Format("02.01.2006 15:04:05"),
+		time.Now().Format(time.RFC3339),
 		viper.GetString("root_ca_tlss.commonName"),
 		viper.GetString("root_ca_tlss.countryName"),
 		viper.GetString("root_ca_tlss.stateProvince"),
@@ -132,7 +141,7 @@ func GenerateRootCA() error {
 		viper.GetString("root_ca_tlss.organizationUnit"),
 		viper.GetString("root_ca_tlss.email"),
 		viper.GetInt("root_ca_tlss.ttl"),
-		template.SerialNumber.String(),
+		serialNumberStr,
 		"",
 		"",
 	)

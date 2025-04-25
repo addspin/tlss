@@ -18,8 +18,8 @@ type StatusCodeTcp struct {
 	MutexTcp    sync.Mutex
 }
 
-func (s *StatusCodeTcp) TCPPortAvailable(timeTicker int) {
-	ticker := time.NewTicker(time.Duration(timeTicker) * time.Second)
+func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
+	ticker := time.NewTicker(timeTicker)
 	log.Println("TCP check started")
 	defer ticker.Stop()
 	s.MutexTcp.Lock()

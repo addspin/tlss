@@ -17,18 +17,18 @@ type Certs struct {
 	Organization     string `db:"organization"`
 	OrganizationUnit string `db:"organization_unit"`
 	Email            string `db:"email"`
-	Password         string `db:"password"`
-	CaName           string `db:"cert_ca_name"`
-	CaKey            string `db:"cert_ca_key"`
-	PublicKey        string `db:"public_key"`
-	PrivateKey       string `db:"private_key"`
-	CertCreateTime   string `db:"cert_create_time"`
-	CertExpireTime   string `db:"cert_expire_time"`
-	DaysLeft         int    `db:"days_left"`
-	SerialNumber     string `db:"serial_number"`
-	DataRevoke       string `db:"data_revoke"`
-	ReasonRevoke     string `db:"reason_revoke"`
-	CertStatus       int    `db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
+	// Password         string `db:"password"`
+	// CaName           string `db:"cert_ca_name"`
+	// CaKey            string `db:"cert_ca_key"`
+	PublicKey      string `db:"public_key"`
+	PrivateKey     string `db:"private_key"`
+	CertCreateTime string `db:"cert_create_time"`
+	CertExpireTime string `db:"cert_expire_time"`
+	DaysLeft       int    `db:"days_left"`
+	SerialNumber   string `db:"serial_number"`
+	DataRevoke     string `db:"data_revoke"`
+	ReasonRevoke   string `db:"reason_revoke"`
+	CertStatus     int    `db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
 }
 
 // структура для добавления сертификата
@@ -45,21 +45,22 @@ type CertsData struct {
 	CountryName      string `json:"country_name"`
 	StateProvince    string `json:"state_province"`
 	LocalityName     string `json:"locality_name"`
+	AppType          string `json:"app_type"`
 	Organization     string `json:"organization"`
 	OrganizationUnit string `json:"organization_unit"`
 	Email            string `json:"email"`
-	Password         string `json:"password"`
-	CaName           string `json:"cert_ca_name"`
-	CaKey            string `json:"cert_ca_key"`
-	PublicKey        string `json:"public_key"`
-	PrivateKey       string `json:"private_key"`
-	CertCreateTime   string `json:"cert_create_time"`
-	CertExpireTime   string `json:"cert_expire_time"`
-	DaysLeft         string `json:"days_left"`
-	SerialNumber     string `json:"serial_number"`
-	DataRevoke       string `json:"data_revoke"`
-	ReasonRevoke     string `json:"reason_revoke"`
-	CertStatus       string `json:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
+	// Password         string `json:"password"`
+	// CaName           string `json:"cert_ca_name"`
+	// CaKey            string `json:"cert_ca_key"`
+	PublicKey      string `json:"public_key"`
+	PrivateKey     string `json:"private_key"`
+	CertCreateTime string `json:"cert_create_time"`
+	CertExpireTime string `json:"cert_expire_time"`
+	DaysLeft       string `json:"days_left"`
+	SerialNumber   string `json:"serial_number"`
+	DataRevoke     string `json:"data_revoke"`
+	ReasonRevoke   string `json:"reason_revoke"`
+	CertStatus     string `json:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
 }
 
 var SchemaCerts = `
@@ -72,6 +73,7 @@ CREATE TABLE IF NOT EXISTS  certs (
 	domain TEXT,
 	wildcard BOOLEAN,
 	recreate BOOLEAN,
+	app_type TEXT,
 	common_name TEXT,
 	country_name TEXT,
 	state_province TEXT,
@@ -79,9 +81,6 @@ CREATE TABLE IF NOT EXISTS  certs (
 	organization TEXT,
 	organization_unit TEXT,
 	email TEXT,
-	password TEXT,
-	cert_ca_name TEXT,
-	cert_ca_key TEXT,
 	public_key TEXT,
 	private_key TEXT,
 	cert_create_time TEXT,

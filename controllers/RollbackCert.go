@@ -105,8 +105,8 @@ func RollbackCert(c fiber.Ctx) error {
 			})
 		}
 
-		// Удаляем сертификат из таблицы ocsp_cert
-		_, err = tx.Exec("DELETE FROM ocsp_cert WHERE serial_number = ?", serialNumber)
+		// Удаляем сертификат из таблицы ocsp_revoke
+		_, err = tx.Exec("DELETE FROM ocsp_revoke WHERE serial_number = ?", serialNumber)
 		if err != nil {
 			tx.Rollback()
 			return c.Status(500).JSON(fiber.Map{

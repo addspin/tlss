@@ -1,0 +1,80 @@
+package check
+
+import (
+	"log"
+	"time"
+
+	"github.com/addspin/tlss/models"
+	"github.com/jmoiron/sqlx"
+	"github.com/spf13/viper"
+)
+
+func CheckValidCerts(checkValidationTime time.Duration) {
+	log.Println("Запуск модуля проверки валидности сертификатов")
+
+	// Выполняем проверку сразу при запуске функции
+	checkCerts()
+
+	// Затем настраиваем тикер для периодических проверок
+	ticker := time.NewTicker(checkValidationTime)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		checkCerts()
+	}
+}
+
+// Вынесем логику проверки в отдельную функцию
+func checkCerts() {
+	log.Println("Проверка валидности сертификатов начата")
+
+	database := viper.GetString("database.path")
+	db, err := sqlx.Open("sqlite3", database)
+	if err != nil {
+		log.Println("Ошибка подключения к базе данных:", err)
+		return
+	}
+	defer db.Close()
+
+	// Получаем все действующие сертификаты
+	certificates := []models.Certs{}
+	err = db.Select(&certificates, "SELECT * FROM certs WHERE cert_status = 0")
+	if err != nil {
+		log.Println("Ошибка запроса сертификатов:", err)
+		return
+	}
+
+	log.Printf("Найдено %d действующих сертификатов для проверки", len(certificates))
+
+	// Текущее время для сравнения
+	currentTime := time.Now()
+	log.Printf("Текущее время: %s", currentTime.Format(time.RFC3339))
+
+	expiredCount := 0
+
+	// Проверяем каждый сертификат
+	for _, cert := range certificates {
+		// Преобразуем строку времени истечения в объект time.Time
+		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
+		if err != nil {
+			log.Printf("Ошибка парсинга времени истечения для сертификата %s (ID: %d): %v", cert.Domain, cert.Id, err)
+			continue
+		}
+
+		log.Printf("Сертификат %s (ID: %d), срок действия до: %s", cert.Domain, cert.Id, expireTime.Format(time.RFC3339))
+
+		// Если сертификат истек
+		if currentTime.After(expireTime) {
+			// Обновляем статус на истекший (1)
+			_, err := db.Exec("UPDATE certs SET cert_status = 1 WHERE id = ?", cert.Id)
+			if err != nil {
+				log.Printf("Ошибка обновления статуса сертификата %s (ID: %d): %v", cert.Domain, cert.Id, err)
+			} else {
+				log.Printf("Сертификат для домена %s (ID: %d) истёк и помечен как недействительный", cert.Domain, cert.Id)
+				expiredCount++
+			}
+		}
+	}
+
+	log.Printf("Проверка валидности сертификатов завершена. Обновлено статусов: %d", expiredCount)
+}

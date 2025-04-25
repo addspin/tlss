@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -85,7 +86,20 @@ func CertListRevokeController(c fiber.Ctx) error {
 				certList[i].Domain = "*." + certList[i].Domain
 			}
 		}
+		// Преобразуем формат времени из RFC3339 в 02.01.2006 15:04:05
+		for i := range certList {
+			// Парсим время создания сертификата
+			createTime, err := time.Parse(time.RFC3339, certList[i].CertCreateTime)
+			if err == nil {
+				certList[i].CertCreateTime = createTime.Format("02.01.2006 15:04:05")
+			}
 
+			// Парсим время отзыва сертификата
+			revokeTime, err := time.Parse(time.RFC3339, certList[i].DataRevoke)
+			if err == nil {
+				certList[i].DataRevoke = revokeTime.Format("02.01.2006 15:04:05")
+			}
+		}
 		// Рендерим шаблон списка сертификатов
 		return c.Render("revoke_certs/certRevokeList", fiber.Map{
 			"certList": certList,

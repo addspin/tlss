@@ -22,6 +22,29 @@
     color: #a99ee8;
 }
 
+.core-login {
+    /* padding-top: 20%; */
+    /* padding-left: 43%;
+    padding-right: 43%; */
+    margin-left: 43%;
+    margin-right: 43%;
+    /* margin-top: 15%; */
+    font-size: 0.8rem;
+    font-family: Inter;
+    font-weight: 100; 
+}
+
+
+.core-login-logo {
+    margin-left:36%;
+    padding-right: 36%;
+    /* margin-right: 36%; */
+    margin-top: 2%;
+    /* margin-bottom: 5%; */
+    font-size: 0.8rem;
+    font-family: Inter;
+    font-weight: 100; 
+}
 .core-servers {
     padding-left: 30%;
     padding-right: 30%;
@@ -48,6 +71,14 @@
     padding-left: 5%;
     padding-right: 5%;
 }
+
+.form_center_login {
+    padding-left: 5%;
+    padding-right: 5%;
+    padding-top: 5%;
+    padding-bottom: 5%;
+}
+
 .c_input {
     border: 1px solid #a99ee8;
     border-color: rgb(128, 119, 176);
@@ -64,6 +95,19 @@
 .c_input:focus {
     outline: none;
     border-color: #bcb0ff;
+}
+
+
+.input_border_login {
+    text-align: left;
+    border: 1px solid #a99ee8;
+    border-color: rgb(128, 119, 176);
+    padding: 2%;
+    border-radius: 5px;
+    background-color: transparent;
+    width: 100%;
+    margin-top: 5%;
+
 }
 
 .input_border {
@@ -189,6 +233,10 @@
 
 .btn-custom-servers {
     /* padding: 1px 8%;  */
+}
+
+.btn-custom-login {
+    width: 100%;
 }
 
 .btn-custom:hover {

@@ -283,3 +283,60 @@
     transform: translateY(0);
     transition: opacity 0.3s ease-in, transform 0.3s ease-in;
   }
+
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    color: #858585;
+    padding: 10px 0;
+    text-align: center;
+    font-family: Inter;
+    font-weight: 100;
+    font-size: 0.7rem;
+    /* border-top: 1px solid rgba(128, 119, 176, 0.3); */
+    z-index: 100;
+}
+
+.ascii-logo {
+    display: flex;
+    margin-top: 6%;
+    justify-content: center;
+    text-align: center;
+    margin-bottom: 2rem;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+.ascii-art {
+    color: #858585;
+    font-family: monospace;
+    margin: 0;
+    text-align: left;
+    display: inline-block;
+    font-weight: 100;
+    /* font-family: Inter; */
+    font-size: 0.7rem;
+    white-space: pre; /* Важно для сохранения форматирования */
+    /* letter-spacing: 0;  */
+    line-height: 1.2; /* Контролируем высоту строк */
+}
+.qr {
+    display: flex;
+    margin-top: 6%;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.qr-art {
+    color: #858585;
+    font-family: monospace;
+    margin: 0;
+    font-size: 0.7rem;
+    text-align: left;
+    display: inline-block;
+}

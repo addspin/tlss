@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
@@ -193,7 +194,20 @@ func CertListController(c fiber.Ctx) error {
 				certList[i].Domain = "*." + certList[i].Domain
 			}
 		}
+		// Преобразуем формат времени из RFC3339 в 02.01.2006 15:04:05
+		for i := range certList {
+			// Парсим время создания сертификата
+			createTime, err := time.Parse(time.RFC3339, certList[i].CertCreateTime)
+			if err == nil {
+				certList[i].CertCreateTime = createTime.Format("02.01.2006 15:04:05")
+			}
 
+			// Парсим время истечения сертификата
+			expireTime, err := time.Parse(time.RFC3339, certList[i].CertExpireTime)
+			if err == nil {
+				certList[i].CertExpireTime = expireTime.Format("02.01.2006 15:04:05")
+			}
+		}
 		// Рендерим шаблон списка сертификатов
 		return c.Render("add_certs/certList", fiber.Map{
 			"certList": certList,

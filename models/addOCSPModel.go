@@ -4,7 +4,6 @@ package models
 type OCSPCertificate struct {
 	Id        int    `db:"id"`
 	CreatedAt string `db:"create_time"` // Время создания в формате RFC3339
-	Domain    string `db:"domain"`      // Доменное имя сервера
 
 	// Основная информация о сертификате
 	SerialNumber string `db:"serial_number"` // Серийный номер сертификата
@@ -42,24 +41,23 @@ type OCSPCertificate struct {
 var SchemaOCSPCertificate = `
 CREATE TABLE IF NOT EXISTS ocsp_cert (
     id INTEGER PRIMARY KEY,
-    create_time TEXT,
-    domain TEXT,
-    serial_number TEXT,
-    issuer_name TEXT,
-    public_key TEXT,
-    private_key TEXT,
-    cert_status INTEGER,
-    reason_revoke TEXT,
-    data_revoke TEXT,
-    cert_create_time TEXT,
-    cert_expire_time TEXT,
-    ocsp_signing_eku BOOLEAN,
-    ocsp_nocheck BOOLEAN,
-    issuer_subca_serial_number TEXT,
-    issuer_name_hash TEXT,
-    issuer_key_hash TEXT,
-    hash_algorithm TEXT,
-    this_update TEXT,
-    next_update TEXT,
-    ocsp_extensions TEXT
+    create_time TEXT NOT NULL DEFAULT '',
+    serial_number TEXT NOT NULL DEFAULT '',
+    issuer_name TEXT NOT NULL DEFAULT '',
+    public_key TEXT NOT NULL,
+    private_key TEXT NOT NULL,
+    cert_status INTEGER NOT NULL DEFAULT 0,
+    reason_revoke TEXT NOT NULL DEFAULT '',
+    data_revoke TEXT NOT NULL DEFAULT '',
+    cert_create_time TEXT NOT NULL DEFAULT '',
+    cert_expire_time TEXT NOT NULL DEFAULT '',
+    ocsp_signing_eku BOOLEAN NOT NULL DEFAULT 0,
+    ocsp_nocheck BOOLEAN NOT NULL DEFAULT 0,
+    issuer_subca_serial_number TEXT NOT NULL DEFAULT '',
+    issuer_name_hash TEXT NOT NULL DEFAULT '',
+    issuer_key_hash TEXT NOT NULL DEFAULT '',
+    hash_algorithm TEXT NOT NULL DEFAULT '',
+    this_update TEXT NOT NULL DEFAULT '',
+    next_update TEXT NOT NULL DEFAULT '',
+    ocsp_extensions TEXT NOT NULL DEFAULT ''
 );`

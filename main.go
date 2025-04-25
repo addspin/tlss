@@ -74,8 +74,20 @@ func main() {
 		log.Println(err.Error())
 	}
 
-	// create SchemaOCSPCertificate tables in db (хранит данные OCSP)
-	_, err = db.Exec(models.SchemaOCSPCertificate)
+	// create Users tables in db (хранит данные Users)
+	_, err = db.Exec(models.UsersData)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// create SchemaOCSPCertificate tables in db (хранит данные OCSP) отключено подписываем OCSP ответы subCA
+	// _, err = db.Exec(models.SchemaOCSPCertificate)
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
+
+	// create SchemaOCSPRevoke tables in db (хранит данные об отозванных сертификатах для OCSP)
+	_, err = db.Exec(models.SchemaOCSPRevoke)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -99,6 +111,21 @@ func main() {
 	//если нету то просим ввести ключ
 	aes := crypts.Aes{}
 	if !exists {
+		// запрос на ввод логина
+		var login string
+		fmt.Print("Enter login: ")
+		fmt.Scanln(&login)
+
+		// запрос ввода пароля
+		var pwd []byte
+		fmt.Print("Enter password: ")
+		fmt.Scanln(&pwd)
+		//если пароль меньше 16 байт то дополняем его нулями
+		var maxPwd = make([]byte, 16)
+		for len(pwd) < len(maxPwd) {
+			pwd = append(pwd, 0)
+		}
+
 		var key []byte
 		fmt.Print("Enter key: ")
 		fmt.Scanln(&key)
@@ -119,9 +146,37 @@ func main() {
 		if err != nil {
 			log.Fatal(err.Error())
 		}
+		// записываем в таблицу login владельца
+		loginInsert := `INSERT INTO UsersData (username) VALUES ($1)`
+		_, err = tx.Exec(loginInsert, login)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 		tx.Commit()
+		//расшифровываем и передаем в переменную ключ
+		var keyData []models.Key
+		db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
+		for _, keyData := range keyData {
+			decryptKey, err := aes.Decrypt([]byte(keyData.Key), pwd)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			//записываем расшифрованный ключ в переменную
+			crypts.AesSecretKey.Key = decryptKey
+		}
+		//---------------------------------------Generate root CA
+		err = crypts.GenerateRootCA()
+		if err != nil {
+			log.Printf("Error generating root CA: %v", err)
+		}
+
+		//---------------------------------------Generate sub CA
+		err = crypts.GenerateSubCA()
+		if err != nil {
+			log.Printf("Error generating sub CA: %v", err)
+		}
 	}
-	//если в базе есть ключ то расшифровываем и передаем в переменную
+	// если в базе есть ключ то расшифровываем и передаем в переменную
 	var keyData []models.Key
 	db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
 	for _, keyData := range keyData {
@@ -164,19 +219,28 @@ func main() {
 	}
 
 	//---------------------------------------Generate CRL
-	updateInterval := time.Duration(viper.GetInt("crl.updateInterval")) * time.Hour
+	updateInterval := time.Duration(viper.GetInt("crl.updateInterval")) * time.Minute
 	// запускаем генерацию CRL через заданный интервал времени
 	go crl.StartCRLGeneration(updateInterval)
 
 	//---------------------------------------Start OCSP Responder
 	// OCSP-респондер работает отдельно от контроллера, обновляя базу данных
-	ocspUpdateInterval := time.Duration(viper.GetInt("ocsp.updateInterval")) * time.Hour
+	ocspUpdateInterval := time.Duration(viper.GetInt("ocsp.updateInterval")) * time.Minute
 	go ocsp.StartOCSPResponder(ocspUpdateInterval)
 
-	checkServerTime := viper.GetInt("checkServer.time")
+	// --------------------------------------Start check server
+	checkServerTime := time.Duration(viper.GetInt("checkServer.time")) * time.Second
 	// запускаем проверку доступности серверов
-	check := check.StatusCodeTcp{}
-	go check.TCPPortAvailable(checkServerTime)
+	checkTCP := check.StatusCodeTcp{}
+	go checkTCP.TCPPortAvailable(checkServerTime)
+
+	//---------------------------------------Check valid certs
+	checkValidationTime := time.Duration(viper.GetInt("certsValidation.time")) * time.Minute
+	go check.CheckValidCerts(checkValidationTime)
+
+	//---------------------------------------Recreate certs
+	recreateCertsTime := time.Duration(viper.GetInt("recreateCerts.time")) * time.Minute
+	go check.RecreateCerts(recreateCertsTime)
 
 	//---------------------------------------Create a new engine Template
 	engine := html.New("./template", ".html")
@@ -186,8 +250,8 @@ func main() {
 		Views: engine,
 	})
 
-	// Настраиваем маршруты, передавая соединение с БД
-	routes.Setup(app, db)
+	// Настраиваем маршруты
+	routes.Setup(app)
 
-	log.Fatal(app.Listen(":43000"))
+	log.Fatal(app.Listen(viper.GetString("app.hostname") + ":" + viper.GetString("app.port")))
 }

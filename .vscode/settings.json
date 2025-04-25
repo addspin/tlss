@@ -1,8 +1,0 @@
-{
-    "editor.fontFamily": "JetBrainsMono-Thin",
-    "editor.fontSize": 13,
-    "editor.fontLigatures": true,
-    "cSpell.enableFiletypes": [
-        "!markdown"
-    ]
-}

@@ -108,8 +108,11 @@ func LoginControll(c fiber.Ctx) error {
 		}
 
 		// Redirect to the add_server route
-		c.Set("Location", "/add_server")
-		return c.SendStatus(fiber.StatusFound)
+		c.Set("HX-Redirect", "/add_server")
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"status":   "success",
+			"redirect": "/add_server",
+		})
 	}
 	return nil
 }

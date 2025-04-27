@@ -92,12 +92,24 @@ func checkRecreateCerts() {
 			}
 
 			// Создаем HTTP запрос с API ключом
-			req, err := http.NewRequest("POST",
-				"http://"+viper.GetString("app.hostname")+":"+viper.GetString("app.port")+"/add_certs",
-				bytes.NewBuffer(jsonData))
-			if err != nil {
-				log.Printf("Ошибка создания запроса для сертификата %s: %v", cert.Domain, err)
-				continue
+			var req *http.Request
+			if viper.GetBool("app.useHTTPS") {
+				req, err = http.NewRequest("POST",
+					"https://"+viper.GetString("app.hostname")+":"+viper.GetString("app.port")+"/add_certs",
+					bytes.NewBuffer(jsonData))
+				if err != nil {
+					log.Printf("Ошибка создания запроса для сертификата %s: %v", cert.Domain, err)
+					continue
+				}
+			}
+			if !viper.GetBool("app.useHTTPS") {
+				req, err = http.NewRequest("POST",
+					"http://"+viper.GetString("app.hostname")+":"+viper.GetString("app.port")+"/add_certs",
+					bytes.NewBuffer(jsonData))
+				if err != nil {
+					log.Printf("Ошибка создания запроса для сертификата %s: %v", cert.Domain, err)
+					continue
+				}
 			}
 
 			// Устанавливаем заголовки

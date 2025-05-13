@@ -6,18 +6,18 @@
     <div class="row">
       <div class="col-md-3">
         <div class="left-core">
-          <!-- Левая панель с серверами -->
+          <!-- Левая панель с сущьностями -->
           <div id="search-server" class="search-input-container-server">
-            <input type="text" class="search-input" name="search-server" placeholder="Search servers">
+            <input type="text" class="search-input" name="search-entity" placeholder="Search entitys">
           </div>
-            {{template "serverList-certs-tpl" .}}
+            {{template "entitysList-users-certs-tpl" .}}
         </div>
       </div>
       <div class="col-md-6">
         <!-- Правая панель с формой для создания сертификата -->
         <div class="core-certs">
           <form class="" 
-            hx-post="/add_certs" 
+            hx-post="/add_users_certs" 
             hx-swap="none"
             hx-ext="json-enc-custom" 
             parse-types="true"
@@ -46,16 +46,16 @@
                       customClass: 'custom-alert',
                       icon: 'success',
                       title: 'Успешно',
-                      text: `Сертификат для домена ${response.domain} был успешно создан`,
+                      text: `Сертификат для сущьности ${response.entityName} был успешно создан`,
                       confirmButtonColor: '#3085d6'
                     }).then(() => {
                       document.getElementById('create-cert-btn').style.display = 'inline-block';
                       
-                      htmx.ajax('GET', '/cert_list', {
+                      htmx.ajax('GET', '/user_cert_list', {
                         target: '#response', 
                         swap: 'innerHTML',  
                         values: {
-                          serverId: document.getElementById('serverId').value
+                          entityId: document.getElementById('entityId').value
                         } 
                       });
                     });
@@ -68,7 +68,7 @@
                 document.getElementById('create-cert-btn').style.display = 'inline-block';
               }
             ">
-            <label id= "" class="form_lable" >Create server certificate</label>
+            <label id= "" class="form_lable" >Create user certificate</label>
             <div class="input_border color-form-certs">
               <div class="row g-3 form_center">
                 <div class="col-md-3">
@@ -92,23 +92,13 @@
                   <input type="number" class="c_input" id="ttl" name="ttl" placeholder="TTL" value="365" required>
                 </div>
                 <div class="col-md-3">
-                  <label class="select_title">Domain</label>
-                  <input type="text" class="c_input" id="domain" name="domain" placeholder="Domain" value="test.ru" required>
-                  <div class="form-check form-switch switch_label">
-                    <label class="form-check-label" for="SwitchWildcard">Wildcard</label>
-                    <input class="form-check-input" type="checkbox" role="switch" id="SwitchWildcard" name="wildcard" checked>
-                  </div>
                   <div class="form-check form-switch">
                     <label class="form-check-label" for="SwitchRecreate">Recreate</label>
                     <input class="form-check-input" type="checkbox" role="switch" id="SwitchRecreate" name="recreate" checked>
                   </div>
-                  <div class="form-check form-switch">
-                    <label class="form-check-label" for="SwitchSaveInServer">Save in server</label>
-                    <input class="form-check-input" type="checkbox" role="switch" id="SwitchSaveInServer" name="saveInServer" checked>
-                  </div>
                 </div>
               </div>
-              <!-- <div class="indent-5"></div> -->
+              <div class="indent-5"></div>
               <div class="row g-1 form_center">
                 <div class="col-md-3">
                   <label class="select_title" title="Обязательное поле">Common Name</label>
@@ -129,13 +119,6 @@
                   <label class="select_title">Locality Name</label>
                   <input type="text" class="c_input" id="Locality" name="LocalityName" placeholder="Izhevsk" value="Izhevsk" required>
                 </div>
-                <div class="col-md-3">
-                  <label class="select_title">App type</label>
-                    <select id="select-app-type" name="appType" class="select" type="number" placeholder="pub.pem \ priv.key">  
-                      <option value="nginx">nginx</option>
-                      <option value="haproxy" selected>haproxy</option>
-                    </select>
-                </div>
               </div>
               <div class="indent-5"></div> 
               <div class="row g-3 form_center">
@@ -153,13 +136,12 @@
                 </div>
 
                 <div class="col-md-3" style="display: none;">
-                  <input type="number" id="serverId" name="serverId" value="">
+                  <input type="number" id="entityId" name="entityId" value="">
                 </div>
-                <!-- <div class="col-md-3">
+                <div class="col-md-3">
                   <label for="standard-select" class="select_title">Password key</label>
                   <input type="password" class="c_input" id="Password" name="Password" placeholder="****" required>
-                </div> -->
-                <!-- <div>Создайте пользователя на сервере и используйте его логин и пароль для подключения</div> -->
+                </div>
                 <div class="btn-container btn-container-right">
                   <button type="submit" class="btn-custom btn-custom-certs" id="create-cert-btn"
                     hx-indicator="#time-svg">
@@ -181,7 +163,7 @@
     <input type="text" class="search-input" name="search-certs" placeholder="Search certs">
   </div>
   <div id="response" class="servers_table">
-  {{template "certList-tpl" .}}
+  {{template "certUserList-tpl" .}}
   </div>
 
 <!-- index end template -->

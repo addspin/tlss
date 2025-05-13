@@ -111,37 +111,43 @@ func AddCertsControll(c fiber.Ctx) error {
 			log.Fatal(err)
 		}
 		log.Println("serverList-certs", serverList)
-		onlineServers := []models.Server{}
-		for _, list := range serverList {
-			// Записываем только онлайн сервера, чтобы не было ошибки при добавлении сертификата
-			if list.ServerStatus == "online" {
-				onlineServers = append(onlineServers, list)
-				log.Println("onlineServerList-certs", onlineServers)
-			}
-		}
+		// onlineServers := []models.Server{}
+		// for _, list := range serverList {
+		// 	// Записываем только онлайн сервера, чтобы не было ошибки при добавлении сертификата
+		// 	if list.ServerStatus == "online" {
+		// 		onlineServers = append(onlineServers, list)
+		// 		log.Println("onlineServerList-certs", onlineServers)
+		// 	}
+		// }
 
 		return c.Render("add_certs/addCerts", fiber.Map{
 			"Title":      "Add certs",
-			"serverList": onlineServers,
+			"serverList": serverList,
 		})
 	}
-	serverList := []models.Server{}
-	error := db.Select(&serverList, "SELECT id, server_id, hostname, server_status FROM server")
-	if error != nil {
-		log.Fatal(err)
-	}
-	onlineServers := []models.Server{}
-	for _, list := range serverList {
-		if list.ServerStatus == "online" {
-			onlineServers = append(onlineServers, list)
-			log.Println("serverList-certs", onlineServers)
-		}
-	}
-	return c.Render("add_certs/addCerts", fiber.Map{
-		"Title":      "Add certs",
-		"serverList": onlineServers,
+	return c.Status(405).JSON(fiber.Map{
+		"status":  "error",
+		"message": "Method not allowed",
 	})
 }
+
+// 	serverList := []models.Server{}
+// 	error := db.Select(&serverList, "SELECT id, server_id, hostname, server_status FROM server")
+// 	if error != nil {
+// 		log.Fatal(err)
+// 	}
+// 	onlineServers := []models.Server{}
+// 	for _, list := range serverList {
+// 		if list.ServerStatus == "online" {
+// 			onlineServers = append(onlineServers, list)
+// 			log.Println("serverList-certs", onlineServers)
+// 		}
+// 	}
+// 	return c.Render("add_certs/addCerts", fiber.Map{
+// 		"Title":      "Add certs",
+// 		"serverList": onlineServers,
+// 	})
+// }
 
 // CertListController обрабатывает запросы на получение списка сертификатов
 func CertListController(c fiber.Ctx) error {
@@ -181,6 +187,7 @@ func CertListController(c fiber.Ctx) error {
 		serverId := c.Query("serverId")
 		// Получаем список сертификатов
 		certList := []models.Certs{}
+
 		if serverId != "" {
 			// Если указан ID сервера, фильтруем сертификаты по серверу кроме результатов 2 - revoked
 			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, domain, wildcard, cert_status, cert_create_time, cert_expire_time, recreate, days_left FROM certs WHERE server_id = ? AND cert_status IN (0, 1)", serverId)

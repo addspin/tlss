@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/addspin/tlss/controllers"
+	usersCertControllers "github.com/addspin/tlss/controllers/usersCertControllers"
 	"github.com/addspin/tlss/middleware"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/static"
@@ -24,14 +25,17 @@ func Setup(app *fiber.App) {
 
 	// API routes (no auth required)
 	app.Get("/api/v1/crl", controllers.GetCRL)
+	app.Get("/api/v1/crlUser", usersCertControllers.GetUserCRL)
 	app.Get("/api/v1/ocsp/*", controllers.HandleOCSP)
 	app.Post("/api/v1/ocsp", controllers.HandleOCSP)
+	app.Get("/api/v1/ocspUser/*", usersCertControllers.HandleOCSPUser)
+	app.Post("/api/v1/ocspUser", usersCertControllers.HandleOCSPUser)
 
 	// Protected routes (auth required)
 	app.Get("/add_server", controllers.AddServerControll)
 	app.Post("/add_server", controllers.AddServerControll)
 	app.Post("/remove_server", controllers.RemoveServer)
-	app.Get("/add_server/errorAdd", controllers.AddServerControll)
+	// app.Get("/add_server/errorAdd", controllers.AddServerControll)
 	app.Get("/add_certs", controllers.AddCertsControll)
 	app.Post("/add_certs", controllers.AddCertsControll)
 	app.Post("/remove_cert", controllers.RemoveCert)
@@ -42,5 +46,19 @@ func Setup(app *fiber.App) {
 	app.Get("/cert_list_revoke", controllers.CertListRevokeController) // Список сертификатов для отзыва находится в RevokeCertsController
 	app.Post("/revoke_certs", controllers.RevokeCertsController)
 	app.Post("/rollback_cert", controllers.RollbackCert) // Откат сертификата
+
+	app.Get("/add_entity", usersCertControllers.AddEntityController)               // Получение сущности
+	app.Post("/add_entity", usersCertControllers.AddEntityController)              // Добавление сущности
+	app.Post("/remove_entity", usersCertControllers.RemoveEntity)                  // Удаление сущности
+	app.Get("/add_users_certs", usersCertControllers.AddUserCertsController)       // Получение списка сертификатов пользователей
+	app.Post("/add_users_certs", usersCertControllers.AddUserCertsController)      // Добавление сертификата пользователя
+	app.Get("/revoke_users_certs", usersCertControllers.RevokeUserCertsController) // Получение списка сертификатов для отзыва
+	app.Post("/remove_users_cert", usersCertControllers.RemoveUserCert)
+	app.Post("/revoke_users_cert", usersCertControllers.RevokeUserCert)
+	app.Get("/user_cert_list_revoke", usersCertControllers.UserCertListRevokeController) // Получение списка сертификатов для отзыва
+	app.Get("/user_cert_list", usersCertControllers.UserCertListController)              // Получение списка сертификатов пользователей
+	app.Post("/user_cert_list", usersCertControllers.UserCertListController)
+	app.Post("/rollback_users_cert", usersCertControllers.RollbackUserCert)
+
 	app.Get("/logout", controllers.LogoutController)
 }

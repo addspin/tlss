@@ -1,0 +1,22 @@
+{{define "entitysList-users-certs-tpl"}}
+<div class="server-list-container">
+  {{ range .entityList }}
+    <div class="row-auto">
+      <div class="col-auto">
+        <button id="entity-{{ .Id }}" class="input_border_button mt-1" 
+                hx-get="/user_cert_list" 
+                hx-target="#response" 
+                hx-ext="json-enc-custom" 
+                parse-types="false"
+                hx-vals='{"entityId": "{{ .Id }}"}'
+                onclick="var input = document.getElementById('entityId'); 
+                         input.value = '{{ .Id }}'; 
+                         input.setAttribute('value', '{{ .Id }}'); ">
+          {{ .EntityName }}
+          <span class=""></span>
+        </button>
+      </div>
+    </div>
+  {{ end }}
+</div>
+{{end}}

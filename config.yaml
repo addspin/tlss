@@ -1,9 +1,15 @@
 app:
   port: 43000
   hostname: tlss.lv.local
-  useHTTPS: true
+  # useHTTPS: true
+  protocol: https
   certFile: ./https/tlss.lv.local.pem
   keyFile: ./https/tlss.lv.local.key
+
+# Временно для отладки
+login:
+  username: admin
+  password: 1gd5hfg5jdgsyrtf
 
 database:
   path: ./db/database.db
@@ -42,6 +48,16 @@ crl:
 ocsp:
   ocspURL: http://10.13.1.36:43000/api/v1/ocsp
   updateInterval: 720 # minutes 12 hours
+  version: 2
+
+crlUser:
+  crlURL: http://10.13.1.36:43000/api/v1/crlUser
+  updateInterval: 720 # minutes 12 hours
+  version: 2
+
+ocspUser:
+  ocspURL: http://10.13.1.36:43000/api/v1/ocspUser
+  updateInterval: 1 # minutes 12 hours
   version: 2
 
 certsValidation:

@@ -81,6 +81,18 @@ func main() {
 		log.Println(err.Error())
 	}
 
+	// create SchemaEntity tables in db (хранит данные сущностей)
+	_, err = db.Exec(models.SchemaEntity)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// create SchemaUserCerts tables in db (хранит данные пользовательских сертификатов)
+	_, err = db.Exec(models.SchemaUserCerts)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
 	// create SchemaOCSPCertificate tables in db (хранит данные OCSP) отключено подписываем OCSP ответы subCA
 	// _, err = db.Exec(models.SchemaOCSPCertificate)
 	// if err != nil {
@@ -93,15 +105,22 @@ func main() {
 		log.Println(err.Error())
 	}
 
-	// запрос ввода пароля
-	var pwd []byte
-	fmt.Print("Enter password: ")
-	fmt.Scanln(&pwd)
-	//если пароль меньше 16 байт то дополняем его нулями
-	var maxPwd = make([]byte, 16)
-	for len(pwd) < len(maxPwd) {
-		pwd = append(pwd, 0)
+	// create SchemaUserOCSPRevoke tables in db (хранит данные об пользовательских отозванных сертификатах для OCSP)
+	_, err = db.Exec(models.SchemaUserOCSPRevoke)
+	if err != nil {
+		log.Println(err.Error())
 	}
+
+	// запрос ввода пароля Временно отключен, добавлен в config.yaml
+	// var pwd []byte
+	// fmt.Print("Enter password: ")
+	// fmt.Scanln(&pwd)
+	// //если пароль меньше 16 байт то дополняем его нулями
+	// var maxPwd = make([]byte, 16)
+	// for len(pwd) < len(maxPwd) {
+	// 	pwd = append(pwd, 0)
+	// }
+	pwd := []byte(viper.GetString("login.password"))
 
 	//проверяем, есть ли в таблице хотя  бы одно значение key
 	var exists bool
@@ -229,6 +248,10 @@ func main() {
 	ocspUpdateInterval := time.Duration(viper.GetInt("ocsp.updateInterval")) * time.Minute
 	go ocsp.StartOCSPResponder(ocspUpdateInterval)
 
+	//---------------------------------------Start User OCSP Responder
+	userOcspUpdateInterval := time.Duration(viper.GetInt("ocspUser.updateInterval")) * time.Minute
+	go ocsp.StartUserOCSPResponder(userOcspUpdateInterval)
+
 	// --------------------------------------Start check server
 	checkServerTime := time.Duration(viper.GetInt("checkServer.time")) * time.Second
 	// запускаем проверку доступности серверов
@@ -259,7 +282,7 @@ func main() {
 	routes.Setup(app)
 
 	// Определяем, использовать ли HTTPS
-	if viper.GetBool("app.useHTTPS") {
+	if viper.GetString("app.protocol") == "https" {
 		// Запуск с TLS (HTTPS)
 		certFile := viper.GetString("app.certFile")
 		keyFile := viper.GetString("app.keyFile")

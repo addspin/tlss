@@ -21,14 +21,35 @@
            hx-get="/add_certs" 
            hx-target="#body" 
            hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Certs</a>
+           hx-push-url="true">Servers certs</a>
       </li>
       <li class="nav-item">
         <a class="nav-link {{if eq .Title "Revoke certs"}}active{{else}}{{end}}" aria-current="page"  
            hx-get="/revoke_certs" 
            hx-target="#body" 
            hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Revoke certs</a>
+           hx-push-url="true">Revoke server certs</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{if eq .Title "Add entity"}}active{{else}}{{end}}" aria-current="page"  
+           hx-get="/add_entity" 
+           hx-target="#body" 
+           hx-swap="innerHTML transition:true" 
+           hx-push-url="true">Entities</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{if eq .Title "Add users certs"}}active{{else}}{{end}}" aria-current="page"  
+           hx-get="/add_users_certs" 
+           hx-target="#body" 
+           hx-swap="innerHTML transition:true" 
+           hx-push-url="true">Users certs</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {{if eq .Title "Revoke users certs"}}active{{else}}{{end}}" aria-current="page"  
+           hx-get="/revoke_users_certs" 
+           hx-target="#body" 
+           hx-swap="innerHTML transition:true" 
+           hx-push-url="true">Revoke users certs</a>
       </li>
     </ul>
   </div> 

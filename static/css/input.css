@@ -1,18 +1,18 @@
 @font-face {
     font-family: 'Inter';
-    src: url('/fonts/Inter/static/Inter_18pt-ExtraLight.ttf') format('truetype');
+    src: url('/fonts/Inter/static/Inter_18pt-ExtraLight.woff2') format('woff2');
     font-weight: 100 900;
     font-style: normal;
     font-display: swap; /* Улучшает производительность загрузки */
 }
 
-@font-face {
+/* @font-face {
     font-family: 'Roboto';
-    src: url('/fonts/Roboto/static/Roboto_Condensed-Light.ttf') format('truetype');
+    src: url('/fonts/Roboto/static/Roboto_Condensed-Light.woff2') format('woff2');
     font-weight: 100 900;
     font-style: normal;
-    font-display: swap; /* Улучшает производительность загрузки */
-}
+    font-display: swap; 
+} */
 
 .color-form-certs {
     color: #a99ee8;

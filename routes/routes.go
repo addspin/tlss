@@ -35,7 +35,6 @@ func Setup(app *fiber.App) {
 	app.Get("/add_server", controllers.AddServerControll)
 	app.Post("/add_server", controllers.AddServerControll)
 	app.Post("/remove_server", controllers.RemoveServer)
-	// app.Get("/add_server/errorAdd", controllers.AddServerControll)
 	app.Get("/add_certs", controllers.AddCertsControll)
 	app.Post("/add_certs", controllers.AddCertsControll)
 	app.Post("/remove_cert", controllers.RemoveCert)

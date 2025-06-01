@@ -172,10 +172,16 @@ func main() {
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-		tx.Commit()
+		err = tx.Commit()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 		//расшифровываем и передаем в переменную ключ
 		var keyData []models.Key
-		db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
+		err = db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
+		if err != nil {
+			return
+		}
 		for _, keyData := range keyData {
 			decryptKey, err := aes.Decrypt([]byte(keyData.Key), pwd)
 			if err != nil {
@@ -198,7 +204,10 @@ func main() {
 	}
 	// если в базе есть ключ то расшифровываем и передаем в переменную
 	var keyData []models.Key
-	db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
+	err = db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
+	if err != nil {
+		return
+	}
 	for _, keyData := range keyData {
 		decryptKey, err := aes.Decrypt([]byte(keyData.Key), pwd)
 		if err != nil {

@@ -9,6 +9,8 @@ type Certs struct {
 	Domain           string `db:"domain"`
 	Wildcard         bool   `db:"wildcard"`
 	Recreate         bool   `db:"recreate"`
+	ServerStatus     string `db:"server_status"`
+	SaveOnServer     bool   `db:"save_on_server"`
 	CommonName       string `db:"common_name"`
 	CountryName      string `db:"country_name"`
 	StateProvince    string `db:"state_province"`
@@ -33,34 +35,36 @@ type Certs struct {
 
 // структура для добавления сертификата
 type CertsData struct {
-	Id               string `json:"id"`
-	ServerId         string `json:"server_id"`
-	Algorithm        string `json:"algorithm"`
-	KeyLength        string `json:"key_length"`
-	TTL              string `json:"ttl"`
-	Domain           string `json:"domain"`
-	Wildcard         string `json:"wildcard"`
-	Recreate         string `json:"recreate"`
-	CommonName       string `json:"common_name"`
-	CountryName      string `json:"country_name"`
-	StateProvince    string `json:"state_province"`
-	LocalityName     string `json:"locality_name"`
-	AppType          string `json:"app_type"`
-	Organization     string `json:"organization"`
-	OrganizationUnit string `json:"organization_unit"`
-	Email            string `json:"email"`
+	Id               string `json:"id" db:"id"`
+	ServerId         string `json:"server_id" db:"server_id"`
+	Algorithm        string `json:"algorithm" db:"algorithm"`
+	KeyLength        string `json:"key_length" db:"key_length"`
+	TTL              string `json:"ttl" db:"ttl"`
+	Domain           string `json:"domain" db:"domain"`
+	Wildcard         string `json:"wildcard" db:"wildcard"`
+	Recreate         string `json:"recreate" db:"recreate"`
+	ServerStatus     string `json:"server_status" db:"server_status"`
+	SaveOnServer     string `json:"save_on_server" db:"save_on_server"`
+	CommonName       string `json:"common_name" db:"common_name"`
+	CountryName      string `json:"country_name" db:"country_name"`
+	StateProvince    string `json:"state_province" db:"state_province"`
+	LocalityName     string `json:"locality_name" db:"locality_name"`
+	AppType          string `json:"app_type" db:"app_type"`
+	Organization     string `json:"organization" db:"organization"`
+	OrganizationUnit string `json:"organization_unit" db:"organization_unit"`
+	Email            string `json:"email" db:"email"`
 	// Password         string `json:"password"`
 	// CaName           string `json:"cert_ca_name"`
 	// CaKey            string `json:"cert_ca_key"`
-	PublicKey      string `json:"public_key"`
-	PrivateKey     string `json:"private_key"`
-	CertCreateTime string `json:"cert_create_time"`
-	CertExpireTime string `json:"cert_expire_time"`
-	DaysLeft       string `json:"days_left"`
-	SerialNumber   string `json:"serial_number"`
-	DataRevoke     string `json:"data_revoke"`
-	ReasonRevoke   string `json:"reason_revoke"`
-	CertStatus     string `json:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
+	PublicKey      string `json:"public_key" db:"public_key"`
+	PrivateKey     string `json:"private_key" db:"private_key"`
+	CertCreateTime string `json:"cert_create_time" db:"cert_create_time"`
+	CertExpireTime string `json:"cert_expire_time" db:"cert_expire_time"`
+	DaysLeft       string `json:"days_left" db:"days_left"`
+	SerialNumber   string `json:"serial_number" db:"serial_number"`
+	DataRevoke     string `json:"data_revoke" db:"data_revoke"`
+	ReasonRevoke   string `json:"reason_revoke" db:"reason_revoke"`
+	CertStatus     string `json:"cert_status" db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
 }
 
 var SchemaCerts = `
@@ -73,6 +77,7 @@ CREATE TABLE IF NOT EXISTS  certs (
 	domain TEXT,
 	wildcard BOOLEAN,
 	recreate BOOLEAN,
+	save_on_server BOOLEAN,
 	app_type TEXT,
 	common_name TEXT,
 	country_name TEXT,

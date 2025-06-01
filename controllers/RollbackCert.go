@@ -3,10 +3,10 @@ package controllers
 import (
 	"fmt"
 	"log"
-	"strconv"
-	"strings"
 
+	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
+	"github.com/addspin/tlss/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
@@ -29,6 +29,7 @@ func RollbackCert(c fiber.Ctx) error {
 		c.Bind().JSON(data)
 		log.Println("id data:", data.Id)
 		log.Println("server_id data:", data.ServerId)
+		log.Println("save_on_server data:", data.SaveOnServer)
 
 		err := c.Bind().JSON(data)
 		if err != nil {
@@ -49,15 +50,18 @@ func RollbackCert(c fiber.Ctx) error {
 		}
 		tx := db.MustBegin()
 		// Выносим значения из запроса
-		currentTime := ""
-		certID, err := strconv.Atoi(data.Id)
+
+		// конвертируем id в число и проверяем на ошибки
+		testData := utils.NewTestData()
+		certID, err := testData.TestInt(data.Id)
 		if err != nil {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Invalid cert ID value",
 			})
 		}
-		serverID, err := strconv.Atoi(data.ServerId)
+
+		serverID, err := testData.TestInt(data.ServerId)
 		if err != nil {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
@@ -65,14 +69,22 @@ func RollbackCert(c fiber.Ctx) error {
 			})
 		}
 
-		daysLeftTest, err := strconv.Atoi(data.DaysLeft)
-		data.DaysLeft = strings.TrimSpace(data.DaysLeft)
+		daysLeftTest, err := testData.TestInt(data.DaysLeft)
 		if err != nil {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Invalid days left value",
 			})
 		}
+
+		saveOnServerTest, err := testData.TestBool(data.SaveOnServer)
+		if err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Invalid save on server value",
+			})
+		}
+
 		var certStatus int
 		if daysLeftTest <= 0 {
 			certStatus = 1
@@ -84,13 +96,14 @@ func RollbackCert(c fiber.Ctx) error {
 		var serialNumber, domain string
 		err = db.QueryRow("SELECT serial_number, domain FROM certs WHERE id = ? AND server_id = ?", certID, serverID).Scan(&serialNumber, &domain)
 		if err != nil {
-			tx.Rollback()
+			// tx.Rollback()
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Ошибка при получении данных сертификата: " + err.Error(),
 			})
 		}
 
+		currentTime := ""
 		// Обновляем статус сертификата с учетом ID сервера и ID сертификата
 		_, err = tx.Exec(`UPDATE certs SET 
 			cert_status = ?, 
@@ -116,6 +129,53 @@ func RollbackCert(c fiber.Ctx) error {
 		}
 
 		log.Printf("Сертификат для домена %s (серийный номер: %s) успешно восстановлен и удален из OCSP", domain, serialNumber)
+
+		if saveOnServerTest {
+			// Изменим имя сертифмката с wildcard именами с  *.test.ru на test.ru
+			// в POST приходят именя с фронта, но в базе данных они хранятся без wildcard
+			data.Domain = domain
+			// Извлекаем сертификат и ключ из базы данных
+			// var publicKey, privateKey string
+			keyList := []models.CertsData{}
+			err = db.Select(&keyList, "SELECT public_key, private_key FROM certs WHERE id = ? AND server_id = ?", certID, serverID)
+			if err != nil {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Ошибка при получении сертификата и ключа из базы данных: " + err.Error(),
+				})
+			}
+
+			if len(keyList) == 0 {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Сертификат не найден в базе данных",
+				})
+			}
+
+			// Расшифровываем приватный ключ
+			aes := crypts.Aes{}
+			decryptedKey, err := aes.Decrypt([]byte(keyList[0].PrivateKey), crypts.AesSecretKey.Key)
+			if err != nil {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Ошибка при расшифровке приватного ключа: " + err.Error(),
+				})
+			}
+
+			saveOnServer := utils.NewSaveOnServer()
+
+			err = saveOnServer.SaveOnServer(data, db, []byte(keyList[0].PublicKey), decryptedKey)
+			if err != nil {
+				log.Printf("Ошибка сохранения сертификата на сервер: %v", err)
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Ошибка сохранения сертификата на сервер: " + err.Error(),
+				})
+			}
+		}
 
 		err = tx.Commit() // Проверяем ошибку при коммите
 		if err != nil {

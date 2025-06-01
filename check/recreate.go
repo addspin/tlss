@@ -1,14 +1,12 @@
 package check
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
-	"net/http"
 	"time"
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
+	"github.com/addspin/tlss/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 )
@@ -39,14 +37,12 @@ func RecreateCerts(checkRecreateTime time.Duration) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		log.Println("Сработал тикер, запуск проверки сертификатов")
+		log.Println("Запуск проверки на пересоздание сертификатов")
 		checkRecreateCerts()
 	}
 }
 
 func checkRecreateCerts() {
-
-	log.Println("Повторное создание сертификата начата")
 
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
@@ -56,80 +52,69 @@ func checkRecreateCerts() {
 	}
 	defer db.Close()
 
-	certificates := []models.Certs{}
-	// Извлекаем все записи с типом expired = 1 и помеченные на переслоздание recreate = 1
-	err = db.Select(&certificates, "SELECT * FROM certs WHERE cert_status = 1 and recreate = 1")
+	certificates := []models.CertsData{}
+	// Извлекаем все записи с типом expired = 1 или помеченные на пересоздание recreate = 1
+	err = db.Select(&certificates, "SELECT * FROM certs WHERE cert_status = 1 OR recreate = 1")
 	if err != nil {
 		log.Println("Ошибка запроса сертификатов:", err)
 		return
 	}
 
 	for _, cert := range certificates {
-		// Проверяем, доступен ли сервер
-		var onlineServerExists bool
-		err = db.Get(&onlineServerExists, "SELECT EXISTS(SELECT 1 FROM server WHERE id = ? AND server_status = ?)", cert.ServerId, "online")
+		// если сертификат сохраняется на сервере, то проверяем, доступен ли сервер
+		saveOnServer, err := utils.NewTestData().TestBool(cert.SaveOnServer)
 		if err != nil {
 			log.Println("Ошибка запроса сервера:", err)
 			continue
 		}
 
-		if !onlineServerExists {
-			log.Printf("Сервер для сертификата %s (ID: %d) недоступен, пересоздание невозможно", cert.Domain, cert.Id)
+		id, err := utils.NewTestData().TestInt(cert.Id)
+		if err != nil {
+			log.Println("Ошибка получения ID сертификата:", err)
 			continue
 		}
 
 		// Проверяем, просрочен ли сертификат
-		if cert.CertExpireTime < time.Now().Format(time.RFC3339) {
-			log.Printf("Сертификат %s (ID: %d) просрочен и будет перевыпущен", cert.Domain, cert.Id)
+		// if cert.CertExpireTime >= time.Now().Format(time.RFC3339) {
+		// 	log.Printf("Сертификат %s (ID: %d) еще не просрочен, пропускаем", cert.Domain, id)
+		// 	continue
+		// }
 
-			postData := cert
-
-			// Преобразуем данные в JSON
-			jsonData, err := json.Marshal(postData)
+		if saveOnServer {
+			// Извлекаем состояние сервера из базы
+			var onlineServerExists bool
+			err = db.Get(&onlineServerExists, "SELECT EXISTS(SELECT 1 FROM server WHERE id = ? AND server_status = ?)", cert.ServerId, "online")
 			if err != nil {
-				log.Printf("Ошибка преобразования данных сертификата %s в JSON: %v", cert.Domain, err)
+				log.Println("Ошибка запроса сервера:", err)
+				continue
+			}
+			// Проверяем, доступен ли сервер
+			if !onlineServerExists {
+				log.Printf("Сервер для сертификата %s (ID: %d) недоступен, пересоздание невозможно", cert.Domain, id)
 				continue
 			}
 
-			// Создаем HTTP/HTTPS запрос с API ключом
-			var req *http.Request
-			req, err = http.NewRequest("POST",
-				viper.GetString("app.protocol")+"://"+viper.GetString("app.hostname")+":"+viper.GetString("app.port")+"/add_certs",
-				bytes.NewBuffer(jsonData))
+			log.Printf("Сертификат %s (ID: %d) просрочен и будет перевыпущен с сохранением на сервер", cert.Domain, id)
+			certPEM, keyPEM, certErr := crypts.RecreateRSACertificate(&cert, db)
+
+			if certErr != nil {
+				log.Printf("Ошибка генерации сертификата: %v", certErr)
+				continue
+			}
+			saveOnServerUtil := utils.NewSaveOnServer()
+			err = saveOnServerUtil.SaveOnServer(&cert, db, certPEM, keyPEM)
 			if err != nil {
-				log.Printf("Ошибка создания запроса для сертификата %s: %v", cert.Domain, err)
+				log.Printf("Ошибка сохранения сертификата на сервер: %v", err)
 				continue
 			}
-
-			// if !viper.GetBool("app.useHTTPS") {
-			// 	req, err = http.NewRequest("POST",
-			// 		"http://"+viper.GetString("app.hostname")+":"+viper.GetString("app.port")+"/add_certs",
-			// 		bytes.NewBuffer(jsonData))
-			// 	if err != nil {
-			// 		log.Printf("Ошибка создания запроса для сертификата %s: %v", cert.Domain, err)
-			// 		continue
-			// 	}
-			// }
-
-			// Устанавливаем заголовки
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("X-API-Key", crypts.GetInternalAPIKey())
-
-			// Отправляем запрос
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Printf("Ошибка отправки запроса для сертификата %s: %v", cert.Domain, err)
+		} else {
+			// если сертификат не сохраняется на сервере, то пересоздаем его без копирования на сервер
+			log.Printf("Сертификат %s (ID: %d) просрочен и будет перевыпущен без сохранения на сервер", cert.Domain, id)
+			_, _, certErr := crypts.RecreateRSACertificate(&cert, db)
+			if certErr != nil {
+				log.Printf("Ошибка генерации сертификата: %v", certErr)
 				continue
 			}
-			defer resp.Body.Close()
-
-			if resp.StatusCode != http.StatusOK {
-				log.Printf("Ошибка при создании сертификата %s: статус %d", cert.Domain, resp.StatusCode)
-				continue
-			}
-
-			log.Printf("Сертификат %s успешно отправлен на пересоздание", cert.Domain)
 		}
 	}
 }

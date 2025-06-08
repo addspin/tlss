@@ -28,8 +28,13 @@
           let name = PARAM_NAMES[param_index];
           let value = PARAM_VALUES[param_index];
 
+          // Автоматическое преобразование числовых строк в числа
+          if (typeof value === 'string' && !isNaN(value) && value !== "" && /^\d+$/.test(value)) {
+              value = Number(value);
+          }
+
           let parse_value = api.getAttributeValue(elt, "parse-types");
-          if (parse_value === "true" ) {
+          if (parse_value === "true") {
               let includedElt = getIncludedElement(elt);
               value = parseValues(elt, includedElt, name, value);
           }
@@ -44,24 +49,39 @@
       }
 
       let result = JSON.stringify(resultingObject);
-      return result
+      return result;
   }
 
   function parseValues(elt, includedElt, name, value) {
       let match = `[name="${name}"]`;
-
-      let elements = elt.closest('form').querySelectorAll(match); // find the closest owning form and use this as the root element for finding matches
+      let elements = [];
+      
+      // Безопасный поиск в форме (если форма существует)
+      const form = elt.closest('form');
+      if (form) {
+          elements = form.querySelectorAll(match);
+      } else {
+          // Если нет формы, ищем в документе от текущего элемента
+          elements = document.querySelectorAll(match);
+      }
 
       if (!elements.length && includedElt !== undefined) {
-          // "hx-include" allows CSS query selectors which may return an specific node, e.g a single input
+          // "hx-include" позволяет использовать CSS-селекторы
           if (includedElt.matches(match)) {
-              elements = [includedElt]
+              elements = [includedElt];
           } else {
               elements = includedElt.querySelectorAll(match);
           }
       }
+      
+      // Если элемент не найден, но это числовая строка, преобразуем значение
+      if (!elements.length && typeof value === 'string' && !isNaN(value) && value !== "" && /^\d+$/.test(value)) {
+          return Number(value);
+      }
 
-      if (!Array.isArray(value)) return parseElementValue(elements[0], value);
+      if (!Array.isArray(value)) {
+          return parseElementValue(elements[0], value);
+      }
       
       for (let index = 0; index < value.length; index++) {
           let array_elt = elements[index];
@@ -72,6 +92,14 @@
   }
 
   function parseElementValue(elt, value) {
+      // Числовое преобразование для строк с атрибутом data-numeric="true"
+      if (elt && elt.getAttribute('data-numeric') === 'true') {
+          if (typeof value === 'string' && !isNaN(value) && value !== "") {
+              return Number(value);
+          }
+      }
+      
+      // Если элемент существует
       if (elt) {
           if (elt.type === "checkbox") {
               return elt.checked;
@@ -87,7 +115,24 @@
               // Если это не число, возвращаем строку как есть
               return value;
           }
+          // Добавляем обработку кнопок
+          if (elt.tagName === "BUTTON" || elt.type === "submit" || elt.type === "button") {
+              // Проверяем, является ли значение числом
+              if (!isNaN(value) && value !== "" && /^\d+$/.test(value)) {
+                  return Number(value);
+              }
+          }
       }
+      
+      // Обрабатываем любые числовые строки, даже если элемент не найден
+      if (typeof value === 'string' && !isNaN(value) && value !== "" && /^\d+$/.test(value)) {
+          return Number(value);
+      }
+      
+      if (elt && elt.getAttribute('data-string') === 'true') {
+          return String(value);
+      }
+      
       return value;
   }
 

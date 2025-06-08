@@ -3,8 +3,6 @@ package controllers
 import (
 	"fmt"
 	"log"
-	"strconv"
-	"strings"
 
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -38,9 +36,9 @@ func RollbackUserCert(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		if data.Id == "" ||
-			data.EntityId == "" ||
-			data.DaysLeft == "" {
+		if data.Id == 0 ||
+			data.EntityId == 0 ||
+			data.DaysLeft == 0 {
 
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
@@ -50,31 +48,9 @@ func RollbackUserCert(c fiber.Ctx) error {
 		tx := db.MustBegin()
 		// Выносим значения из запроса
 		currentTime := ""
-		certID, err := strconv.Atoi(data.Id)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Invalid cert ID value",
-			})
-		}
-		entityID, err := strconv.Atoi(data.EntityId)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Invalid entity ID value",
-			})
-		}
 
-		daysLeftTest, err := strconv.Atoi(data.DaysLeft)
-		data.DaysLeft = strings.TrimSpace(data.DaysLeft)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Invalid days left value",
-			})
-		}
 		var certStatus int
-		if daysLeftTest <= 0 {
+		if data.DaysLeft <= 0 {
 			certStatus = 1
 		} else {
 			certStatus = 0
@@ -82,7 +58,7 @@ func RollbackUserCert(c fiber.Ctx) error {
 
 		// Получаем серийный номер и домен сертификата для удаления из user OCSP
 		var serialNumber, commonName string
-		err = db.QueryRow("SELECT serial_number, common_name FROM user_certs WHERE id = ? AND entity_id = ?", certID, entityID).Scan(&serialNumber, &commonName)
+		err = db.QueryRow("SELECT serial_number, common_name FROM user_certs WHERE id = ? AND entity_id = ?", data.Id, data.EntityId).Scan(&serialNumber, &commonName)
 		if err != nil {
 			tx.Rollback()
 			return c.Status(500).JSON(fiber.Map{
@@ -96,7 +72,7 @@ func RollbackUserCert(c fiber.Ctx) error {
 			cert_status = ?, 
 			data_revoke = ?,
 			reason_revoke = ?
-			WHERE id = ? AND entity_id = ?`, certStatus, currentTime, "", certID, entityID)
+			WHERE id = ? AND entity_id = ?`, certStatus, currentTime, "", data.Id, data.EntityId)
 		if err != nil {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{

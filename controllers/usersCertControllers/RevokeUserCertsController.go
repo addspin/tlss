@@ -40,7 +40,7 @@ func RevokeUserCertsController(c fiber.Ctx) error {
 
 	// }
 	if c.Method() == "GET" {
-		entityList := []models.Entity{}
+		entityList := []models.EntityData{}
 		err := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
 		if err != nil {
 			log.Fatal(err)
@@ -70,12 +70,12 @@ func UserCertListRevokeController(c fiber.Ctx) error {
 
 	if c.Method() == "GET" {
 		// Получаем ID сервера из запроса
-		entityId := c.Query("entityId")
+		EntityId := c.Query("EntityId")
 		// Получаем список сертификатов
-		certList := []models.UserCerts{}
-		if entityId != "" {
+		certList := []models.UserCertsData{}
+		if EntityId != "" {
 			// Если указан ID сервера, фильтруем сертификаты по серверу кроме результатов 2 - revoked
-			err = db.Select(&certList, "SELECT id, entity_id, common_name, algorithm, key_length, cert_create_time, days_left, data_revoke, reason_revoke FROM user_certs WHERE entity_id = ? AND cert_status IN (2)", entityId)
+			err = db.Select(&certList, "SELECT id, entity_id, common_name, algorithm, key_length, cert_create_time, days_left, data_revoke, reason_revoke FROM user_certs WHERE entity_id = ? AND cert_status IN (2)", EntityId)
 			if err != nil {
 				log.Fatal(err)
 			}

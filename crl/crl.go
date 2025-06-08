@@ -98,7 +98,7 @@ func GenerateCRL() error {
 	}
 
 	// Получаем отозванные сертификаты из базы данных
-	var revokedCerts []models.Certs
+	var revokedCerts []models.CertsData
 	err = db.Select(&revokedCerts, `
 		SELECT 
 			id, cert_status, public_key, 

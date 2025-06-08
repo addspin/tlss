@@ -34,11 +34,11 @@
                       <td>{{ .ReasonRevoke }}</td>
                       <!-- Rollback -->
                       <td>
-                        <button class="select_cert_revoke"  type="number" hx-trigger='rollback' hx-post="/rollback_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                        <button class="select_cert_revoke"  type="number" hx-trigger='rollback' hx-post="/rollback_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         hx-vals='js:{
-                          "id": "{{ .Id }}", 
-                          "entity_id": "{{ .EntityId }}",
-                          "days_left": "{{ .DaysLeft }}"
+                          "Id": {{ .Id }}, 
+                          "EntityId": {{ .EntityId }},
+                          "DaysLeft": {{ .DaysLeft }}
                         }'
                         onClick="const { value: commonName } = Swal.fire({
                         showClass: {
@@ -77,7 +77,7 @@
                         >Rollback</td>
                       <!-- Remove -->
                       <td>
-                        <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                        <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         onClick="const { value: commonName } = Swal.fire({
                         showClass: {
                         popup: `

@@ -98,7 +98,7 @@ func GenerateCRLUser() error {
 	}
 
 	// Получаем отозванные сертификаты из базы данных
-	var revokedCerts []models.UserCerts
+	var revokedCerts []models.UserCertsData
 	err = db.Select(&revokedCerts, `
 		SELECT 
 			id, cert_status, public_key, 

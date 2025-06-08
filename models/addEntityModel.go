@@ -1,16 +1,10 @@
 package models
 
-type Entity struct {
-	Id                int    `db:"id"`
-	EntityName        string `db:"entity_name"`
-	EntityDescription string `db:"entity_description"`
-}
-
 // структура для добавления сервера
 type EntityData struct {
-	Id                string `json:"id"`
-	EntityName        string `json:"entity_name"`
-	EntityDescription string `json:"entity_description"`
+	Id                int    `json:"Id" db:"id"`
+	EntityName        string `json:"EntityName" db:"entity_name"`
+	EntityDescription string `json:"EntityDescription" db:"entity_description"`
 }
 
 var SchemaEntity = `

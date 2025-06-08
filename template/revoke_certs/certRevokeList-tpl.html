@@ -35,14 +35,13 @@
                       <td>{{ .ReasonRevoke }}</td>
                       <!-- Rollback -->
                       <td>
-                        <button class="select_cert_revoke"  type="number" hx-trigger='rollback' hx-post="/rollback_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                        <button class="select_cert_revoke"  type="number" hx-trigger='rollback' hx-post="/rollback_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         hx-vals='js:{
-                          "id": "{{ .Id }}", 
-                          "server_id": "{{ .ServerId }}",
-                          "days_left": "{{ .DaysLeft }}",
-                          "app_type": "{{ .AppType }}",
-                          "domain": "{{ .Domain }}",
-                          "save_on_server": document.querySelector(&#34;.cert_id_{{ .Id }} #SwitchSaveOnServer&#34;).checked
+                          "id": {{ .Id }}, 
+                          "ServerId": {{ .ServerId }},
+                          "DaysLeft": {{ .DaysLeft }},
+                          "AppType": "{{ .AppType }}",
+                          "SaveOnServer": document.querySelector(&#34;.cert_id_{{ .Id }} #SwitchSaveOnServer&#34;).checked
                         }'
                         onClick="const { value: domain } = Swal.fire({
                         showClass: {
@@ -82,12 +81,12 @@
                       <td>
                         <div class="form-check form-switch">
                           <label class="form-check-label" for="SwitchSaveOnServer">Save on server</label>
-                          <input class="form-check-input" type="checkbox" role="switch" id="SwitchSaveOnServer" name="saveOnServer" checked>
+                          <input class="form-check-input" type="checkbox" role="switch" id="SwitchSaveOnServer" name="SaveOnServer" checked>
                         </div>
                       </td>
                       <!-- Remove -->
                       <td>
-                        <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                        <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         onClick="const { value: domain } = Swal.fire({
                         showClass: {
                         popup: `

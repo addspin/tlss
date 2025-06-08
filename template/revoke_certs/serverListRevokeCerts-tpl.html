@@ -7,9 +7,9 @@
                 hx-get="/cert_list_revoke" 
                 hx-target="#response" 
                 hx-ext="json-enc-custom" 
-                parse-types="false"
-                hx-vals='{"serverId": "{{ .Id }}"}'
-                onclick="var input = document.getElementById('serverId'); 
+                parse-types="true"
+                hx-vals='js:{"ServerId": {{ .Id }}}'
+                onclick="var input = document.getElementById('ServerId'); 
                          input.value = '{{ .Id }}'; 
                          input.setAttribute('value', '{{ .Id }}'); ">
           {{ .Hostname }}

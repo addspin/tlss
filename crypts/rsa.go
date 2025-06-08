@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/addspin/tlss/models"
-	"github.com/addspin/tlss/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 )
@@ -64,7 +63,7 @@ func standardizeSerialNumber(serialNumber *big.Int) string {
 // Генерирует RSA сертификат, подписанный промежуточным CA,
 // и сохраняет его в базу данных
 func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPem []byte, err error) {
-	testData := utils.NewTestData()
+
 	// Получаем промежуточный CA сертификат из базы данных
 	var subCA models.SubCA
 	err = db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
@@ -104,11 +103,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	}
 
 	// Генерируем новую RSA ключевую пару для сертификата
-	keyLength, err := testData.TestInt(data.KeyLength)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить длину ключа: %w", err)
-	}
-	privateKey, err := rsa.GenerateKey(rand.Reader, keyLength)
+	privateKey, err := rsa.GenerateKey(rand.Reader, data.KeyLength)
 	if err != nil {
 		return nil, nil, fmt.Errorf("не удалось сгенерировать RSA ключевую пару: %w", err)
 	}
@@ -125,21 +120,14 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 
 	// Подготавливаем шаблон сертификата
 	//dnsNames = SAN
-	wildcard, err := testData.TestBool(data.Wildcard)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить флаг wildcard: %w", err)
-	}
-	ttl, err := testData.TestInt(data.TTL)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить TTL: %w", err)
-	}
+
 	dnsNames := []string{data.Domain}
-	if wildcard {
+	if data.Wildcard {
 		dnsNames = append(dnsNames, "*."+data.Domain)
 	}
 
 	now := time.Now()
-	expiry := now.AddDate(0, 0, ttl)
+	expiry := now.AddDate(0, 0, data.TTL)
 
 	template := &x509.Certificate{
 		SerialNumber: serialNumber,
@@ -258,7 +246,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 			app_type, organization, organization_unit, email, public_key, private_key,
 			cert_create_time, cert_expire_time, serial_number, data_revoke, reason_revoke, cert_status, days_left
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		data.ServerId, data.Algorithm, data.KeyLength, ttl, data.Domain, wildcard, data.Recreate, data.SaveOnServer,
+		data.ServerId, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.Wildcard, data.Recreate, data.SaveOnServer,
 		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 		data.AppType, data.Organization, data.OrganizationUnit, data.Email,
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339), data.SerialNumber, "", "", 0, daysLeft)
@@ -268,11 +256,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	}
 	log.Printf("Новый сертификат для домена %s добавлен в базу данных", data.Domain)
 	// если не установлен флаг SaveOnServer, комитим транзакцию в базу и завершаем работу
-	saveOnServer, err := utils.NewTestData().TestBool(data.SaveOnServer)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить флаг saveOnServer: %w", err)
-	}
-	if !saveOnServer {
+	if !data.SaveOnServer {
 		// Фиксируем транзакцию перед возвратом
 		if err = tx.Commit(); err != nil {
 			return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
@@ -443,14 +427,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	}
 
 	// Генерируем новую RSA ключевую пару для сертификата
-
-	log.Println("data.KeyLength:", data.KeyLength)
-	testData := utils.NewTestData()
-	keyLength, err := testData.TestInt(data.KeyLength)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить длину ключа: %w", err)
-	}
-	privateKey, err := rsa.GenerateKey(rand.Reader, keyLength)
+	privateKey, err := rsa.GenerateKey(rand.Reader, data.KeyLength)
 	if err != nil {
 		return nil, nil, fmt.Errorf("не удалось сгенерировать RSA ключевую пару: %w", err)
 	}
@@ -468,21 +445,13 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	// Подготавливаем шаблон сертификата
 	//dnsNames = SAN
 
-	wildcard, err := testData.TestBool(data.Wildcard)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить флаг wildcard: %w", err)
-	}
-	ttl, err := testData.TestInt(data.TTL)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить TTL: %w", err)
-	}
 	dnsNames := []string{data.Domain}
-	if wildcard {
+	if data.Wildcard {
 		dnsNames = append(dnsNames, "*."+data.Domain)
 	}
 
 	now := time.Now()
-	expiry := now.AddDate(0, 0, ttl)
+	expiry := now.AddDate(0, 0, data.TTL)
 
 	template := &x509.Certificate{
 		SerialNumber: serialNumber,
@@ -572,7 +541,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	            public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
 	            serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?
 	        WHERE domain = ? AND server_id = ?`,
-		data.Algorithm, keyLength, ttl, wildcard, data.Recreate, data.SaveOnServer,
+		data.Algorithm, data.KeyLength, data.TTL, data.Wildcard, data.Recreate, data.SaveOnServer,
 		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 		data.AppType, data.Organization, data.OrganizationUnit, data.Email,
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
@@ -582,18 +551,10 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		tx.Rollback()
 		return nil, nil, fmt.Errorf("не удалось обновить существующий сертификат в базе данных: %w", err)
 	}
-	id, err := testData.TestInt(data.Id)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить ID сертификата: %w", err)
-	}
-	log.Printf("Сертификат для домена %s обновлен в базе данных (ID: %d)", data.Domain, id)
 
-	saveOnServer, err := testData.TestBool(data.SaveOnServer)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить флаг saveOnServer: %w", err)
-	}
+	log.Printf("Сертификат для домена %s обновлен в базе данных (ID: %d)", data.Domain, data.Id)
 
-	if !saveOnServer {
+	if !data.SaveOnServer {
 		// Фиксируем транзакцию перед возвратом
 		if err = tx.Commit(); err != nil {
 			return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)

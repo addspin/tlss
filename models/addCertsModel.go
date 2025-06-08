@@ -1,58 +1,58 @@
 package models
 
-type Certs struct {
-	Id               int    `db:"id"`
-	ServerId         int    `db:"server_id"`
-	Algorithm        string `db:"algorithm"`
-	KeyLength        int    `db:"key_length"`
-	TTL              int    `db:"ttl"`
-	Domain           string `db:"domain"`
-	Wildcard         bool   `db:"wildcard"`
-	Recreate         bool   `db:"recreate"`
-	ServerStatus     string `db:"server_status"`
-	SaveOnServer     bool   `db:"save_on_server"`
-	CommonName       string `db:"common_name"`
-	CountryName      string `db:"country_name"`
-	StateProvince    string `db:"state_province"`
-	LocalityName     string `db:"locality_name"`
-	AppType          string `db:"app_type"`
-	Organization     string `db:"organization"`
-	OrganizationUnit string `db:"organization_unit"`
-	Email            string `db:"email"`
-	// Password         string `db:"password"`
-	// CaName           string `db:"cert_ca_name"`
-	// CaKey            string `db:"cert_ca_key"`
-	PublicKey      string `db:"public_key"`
-	PrivateKey     string `db:"private_key"`
-	CertCreateTime string `db:"cert_create_time"`
-	CertExpireTime string `db:"cert_expire_time"`
-	DaysLeft       int    `db:"days_left"`
-	SerialNumber   string `db:"serial_number"`
-	DataRevoke     string `db:"data_revoke"`
-	ReasonRevoke   string `db:"reason_revoke"`
-	CertStatus     int    `db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
-}
+// type Certs struct {
+// 	Id               int    `db:"id"`
+// 	ServerId         int    `db:"server_id"`
+// 	Algorithm        string `db:"algorithm"`
+// 	KeyLength        int    `db:"key_length"`
+// 	TTL              int    `db:"ttl"`
+// 	Domain           string `db:"domain"`
+// 	Wildcard         bool   `db:"wildcard"`
+// 	Recreate         bool   `db:"recreate"`
+// 	ServerStatus     string `db:"server_status"`
+// 	SaveOnServer     bool   `db:"save_on_server"`
+// 	CommonName       string `db:"common_name"`
+// 	CountryName      string `db:"country_name"`
+// 	StateProvince    string `db:"state_province"`
+// 	LocalityName     string `db:"locality_name"`
+// 	AppType          string `db:"app_type"`
+// 	Organization     string `db:"organization"`
+// 	OrganizationUnit string `db:"organization_unit"`
+// 	Email            string `db:"email"`
+// 	// Password         string `db:"password"`
+// 	// CaName           string `db:"cert_ca_name"`
+// 	// CaKey            string `db:"cert_ca_key"`
+// 	PublicKey      string `db:"public_key"`
+// 	PrivateKey     string `db:"private_key"`
+// 	CertCreateTime string `db:"cert_create_time"`
+// 	CertExpireTime string `db:"cert_expire_time"`
+// 	DaysLeft       int    `db:"days_left"`
+// 	SerialNumber   string `db:"serial_number"`
+// 	DataRevoke     string `db:"data_revoke"`
+// 	ReasonRevoke   string `db:"reason_revoke"`
+// 	CertStatus     int    `db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
+// }
 
 // структура для добавления сертификата
 type CertsData struct {
-	Id               string `json:"id" db:"id"`
-	ServerId         string `json:"server_id" db:"server_id"`
-	Algorithm        string `json:"algorithm" db:"algorithm"`
-	KeyLength        string `json:"key_length" db:"key_length"`
-	TTL              string `json:"ttl" db:"ttl"`
-	Domain           string `json:"domain" db:"domain"`
-	Wildcard         string `json:"wildcard" db:"wildcard"`
-	Recreate         string `json:"recreate" db:"recreate"`
-	ServerStatus     string `json:"server_status" db:"server_status"`
-	SaveOnServer     string `json:"save_on_server" db:"save_on_server"`
-	CommonName       string `json:"common_name" db:"common_name"`
-	CountryName      string `json:"country_name" db:"country_name"`
-	StateProvince    string `json:"state_province" db:"state_province"`
-	LocalityName     string `json:"locality_name" db:"locality_name"`
-	AppType          string `json:"app_type" db:"app_type"`
-	Organization     string `json:"organization" db:"organization"`
-	OrganizationUnit string `json:"organization_unit" db:"organization_unit"`
-	Email            string `json:"email" db:"email"`
+	Id               int    `json:"id" db:"id"`
+	ServerId         int    `json:"ServerId" db:"server_id"`
+	Algorithm        string `json:"Algorithm" db:"algorithm"`
+	KeyLength        int    `json:"KeyLength" db:"key_length"`
+	TTL              int    `json:"TTL" db:"ttl"`
+	Domain           string `json:"Domain" db:"domain"`
+	Wildcard         bool   `json:"Wildcard" db:"wildcard"`
+	Recreate         bool   `json:"Recreate" db:"recreate"`
+	ServerStatus     string `json:"ServerStatus" db:"server_status"` // online, offline
+	SaveOnServer     bool   `json:"SaveOnServer" db:"save_on_server"`
+	CommonName       string `json:"CommonName" db:"common_name"`
+	CountryName      string `json:"CountryName" db:"country_name"`
+	StateProvince    string `json:"StateProvince" db:"state_province"`
+	LocalityName     string `json:"LocalityName" db:"locality_name"`
+	AppType          string `json:"AppType" db:"app_type"`
+	Organization     string `json:"Organization" db:"organization"`
+	OrganizationUnit string `json:"OrganizationUnit" db:"organization_unit"`
+	Email            string `json:"Email" db:"email"`
 	// Password         string `json:"password"`
 	// CaName           string `json:"cert_ca_name"`
 	// CaKey            string `json:"cert_ca_key"`
@@ -60,11 +60,11 @@ type CertsData struct {
 	PrivateKey     string `json:"private_key" db:"private_key"`
 	CertCreateTime string `json:"cert_create_time" db:"cert_create_time"`
 	CertExpireTime string `json:"cert_expire_time" db:"cert_expire_time"`
-	DaysLeft       string `json:"days_left" db:"days_left"`
+	DaysLeft       int    `json:"DaysLeft" db:"days_left"`
 	SerialNumber   string `json:"serial_number" db:"serial_number"`
 	DataRevoke     string `json:"data_revoke" db:"data_revoke"`
-	ReasonRevoke   string `json:"reason_revoke" db:"reason_revoke"`
-	CertStatus     string `json:"cert_status" db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
+	ReasonRevoke   string `json:"ReasonRevoke" db:"reason_revoke"`
+	CertStatus     int    `json:"cert_status" db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
 }
 
 var SchemaCerts = `

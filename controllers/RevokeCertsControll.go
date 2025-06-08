@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/addspin/tlss/models"
-	"github.com/addspin/tlss/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -71,25 +70,19 @@ func CertListRevokeController(c fiber.Ctx) error {
 
 	if c.Method() == "GET" {
 		// Получаем ID сервера из запроса
-		serverId := c.Query("serverId")
+		ServerId := c.Query("ServerId")
 		// Получаем список сертификатов
 		certList := []models.CertsData{}
-		if serverId != "" {
+		if ServerId != "" {
 			// Если указан ID сервера, фильтруем сертификаты по серверу кроме результатов 2 - revoked
-			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, ttl, domain, wildcard, recreate, common_name, country_name, state_province, locality_name, app_type, organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM certs WHERE server_id = ? AND cert_status IN (2)", serverId)
+			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, ttl, domain, wildcard, recreate, common_name, country_name, state_province, locality_name, app_type, organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM certs WHERE server_id = ? AND cert_status IN (2)", ServerId)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 		// Обрабатываем wildcard домены для отображения
-		log.Println("certList:", certList)
 		for i := range certList {
-			wildcard, err := utils.NewTestData().TestBool(certList[i].Wildcard)
-			log.Println("wildcard:", wildcard)
-			if err != nil {
-				log.Println("Ошибка запроса сервера:", err)
-				continue
-			}
+			wildcard := certList[i].Wildcard
 			if wildcard {
 				certList[i].Domain = "*." + certList[i].Domain
 			}

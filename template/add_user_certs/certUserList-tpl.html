@@ -50,11 +50,11 @@
                         </select>
                       </td>
                       <td>
-                        <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                        <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         hx-vals='js:{
-                            "id": "{{ .Id }}", 
-                            "entity_id": "{{ .EntityId }}",
-                            "reason_revoke": document.getElementById("revoke_reason_{{ .Id }}").value
+                            "Id": {{ .Id }}, 
+                            "EntityId": {{ .EntityId }},
+                            "ReasonRevoke": document.getElementById("revoke_reason_{{ .Id }}").value
                         }'
                         onClick="const { value: commonName } = Swal.fire({
                         showClass: {
@@ -95,7 +95,7 @@
                       <td></td>
                       <!-- Remove -->
                       <td>
-                        <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                        <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         onClick="const { value: commonName } = Swal.fire({
                         showClass: {
                         popup: `

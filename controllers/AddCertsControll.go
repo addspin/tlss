@@ -27,7 +27,8 @@ func AddCertsControll(c fiber.Ctx) error {
 
 	if c.Method() == "POST" {
 		data := new(models.CertsData)
-
+		// rawBody := c.Body()
+		// log.Printf("Сырой JSON: %s", string(rawBody))
 		// SaveOnServer := c.Query("saveOnServer")
 		// ServerStatus := c.Query("serverStatus")
 		// log.Println("SaveOnServer", SaveOnServer, "ServerStatus", ServerStatus)
@@ -39,9 +40,9 @@ func AddCertsControll(c fiber.Ctx) error {
 		// 	})
 		// }
 		// c.Bind().JSON(data)
-		// log.Println(data.SaveOnServer, data.ServerStatus, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.AppType, data.Organization, data.OrganizationUnit, data.Email)
 
 		err := c.Bind().JSON(data)
+		log.Println(data.SaveOnServer, data.ServerStatus, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.AppType, data.Organization, data.OrganizationUnit, data.Email)
 		if err != nil {
 			return c.Status(400).JSON(
 				fiber.Map{"status": "error",
@@ -51,51 +52,67 @@ func AddCertsControll(c fiber.Ctx) error {
 		}
 
 		// Если сервер недоступен и стоит "сохранять на сервере", тогда запретить создание.
-		saveOnServer, err := utils.NewTestData().TestBool(data.SaveOnServer)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Error getting server status: " + err.Error(),
-			})
-		}
-		if data.ServerStatus == "offline" && saveOnServer {
+		// saveOnServer, err := utils.NewTestData().TestBool(data.SaveOnServer)
+		// if err != nil {
+		// 	return c.Status(400).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Error getting server status: " + err.Error(),
+		// 	})
+		// }
+		if data.ServerStatus == "offline" && data.SaveOnServer {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "You can't save certificate on offline server, disable - save on server",
 			})
 		}
 
-		keyLength, err := utils.NewTestData().TestInt(data.KeyLength)
-		if err != nil {
+		// keyLength, err := utils.NewTestData().TestInt(data.KeyLength)
+		// if err != nil {
+		// 	return c.Status(400).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Error getting server status: " + err.Error(),
+		// 	})
+		// }
+		// ttl, err := utils.NewTestData().TestInt(data.TTL)
+		// if err != nil {
+		// 	return c.Status(400).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Error getting server status: " + err.Error(),
+		// 	})
+		// }
+		// serverId, err := utils.NewTestData().TestInt(data.ServerId)
+		// if err != nil {
+		// 	return c.Status(400).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Error getting server status: " + err.Error(),
+		// 	})
+		// }
+		if data.Algorithm != "RSA" && data.Algorithm != "ECDSA" && data.Algorithm != "Ed25519" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Error getting server status: " + err.Error(),
+				"message": "Invalid algorithm",
 			})
 		}
-		ttl, err := utils.NewTestData().TestInt(data.TTL)
-		if err != nil {
+		if data.KeyLength != 1024 && data.KeyLength != 2048 && data.KeyLength != 4096 {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Error getting server status: " + err.Error(),
+				"message": "Invalid key length",
 			})
 		}
-		serverId, err := utils.NewTestData().TestInt(data.ServerId)
-		if err != nil {
+		if data.AppType != "haproxy" && data.AppType != "nginx" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Error getting server status: " + err.Error(),
+				"message": "Invalid app type",
 			})
 		}
-		if data.Algorithm == "" || // Type
-			keyLength == 0 || // Lenght
-			ttl == 0 || // TTL
+
+		if data.TTL == 0 || // TTL
 			data.Domain == "" || // Domain
-			serverId == 0 || // ServerId
+			data.ServerId == 0 || // ServerId
 			data.CommonName == "" || // Common Name
 			data.CountryName == "" || // Country Name
 			data.StateProvince == "" || // State Province
 			data.LocalityName == "" || // Locality Name
-			data.AppType == "" || // App Type
 			data.Organization == "" || // Organization
 			data.OrganizationUnit == "" || // Organization Unit
 			data.Email == "" { // Email
@@ -118,7 +135,7 @@ func AddCertsControll(c fiber.Ctx) error {
 					"message": "Ошибка генерации сертификата: " + certErr.Error(),
 				})
 			}
-			if saveOnServer {
+			if data.SaveOnServer {
 				saveOnServer := utils.NewSaveOnServer()
 				err = saveOnServer.SaveOnServer(data, db, certPEM, keyPEM)
 				if err != nil {
@@ -226,13 +243,7 @@ func CertListController(c fiber.Ctx) error {
 		}
 		// Обрабатываем wildcard домены для отображения
 		if len(certList) > 0 {
-			wildcard, err := utils.NewTestData().TestBool(certList[0].Wildcard)
-			if err != nil {
-				return c.Status(405).JSON(fiber.Map{
-					"status":  "error",
-					"message": "Method not allowed",
-				})
-			}
+			wildcard := certList[0].Wildcard
 			for i := range certList {
 				if wildcard {
 					certList[i].Domain = "*." + certList[i].Domain
@@ -260,13 +271,7 @@ func CertListController(c fiber.Ctx) error {
 		}
 		// Обрабатываем wildcard домены для отображения
 		if len(certList) > 0 {
-			wildcard, err := utils.NewTestData().TestBool(certList[0].Wildcard)
-			if err != nil {
-				return c.Status(405).JSON(fiber.Map{
-					"status":  "error",
-					"message": "Method not allowed",
-				})
-			}
+			wildcard := certList[0].Wildcard
 			for i := range certList {
 				if wildcard {
 					certList[i].Domain = "*." + certList[i].Domain

@@ -35,12 +35,12 @@
                       <td>{{ .KeyLength }} bits</td>
                       <!-- Status -->
                       <td>
-                        <div class="state-{{ if eq .CertStatus "0" }}valid-certs{{ else if eq .CertStatus "1" }}expired-certs{{ else if eq .CertStatus "2" }}revoked-certs{{ end }}" >
-                          {{ if eq .CertStatus "0" }}valid{{ else if eq .CertStatus "1" }}expired{{ else if eq .CertStatus "2" }}revoked{{ end }}
+                        <div class="state-{{ if eq .CertStatus 0 }}valid-certs{{ else if eq .CertStatus 1 }}expired-certs{{ else if eq .CertStatus 2 }}revoked-certs{{ end }}" >
+                          {{ if eq .CertStatus 0 }}valid{{ else if eq .CertStatus 1 }}expired{{ else if eq .CertStatus 2 }}revoked{{ end }}
                         </div>
                       </td>
                       <!-- Recreate -->
-                      <td>{{ if eq .Recreate "true" }}Yes{{ else }}No{{ end }}</td>
+                      <td>{{ if eq .Recreate true }}Yes{{ else }}No{{ end }}</td>
                       <!-- Revoke -->
                        <td>
                         <!-- <label class="select_title">TEST</label> -->
@@ -51,11 +51,11 @@
                         </select>
                       </td>
                       <td>
-                        <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                        <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         hx-vals='js:{
-                            "id": "{{ .Id }}", 
-                            "server_id": "{{ .ServerId }}",
-                            "reason_revoke": document.getElementById("revoke_reason_{{ .Id }}").value
+                            "id": {{ .Id }}, 
+                            "ServerId": {{ .ServerId }},
+                            "ReasonRevoke": document.getElementById("revoke_reason_{{ .Id }}").value
                         }'
                         onClick="const { value: domain } = Swal.fire({
                         showClass: {
@@ -96,7 +96,8 @@
                       <td></td>
                       <!-- Remove -->
                       <td>
-                        <button class="btn-trash" name="id" value="{{ .Id }}"  hx-trigger='remove' hx-post="/remove_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                        <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
+                       
                         onClick="const { value: domain } = Swal.fire({
                         showClass: {
                         popup: `

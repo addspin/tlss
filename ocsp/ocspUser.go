@@ -137,7 +137,7 @@ func (r *UserOCSPResponder) UpdateUserOCSPData() error {
 	nextUpdateStr := nextUpdate.Format(time.RFC3339)
 
 	// Запрашиваем из БД все сертификаты с статусом 2 (отозванные)
-	var certs []models.UserCerts
+	var certs []models.UserCertsData
 	err := r.db.Select(&certs, `
 		SELECT 
 			id, common_name, cert_create_time, cert_expire_time, days_left,

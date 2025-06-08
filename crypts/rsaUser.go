@@ -62,7 +62,7 @@ func UserStandardizeSerialNumber(serialNumber *big.Int) string {
 
 // Генерирует RSA сертификат, подписанный промежуточным CA,
 // и сохраняет его в базу данных
-func GenerateUserRSACertificate(data *models.UserCerts, db *sqlx.DB) error {
+func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 
 	// Получаем промежуточный CA сертификат из базы данных
 	var subCA models.SubCA
@@ -197,7 +197,7 @@ func GenerateUserRSACertificate(data *models.UserCerts, db *sqlx.DB) error {
 
 	// Вычисляем количество дней до истечения сертификата
 	daysLeft := int(expiry.Sub(now).Hours() / 24)
-	data.DaysLeft = daysLeft
+	// data.DaysLeft = daysLeft
 
 	// Сохраняем сертификат в БД
 	tx := db.MustBegin()
@@ -231,7 +231,7 @@ func GenerateUserRSACertificate(data *models.UserCerts, db *sqlx.DB) error {
 			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 			data.Organization, data.OrganizationUnit, data.Email, data.Password,
 			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, data.DaysLeft,
+			data.SerialNumber, "", "", 0, daysLeft,
 			data.CommonName, data.EntityId)
 		if err != nil {
 			tx.Rollback()
@@ -251,7 +251,7 @@ func GenerateUserRSACertificate(data *models.UserCerts, db *sqlx.DB) error {
 			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 			data.Organization, data.OrganizationUnit, data.Email, data.Password,
 			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, data.DaysLeft)
+			data.SerialNumber, "", "", 0, daysLeft)
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("не удалось добавить новый сертификат в базу данных: %w", err)

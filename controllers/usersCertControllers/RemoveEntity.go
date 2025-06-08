@@ -35,7 +35,7 @@ func RemoveEntity(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		if data.Id == "" {
+		if data.Id == 0 {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Missing required fields",

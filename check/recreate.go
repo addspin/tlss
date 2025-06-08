@@ -53,8 +53,8 @@ func checkRecreateCerts() {
 	defer db.Close()
 
 	certificates := []models.CertsData{}
-	// Извлекаем все записи с типом expired = 1 или помеченные на пересоздание recreate = 1
-	err = db.Select(&certificates, "SELECT * FROM certs WHERE cert_status = 1 OR recreate = 1")
+	// Извлекаем все записи с типом cert_status = 1 или помеченные на пересоздание recreate = 1
+	err = db.Select(&certificates, "SELECT * FROM certs WHERE cert_status = 1 AND recreate = 1")
 	if err != nil {
 		log.Println("Ошибка запроса сертификатов:", err)
 		return
@@ -62,25 +62,7 @@ func checkRecreateCerts() {
 
 	for _, cert := range certificates {
 		// если сертификат сохраняется на сервере, то проверяем, доступен ли сервер
-		saveOnServer, err := utils.NewTestData().TestBool(cert.SaveOnServer)
-		if err != nil {
-			log.Println("Ошибка запроса сервера:", err)
-			continue
-		}
-
-		id, err := utils.NewTestData().TestInt(cert.Id)
-		if err != nil {
-			log.Println("Ошибка получения ID сертификата:", err)
-			continue
-		}
-
-		// Проверяем, просрочен ли сертификат
-		// if cert.CertExpireTime >= time.Now().Format(time.RFC3339) {
-		// 	log.Printf("Сертификат %s (ID: %d) еще не просрочен, пропускаем", cert.Domain, id)
-		// 	continue
-		// }
-
-		if saveOnServer {
+		if cert.SaveOnServer {
 			// Извлекаем состояние сервера из базы
 			var onlineServerExists bool
 			err = db.Get(&onlineServerExists, "SELECT EXISTS(SELECT 1 FROM server WHERE id = ? AND server_status = ?)", cert.ServerId, "online")
@@ -90,11 +72,11 @@ func checkRecreateCerts() {
 			}
 			// Проверяем, доступен ли сервер
 			if !onlineServerExists {
-				log.Printf("Сервер для сертификата %s (ID: %d) недоступен, пересоздание невозможно", cert.Domain, id)
+				log.Printf("Сервер для сертификата %s (ID: %d) недоступен, пересоздание невозможно", cert.Domain, cert.Id)
 				continue
 			}
 
-			log.Printf("Сертификат %s (ID: %d) просрочен и будет перевыпущен с сохранением на сервер", cert.Domain, id)
+			log.Printf("Сертификат %s (ID: %d) просрочен и будет перевыпущен с сохранением на сервер", cert.Domain, cert.Id)
 			certPEM, keyPEM, certErr := crypts.RecreateRSACertificate(&cert, db)
 
 			if certErr != nil {
@@ -109,7 +91,7 @@ func checkRecreateCerts() {
 			}
 		} else {
 			// если сертификат не сохраняется на сервере, то пересоздаем его без копирования на сервер
-			log.Printf("Сертификат %s (ID: %d) просрочен и будет перевыпущен без сохранения на сервер", cert.Domain, id)
+			log.Printf("Сертификат %s (ID: %d) просрочен и будет перевыпущен без сохранения на сервер", cert.Domain, cert.Id)
 			_, _, certErr := crypts.RecreateRSACertificate(&cert, db)
 			if certErr != nil {
 				log.Printf("Ошибка генерации сертификата: %v", certErr)

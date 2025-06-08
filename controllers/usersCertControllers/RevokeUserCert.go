@@ -37,8 +37,8 @@ func RevokeUserCert(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		if data.Id == "" ||
-			data.EntityId == "" ||
+		if data.Id == 0 ||
+			data.EntityId == 0 ||
 			data.ReasonRevoke == "" {
 
 			return c.Status(400).JSON(fiber.Map{
@@ -50,9 +50,6 @@ func RevokeUserCert(c fiber.Ctx) error {
 
 		// Выносим значения из запроса
 		currentTime := time.Now().Format(time.RFC3339)
-		reasonRevoke := data.ReasonRevoke
-		certID := data.Id
-		entityID := data.EntityId
 		certStatus := 2
 
 		// Обновляем статус сертификата с учетом ID сервера и ID сертификата
@@ -60,7 +57,7 @@ func RevokeUserCert(c fiber.Ctx) error {
 			cert_status = ?, 
 			data_revoke = ?, 
 			reason_revoke = ? 
-			WHERE id = ? AND entity_id = ?`, certStatus, currentTime, reasonRevoke, certID, entityID)
+			WHERE id = ? AND entity_id = ?`, certStatus, currentTime, data.ReasonRevoke, data.Id, data.EntityId)
 		if err != nil {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{

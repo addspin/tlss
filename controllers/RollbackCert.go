@@ -39,9 +39,9 @@ func RollbackCert(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		if data.Id == "" ||
-			data.ServerId == "" ||
-			data.DaysLeft == "" {
+		if data.Id == 0 ||
+			data.ServerId == 0 ||
+			data.DaysLeft == 0 {
 
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
@@ -49,44 +49,9 @@ func RollbackCert(c fiber.Ctx) error {
 			})
 		}
 		tx := db.MustBegin()
-		// Выносим значения из запроса
-
-		// конвертируем id в число и проверяем на ошибки
-		testData := utils.NewTestData()
-		certID, err := testData.TestInt(data.Id)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Invalid cert ID value",
-			})
-		}
-
-		serverID, err := testData.TestInt(data.ServerId)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Invalid server ID value",
-			})
-		}
-
-		daysLeftTest, err := testData.TestInt(data.DaysLeft)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Invalid days left value",
-			})
-		}
-
-		saveOnServerTest, err := testData.TestBool(data.SaveOnServer)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Invalid save on server value",
-			})
-		}
 
 		var certStatus int
-		if daysLeftTest <= 0 {
+		if data.DaysLeft <= 0 {
 			certStatus = 1
 		} else {
 			certStatus = 0
@@ -94,7 +59,7 @@ func RollbackCert(c fiber.Ctx) error {
 
 		// Получаем серийный номер и домен сертификата для удаления из OCSP
 		var serialNumber, domain string
-		err = db.QueryRow("SELECT serial_number, domain FROM certs WHERE id = ? AND server_id = ?", certID, serverID).Scan(&serialNumber, &domain)
+		err = db.QueryRow("SELECT serial_number, domain FROM certs WHERE id = ? AND server_id = ?", data.Id, data.ServerId).Scan(&serialNumber, &domain)
 		if err != nil {
 			// tx.Rollback()
 			return c.Status(500).JSON(fiber.Map{
@@ -109,7 +74,7 @@ func RollbackCert(c fiber.Ctx) error {
 			cert_status = ?, 
 			data_revoke = ?,
 			reason_revoke = ?
-			WHERE id = ? AND server_id = ?`, certStatus, currentTime, "", certID, serverID)
+			WHERE id = ? AND server_id = ?`, certStatus, currentTime, "", data.Id, data.ServerId)
 		if err != nil {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{
@@ -130,14 +95,14 @@ func RollbackCert(c fiber.Ctx) error {
 
 		log.Printf("Сертификат для домена %s (серийный номер: %s) успешно восстановлен и удален из OCSP", domain, serialNumber)
 
-		if saveOnServerTest {
+		if data.SaveOnServer {
 			// Изменим имя сертифмката с wildcard именами с  *.test.ru на test.ru
 			// в POST приходят именя с фронта, но в базе данных они хранятся без wildcard
 			data.Domain = domain
 			// Извлекаем сертификат и ключ из базы данных
 			// var publicKey, privateKey string
 			keyList := []models.CertsData{}
-			err = db.Select(&keyList, "SELECT public_key, private_key FROM certs WHERE id = ? AND server_id = ?", certID, serverID)
+			err = db.Select(&keyList, "SELECT public_key, private_key FROM certs WHERE id = ? AND server_id = ?", data.Id, data.ServerId)
 			if err != nil {
 				tx.Rollback()
 				return c.Status(500).JSON(fiber.Map{

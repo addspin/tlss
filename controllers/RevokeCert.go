@@ -37,8 +37,8 @@ func RevokeCert(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		if data.Id == "" ||
-			data.ServerId == "" ||
+		if data.Id == 0 ||
+			data.ServerId == 0 ||
 			data.ReasonRevoke == "" {
 
 			return c.Status(400).JSON(fiber.Map{

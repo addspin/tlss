@@ -46,7 +46,7 @@
                       customClass: 'custom-alert',
                       icon: 'success',
                       title: 'Успешно',
-                      text: `Сертификат для сущьности ${response.entityName} был успешно создан`,
+                      text: `Сертификат для сущьности ${response.CommonName} был успешно создан`,
                       confirmButtonColor: '#3085d6'
                     }).then(() => {
                       document.getElementById('create-cert-btn').style.display = 'inline-block';
@@ -55,7 +55,7 @@
                         target: '#response', 
                         swap: 'innerHTML',  
                         values: {
-                          entityId: document.getElementById('entityId').value
+                          EntityId: document.getElementById('entityId').value
                         } 
                       });
                     });
@@ -73,7 +73,7 @@
               <div class="row g-3 form_center">
                 <div class="col-md-3">
                   <label class="select_title">Algorithm</label>
-                    <select id="select-type" name="algorithm" class="select">
+                    <select id="select-type" name="Algorithm" class="select">
                       <option value="RSA" selected>RSA</option>
                       <option value="ECDSA">ECDSA</option>
                       <option value="Ed25519">Ed25519 </option>
@@ -81,7 +81,7 @@
                 </div>
                 <div class="col-md-3">
                   <label class="select_title">Lenght</label>
-                    <select id="select-key-length" name="keyLength" class="select" type="number">  
+                    <select id="select-key-length" name="KeyLength" class="select" type="number">  
                       <option value="1024">1024</option>
                       <option value="2048">2048</option>
                       <option value="4096" selected>4096</option>
@@ -89,7 +89,7 @@
                 </div>
                 <div class="col-md-3">
                   <label class="select_title">TTL</label>
-                  <input type="number" class="c_input" id="ttl" name="ttl" placeholder="TTL" value="365" required>
+                  <input class="c_input" id="ttl" name="TTL" placeholder="TTL" value="365" required>
                 </div>
                 <div class="col-md-3">
                   <div class="form-check form-switch">
@@ -136,11 +136,11 @@
                 </div>
 
                 <div class="col-md-3" style="display: none;">
-                  <input type="number" id="entityId" name="entityId" value="">
+                  <input type="number" id="entityId" name="EntityId" value="">
                 </div>
                 <div class="col-md-3">
                   <label for="standard-select" class="select_title">Password key</label>
-                  <input type="password" class="c_input" id="Password" name="Password" placeholder="****" required>
+                  <input type="password" class="c_input" id="Password" name="Password" placeholder="****" data-string="true" required>
                 </div>
                 <div class="btn-container btn-container-right">
                   <button type="submit" class="btn-custom btn-custom-certs" id="create-cert-btn"

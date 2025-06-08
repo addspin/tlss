@@ -316,7 +316,7 @@ func (r *OCSPResponder) UpdateOCSPData() error {
 	nextUpdateStr := nextUpdate.Format(time.RFC3339)
 
 	// Запрашиваем из БД все сертификаты с статусом 2 (отозванные)
-	var certs []models.Certs
+	var certs []models.CertsData
 	err := r.db.Select(&certs, `
 		SELECT 
 			id, domain, cert_create_time, cert_expire_time, days_left,

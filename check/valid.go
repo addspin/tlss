@@ -24,7 +24,6 @@ func CheckValidCerts(checkValidationTime time.Duration) {
 	}
 }
 
-// Вынесем логику проверки в отдельную функцию
 func checkCerts() {
 	log.Println("Проверка валидности сертификатов начата")
 
@@ -37,7 +36,7 @@ func checkCerts() {
 	defer db.Close()
 
 	// Получаем все действующие сертификаты
-	certificates := []models.Certs{}
+	certificates := []models.CertsData{}
 	err = db.Select(&certificates, "SELECT * FROM certs WHERE cert_status = 0")
 	if err != nil {
 		log.Println("Ошибка запроса сертификатов:", err)
@@ -65,6 +64,7 @@ func checkCerts() {
 
 		// Если сертификат истек
 		if currentTime.After(expireTime) {
+			log.Printf("currentTime: %s, expireTime: %s", currentTime.Format(time.RFC3339), expireTime.Format(time.RFC3339))
 			// Обновляем статус на истекший (1)
 			_, err := db.Exec("UPDATE certs SET cert_status = 1 WHERE id = ?", cert.Id)
 			if err != nil {

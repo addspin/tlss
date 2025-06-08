@@ -7,8 +7,8 @@
                 hx-get="/user_cert_list_revoke" 
                 hx-target="#response" 
                 hx-ext="json-enc-custom" 
-                parse-types="false"
-                hx-vals='{"entityId": "{{ .Id }}"}'
+                parse-types="true"
+                hx-vals='{"EntityId": {{ .Id }}}'
                 onclick="var input = document.getElementById('entityId'); 
                          input.value = '{{ .Id }}'; 
                          input.setAttribute('value', '{{ .Id }}'); ">

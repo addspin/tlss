@@ -81,10 +81,20 @@ func AddEntityController(c fiber.Ctx) error {
 					"message": "Ошибка при сохранении данных: " + err.Error(),
 				})
 			}
+			entityList := []models.EntityData{}
+			error := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
+			if error != nil {
+				log.Fatal(err)
+			}
+			log.Println("entityList", entityList)
+			return c.Render("add_entity/addEntity", fiber.Map{
+				"Title":      "Add entity",
+				"entityList": &entityList,
+			})
 		}
 	}
 	if c.Method() == "GET" {
-		entityList := []models.Entity{}
+		entityList := []models.EntityData{}
 		err := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
 		if err != nil {
 			log.Fatal(err)
@@ -95,14 +105,18 @@ func AddEntityController(c fiber.Ctx) error {
 			"entityList": &entityList,
 		})
 	}
-	entityList := []models.Entity{}
-	error := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
-	if error != nil {
-		log.Fatal(err)
-	}
-	log.Println("entityList", entityList)
-	return c.Render("add_entity/addEntity", fiber.Map{
-		"Title":      "Add entity",
-		"entityList": &entityList,
+	return c.Status(400).JSON(fiber.Map{
+		"status":  "error",
+		"message": "Method not allowed",
 	})
+	// entityList := []models.EntityData{}
+	// error := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
+	// if error != nil {
+	// 	log.Fatal(err)
+	// }
+	// log.Println("entityList", entityList)
+	// return c.Render("add_entity/addEntity", fiber.Map{
+	// 	"Title":      "Add entity",
+	// 	"entityList": &entityList,
+	// })
 }

@@ -579,7 +579,7 @@ func GetCertificateStatus(db *sqlx.DB, serialNumber string) (int, time.Time, int
 		}
 	} else {
 		// Если не найден в ocsp_revoke, ищем в таблице user_certs
-		var cert models.UserCerts
+		var cert models.UserCertsData
 		err = db.Get(&cert, `
 			SELECT cert_status, reason_revoke, data_revoke
 			FROM user_certs

@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/addspin/tlss/models"
-	"github.com/addspin/tlss/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
@@ -29,6 +28,7 @@ func RemoveCert(c fiber.Ctx) error {
 		// log.Println("id data:", data.Id)
 
 		err := c.Bind().JSON(data)
+		log.Println("id data:", data.Id)
 		if err != nil {
 			return c.Status(400).JSON(
 				fiber.Map{"status": "error",
@@ -36,19 +36,10 @@ func RemoveCert(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		// конвертируем id в число и проверяем на ошибки
-		testData := utils.NewTestData()
-		id, err := testData.TestInt(data.Id)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Отсутствуют обязательные поля: " + err.Error(),
-			})
-		}
 		tx := db.MustBegin()
 
 		dataRemove := `DELETE FROM certs WHERE id = ?`
-		_, err = tx.Exec(dataRemove, id)
+		_, err = tx.Exec(dataRemove, data.Id)
 		if err != nil {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{

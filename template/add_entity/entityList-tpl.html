@@ -16,7 +16,7 @@
                   <td>{{ .EntityDescription }}</td>
                   <td></td>
                   <td>
-                    <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_entity" hx-target=".entity_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                    <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_entity" hx-target=".entity_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                     onClick="const { value: hostname } = Swal.fire({
                     showClass: {
                     popup: `

@@ -25,9 +25,9 @@ func AddUserCertsController(c fiber.Ctx) error {
 	defer db.Close()
 
 	if c.Method() == "POST" {
-		data := new(models.UserCerts)
+		data := new(models.UserCertsData)
 
-		c.Bind().JSON(data)
+		// c.Bind().JSON(data)
 
 		err := c.Bind().JSON(data)
 		if err != nil {
@@ -37,10 +37,20 @@ func AddUserCertsController(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
+		if data.Algorithm != "RSA" && data.Algorithm != "ECDSA" && data.Algorithm != "Ed25519" {
+			return c.Status(400).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Invalid algorithm",
+			})
+		}
+		if data.KeyLength != 1024 && data.KeyLength != 2048 && data.KeyLength != 4096 {
+			return c.Status(400).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Invalid key length",
+			})
+		}
 
-		if data.Algorithm == "" || // Type
-			data.KeyLength == 0 || // Lenght
-			data.TTL == 0 || // TTL
+		if data.TTL == 0 || // TTL
 			data.EntityId == 0 || // EntityId
 			data.CommonName == "" || // Common Name
 			data.CountryName == "" || // Country Name
@@ -78,13 +88,13 @@ func AddUserCertsController(c fiber.Ctx) error {
 		}
 
 		return c.JSON(fiber.Map{
-			"status":      "success",
-			"common_name": data.CommonName,
-			"message":     "Certificate created successfully",
+			"status":     "success",
+			"CommonName": data.CommonName,
+			"message":    "Certificate created successfully",
 		})
 	}
 	if c.Method() == "GET" {
-		entityList := []models.Entity{}
+		entityList := []models.EntityData{}
 		err := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
 		if err != nil {
 			log.Fatal(err)
@@ -129,12 +139,12 @@ func UserCertListController(c fiber.Ctx) error {
 	// }
 	if c.Method() == "GET" {
 		// Получаем ID сущности из запроса
-		entityId := c.Query("entityId")
+		EntityId := c.Query("EntityId")
 		// Получаем список сертификатов
-		certList := []models.UserCerts{}
-		if entityId != "" {
+		certList := []models.UserCertsData{}
+		if EntityId != "" {
 			// Если указан ID сущности, фильтруем сертификаты по сущности кроме результатов 2 - revoked
-			err = db.Select(&certList, "SELECT id, entity_id, algorithm, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM user_certs WHERE entity_id = ? AND cert_status IN (0, 1)", entityId)
+			err = db.Select(&certList, "SELECT id, entity_id, algorithm, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM user_certs WHERE entity_id = ? AND cert_status IN (0, 1)", EntityId)
 			if err != nil {
 				log.Fatal(err)
 			}

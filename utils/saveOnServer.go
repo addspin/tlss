@@ -27,6 +27,13 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		return fmt.Errorf("не удалось получить информацию о сервере: %w", err)
 	}
 
+	// Извлекаем Sub CA из базы данных
+	var subCACert string
+	err = db.Get(&subCACert, "SELECT public_key FROM sub_ca_tlss WHERE id = 1")
+	if err != nil {
+		return fmt.Errorf("не удалось получить промежуточный сертификат: %w", err)
+	}
+
 	// Получаем домашний каталог пользователя
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -39,6 +46,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		// Создаем пути для файлов сертификата и ключа на удаленном сервере
 		certPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
 		keyPath := fmt.Sprintf("%s/%s.key", serverInfo.CertConfigPath, data.Domain)
+		subCAPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, "sub_ca_tlss")
 
 		// Используем ssh клиент для передачи сертификата и ключа
 		// Создаём контекст с таймаутом для SSH-команд
@@ -50,7 +58,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 			"-o", "StrictHostKeyChecking=no",
 			"-p", serverInfo.Port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
-			fmt.Sprintf("echo '%s' > %s", string(certPEM), certPath))
+			fmt.Sprintf("echo '%s' > %s && echo '%s' > %s", string(certPEM), certPath, subCACert, subCAPath))
 
 		// Выполняем команды и проверяем результат
 		if err = certCmd.Run(); err != nil {
@@ -92,6 +100,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 
 		// Путь для сохранения объединенного файла на удаленном сервере
 		combinedPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
+		subCAPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, "sub_ca_tlss")
 
 		// Используем ssh клиент для передачи объединенного файла
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -102,7 +111,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 			"-o", "StrictHostKeyChecking=no",
 			"-p", serverInfo.Port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
-			fmt.Sprintf("echo '%s' > %s && chmod 600 %s", combinedContent, combinedPath, combinedPath))
+			fmt.Sprintf("echo '%s' > %s && echo '%s' > %s && chmod 600 %s", combinedContent, combinedPath, subCACert, subCAPath, combinedPath))
 
 		// Выполняем команду и проверяем результат
 		if err = combinedCmd.Run(); err != nil {

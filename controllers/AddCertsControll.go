@@ -27,38 +27,10 @@ func AddCertsControll(c fiber.Ctx) error {
 
 	if c.Method() == "POST" {
 		data := new(models.CertsData)
-		// rawBody := c.Body()
-		// log.Printf("Сырой JSON: %s", string(rawBody))
-		// SaveOnServer := c.Query("saveOnServer")
-		// ServerStatus := c.Query("serverStatus")
-		// log.Println("SaveOnServer", SaveOnServer, "ServerStatus", ServerStatus)
-		// saveOnServerBool := SaveOnServer == "true"
-		// if ServerStatus == "offline" && saveOnServerBool {
-		// 	return c.Status(400).JSON(fiber.Map{
-		// 		"status":  "error",
-		// 		"message": "You can't save certificate on offline server",
-		// 	})
-		// }
-		// c.Bind().JSON(data)
 
-		err := c.Bind().JSON(data)
+		c.Bind().JSON(data)
 		log.Println(data.SaveOnServer, data.ServerStatus, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.AppType, data.Organization, data.OrganizationUnit, data.Email)
-		if err != nil {
-			return c.Status(400).JSON(
-				fiber.Map{"status": "error",
-					"message": "Cannot parse JSON!",
-					"data":    err},
-			)
-		}
 
-		// Если сервер недоступен и стоит "сохранять на сервере", тогда запретить создание.
-		// saveOnServer, err := utils.NewTestData().TestBool(data.SaveOnServer)
-		// if err != nil {
-		// 	return c.Status(400).JSON(fiber.Map{
-		// 		"status":  "error",
-		// 		"message": "Error getting server status: " + err.Error(),
-		// 	})
-		// }
 		if data.ServerStatus == "offline" && data.SaveOnServer {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
@@ -66,27 +38,6 @@ func AddCertsControll(c fiber.Ctx) error {
 			})
 		}
 
-		// keyLength, err := utils.NewTestData().TestInt(data.KeyLength)
-		// if err != nil {
-		// 	return c.Status(400).JSON(fiber.Map{
-		// 		"status":  "error",
-		// 		"message": "Error getting server status: " + err.Error(),
-		// 	})
-		// }
-		// ttl, err := utils.NewTestData().TestInt(data.TTL)
-		// if err != nil {
-		// 	return c.Status(400).JSON(fiber.Map{
-		// 		"status":  "error",
-		// 		"message": "Error getting server status: " + err.Error(),
-		// 	})
-		// }
-		// serverId, err := utils.NewTestData().TestInt(data.ServerId)
-		// if err != nil {
-		// 	return c.Status(400).JSON(fiber.Map{
-		// 		"status":  "error",
-		// 		"message": "Error getting server status: " + err.Error(),
-		// 	})
-		// }
 		if data.Algorithm != "RSA" && data.Algorithm != "ECDSA" && data.Algorithm != "Ed25519" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
@@ -142,41 +93,13 @@ func AddCertsControll(c fiber.Ctx) error {
 					log.Printf("Ошибка сохранения сертификата на сервер: %v", err)
 				}
 			}
-		// Добавляем другие алгоритмы по мере необходимости
 		default:
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Неподдерживаемый алгоритм: " + data.Algorithm,
 			})
 		}
-		// if certErr != nil {
-		// 	log.Printf("Certificate generation error: %v", certErr)
-		// 	return c.Status(500).JSON(fiber.Map{
-		// 		"status":  "error",
-		// 		"message": "Failed to generate certificate: " + certErr.Error(),
-		// 	})
-		// }
 
-		// // Если нет ошибки вернуть
-		// serverList := []models.Server{}
-		// err = db.Select(&serverList, "SELECT id, hostname, server_status FROM server")
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-		// log.Println("serverList-certs", serverList)
-		// onlineServers := []models.Server{}
-		// for _, list := range serverList {
-		// 	// Записываем только онлайн сервера, чтобы не было ошибки при добавлении сертификата
-		// 	if list.ServerStatus == "online" {
-		// 		onlineServers = append(onlineServers, list)
-		// 		log.Println("onlineServerList-certs", onlineServers)
-		// 	}
-		// }
-		// return c.Render("add_certs/addCerts", fiber.Map{
-		// 	"Title":      "Add certs",
-		// 	"serverList": onlineServers,
-		// })
-		// Если нет ошибки, вернуть JSON с успешным статусом
 		return c.JSON(fiber.Map{
 			"status":  "success",
 			"domain":  data.Domain,
@@ -201,24 +124,6 @@ func AddCertsControll(c fiber.Ctx) error {
 		"message": "Method not allowed",
 	})
 }
-
-// 	serverList := []models.Server{}
-// 	error := db.Select(&serverList, "SELECT id, server_id, hostname, server_status FROM server")
-// 	if error != nil {
-// 		log.Fatal(err)
-// 	}
-// 	onlineServers := []models.Server{}
-// 	for _, list := range serverList {
-// 		if list.ServerStatus == "online" {
-// 			onlineServers = append(onlineServers, list)
-// 			log.Println("serverList-certs", onlineServers)
-// 		}
-// 	}
-// 	return c.Render("add_certs/addCerts", fiber.Map{
-// 		"Title":      "Add certs",
-// 		"serverList": onlineServers,
-// 	})
-// }
 
 // CertListController обрабатывает запросы на получение списка сертификатов
 func CertListController(c fiber.Ctx) error {

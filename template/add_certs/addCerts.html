@@ -109,11 +109,28 @@
                 </div>
               </div>
               <!-- <div class="indent-5"></div> -->
-              <div class="row g-1 form_center">
+              <div class="row g-3 form_center">
                 <div class="col-md-3">
                   <label class="select_title" title="Обязательное поле">Common Name</label>
                   <input title="Обязательное поле" type="text" class="c_input" id="Common" name="CommonName" placeholder="CA" value="TEST WEB" required>
                 </div>
+
+                <div class="col-md-9">
+                  <label class="select_title">SAN</label>
+                  <div class="tags-container">
+                    <input type="text" 
+                      id="san-input"
+                      class="c_input tag-input"
+                      placeholder="Введите дополнительные SAN"
+                      onkeydown="if(event.key === 'Enter') { event.preventDefault(); addTag(); return false; }">
+                    
+                    <div id="san-tags" class="tags">
+                      <!-- Теги будут добавляться сюда -->
+                    </div>
+                    <input type="hidden" name="SAN" id="san-values" value="">
+                  </div>
+                </div>
+                
                 <div class="indent-5"></div>
               </div>
               <div class="row g-3 form_center">
@@ -158,11 +175,7 @@
                 <div class="col-md-3" style="display: none;">
                   <input type="text" id="serverStatus" name="ServerStatus" value="">
                 </div>
-                <!-- <div class="col-md-3">
-                  <label for="standard-select" class="select_title">Password key</label>
-                  <input type="password" class="c_input" id="Password" name="Password" placeholder="****" required>
-                </div> -->
-                <!-- <div>Создайте пользователя на сервере и используйте его логин и пароль для подключения</div> -->
+                
                 <div class="btn-container btn-container-right">
                   <button type="submit" class="btn-custom btn-custom-certs" id="create-cert-btn"
                     hx-indicator="#time-svg">
@@ -189,6 +202,9 @@
 
 <!-- index end template -->
 {{template "footer-tpl" .}}
+
+
+
 <!-- </div>
 </body>
 </html> -->

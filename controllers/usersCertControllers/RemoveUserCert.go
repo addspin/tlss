@@ -22,7 +22,7 @@ func RemoveUserCert(c fiber.Ctx) error {
 	defer db.Close()
 
 	if c.Method() == "POST" {
-		data := new(models.CertsData)
+		data := new(models.UserCertsData)
 
 		c.Bind().JSON(data)
 		log.Println("id data:", data.Id)
@@ -60,5 +60,5 @@ func RemoveUserCert(c fiber.Ctx) error {
 			})
 		}
 	}
-	return c.Render("add_certs/certList-tpl", fiber.Map{})
+	return c.Render("add_user_certs/certUserList-tpl", fiber.Map{})
 }

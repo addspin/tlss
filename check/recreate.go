@@ -60,6 +60,13 @@ func checkRecreateCerts() {
 		return
 	}
 
+	userCertificate := []models.UserCertsData{}
+	err = db.Select(&userCertificate, "SELECT * FROM user_certs WHERE cert_status = 1 AND recreate = 1")
+	if err != nil {
+		log.Println("Ошибка запроса сертификатов:", err)
+		return
+	}
+	// Сереверные сертификаты
 	for _, cert := range certificates {
 		// если сертификат сохраняется на сервере, то проверяем, доступен ли сервер
 		if cert.SaveOnServer {
@@ -97,6 +104,15 @@ func checkRecreateCerts() {
 				log.Printf("Ошибка генерации сертификата: %v", certErr)
 				continue
 			}
+		}
+	}
+	// Сертификаты пользователей
+	for _, userCert := range userCertificate {
+		log.Printf("Сертификат %s (ID: %d) просрочен и будет перевыпущен", userCert.CommonName, userCert.Id)
+		certErr := crypts.RecreateUserRSACertificate(&userCert, db)
+		if certErr != nil {
+			log.Printf("Ошибка генерации сертификата: %v", certErr)
+			continue
 		}
 	}
 }

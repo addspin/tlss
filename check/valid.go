@@ -37,7 +37,14 @@ func checkCerts() {
 
 	// Получаем все действующие сертификаты
 	certificates := []models.CertsData{}
-	err = db.Select(&certificates, "SELECT * FROM certs WHERE cert_status = 0")
+	err = db.Select(&certificates, `SELECT id, domain, cert_expire_time FROM certs WHERE cert_status = 0`)
+	if err != nil {
+		log.Println("Ошибка запроса сертификатов:", err)
+		return
+	}
+
+	userCertificates := []models.UserCertsData{}
+	err = db.Select(&userCertificates, "SELECT * FROM user_certs WHERE cert_status = 0")
 	if err != nil {
 		log.Println("Ошибка запроса сертификатов:", err)
 		return
@@ -71,6 +78,30 @@ func checkCerts() {
 				log.Printf("Ошибка обновления статуса сертификата %s (ID: %d): %v", cert.Domain, cert.Id, err)
 			} else {
 				log.Printf("Сертификат для домена %s (ID: %d) истёк и помечен как недействительный", cert.Domain, cert.Id)
+				expiredCount++
+			}
+		}
+	}
+
+	for _, cert := range userCertificates {
+		// Преобразуем строку времени истечения в объект time.Time
+		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
+		if err != nil {
+			log.Printf("Ошибка парсинга времени истечения для сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+			continue
+		}
+
+		log.Printf("Сертификат %s (ID: %d), срок действия до: %s", cert.CommonName, cert.Id, expireTime.Format(time.RFC3339))
+
+		// Если сертификат истек
+		if currentTime.After(expireTime) {
+			log.Printf("currentTime: %s, expireTime: %s", currentTime.Format(time.RFC3339), expireTime.Format(time.RFC3339))
+			// Обновляем статус на истекший (1)
+			_, err := db.Exec("UPDATE user_certs SET cert_status = 1 WHERE id = ?", cert.Id)
+			if err != nil {
+				log.Printf("Ошибка обновления статуса сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+			} else {
+				log.Printf("Сертификат для %s (ID: %d) истёк и помечен как недействительный", cert.CommonName, cert.Id)
 				expiredCount++
 			}
 		}

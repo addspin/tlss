@@ -8,7 +8,9 @@
     cursor: pointer;
 }
 
-
+.th-text-center {
+    text-align: center;
+}
 
 .tables_lable {
     font-weight: bold;

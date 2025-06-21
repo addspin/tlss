@@ -45,6 +45,7 @@ func Setup(app *fiber.App) {
 	app.Get("/cert_list_revoke", controllers.CertListRevokeController) // Список сертификатов для отзыва находится в RevokeCertsController
 	app.Post("/revoke_certs", controllers.RevokeCertsController)
 	app.Post("/rollback_cert", controllers.RollbackCert) // Откат сертификата
+	app.Get("/take_cert", controllers.TakeCert)          // Скачать сертификат
 
 	app.Get("/add_entity", usersCertControllers.AddEntityController)               // Получение сущности
 	app.Post("/add_entity", usersCertControllers.AddEntityController)              // Добавление сущности

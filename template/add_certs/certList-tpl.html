@@ -14,6 +14,7 @@
                 <th scope="col">Revoke</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
+                <th scope="col">Take cert</th>
                 <th scope="col">Remove</th>
               </tr>
             </thead>
@@ -30,7 +31,7 @@
                       <!-- Expire in -->
                       <td>{{ .DaysLeft }} days</td>
                       <!-- Algorithm -->
-                      <td>{{ .Algorithm }}</td>
+                      <td class="th-text-center">{{ .Algorithm }}</td>
                       <!-- Key length -->
                       <td>{{ .KeyLength }} bits</td>
                       <!-- Status -->
@@ -40,7 +41,7 @@
                         </div>
                       </td>
                       <!-- Recreate -->
-                      <td>{{ if eq .Recreate true }}Yes{{ else }}No{{ end }}</td>
+                      <td class="th-text-center">{{ if eq .Recreate true }}Yes{{ else }}No{{ end }}</td>
                       <!-- Revoke -->
                        <td>
                         <!-- <label class="select_title">TEST</label> -->
@@ -94,8 +95,14 @@
                       >Revoke</button>
                       </td>
                       <td></td>
+                      <!-- Take cert -->
+                      <td class="th-text-center">
+                        <a href="/take_cert?serverId={{ .ServerId }}&id={{ .Id }}" download>
+                          <img src="/svg/take_cert.svg" alt="Take certificate" style="cursor: pointer;" width="20" height="20">
+                        </a>
+                      </td>
                       <!-- Remove -->
-                      <td>
+                      <td class="th-text-center">
                         <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                        
                         onClick="const { value: domain } = Swal.fire({
@@ -144,6 +151,7 @@
               {{ else }}
                 <tr>
                   <td colspan="7">No server selected or no certs</td>
+                  <td></td>
                   <td></td>
                   <td></td>
                   <td></td>

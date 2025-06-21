@@ -81,7 +81,7 @@
 .form_center_entity {
     padding-left: 5%;
     padding-right: 5%;
-    padding-top: 2%;
+    /* padding-top: 1%; */
     padding-bottom: 2%;
 }
 
@@ -233,12 +233,12 @@
 }
 
 .btn-custom-certs {
-    /* padding: 1px 8%;  */
-    width: 20%;
+    padding: 1px 8%; 
+    /* width: 20%; */
 }
 
 .btn-custom-servers {
-    /* padding: 1px 8%;  */
+    padding: 1px 8%; 
 }
 
 .btn-custom-login {
@@ -331,7 +331,7 @@
 .tag {
     background: #30363B;
     color: #ffffff;
-    padding: 5px 12px;
+    padding: 3px 5px;
     border-radius: 30px;
     display: flex;
     align-items: center;

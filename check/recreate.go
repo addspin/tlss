@@ -106,6 +106,8 @@ func checkRecreateCerts() {
 			}
 		}
 	}
+	log.Println("Проверка на пересоздание серверных сертификатов завершена")
+
 	// Сертификаты пользователей
 	for _, userCert := range userCertificate {
 		log.Printf("Сертификат %s (ID: %d) просрочен и будет перевыпущен", userCert.CommonName, userCert.Id)
@@ -115,4 +117,5 @@ func checkRecreateCerts() {
 			continue
 		}
 	}
+	log.Println("Проверка на пересоздание пользовательских сертификатов завершена")
 }

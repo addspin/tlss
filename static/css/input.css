@@ -159,6 +159,44 @@
     background: #0056b3;
 }
 
+.select_cert_take { 
+    background: #007bff;
+    border-radius: 30px;
+    text-align: center;
+    width: 10em;
+    border: none;
+    padding: 0;
+}
+
+.dropdown-item-take {
+    display: block; 
+    width: 100%;
+    font-size: 0.9em;
+    color: #000000;
+    text-decoration: none;
+    padding-left: 1rem;
+}
+
+.dropdown-item-take:hover {
+    background: #007bff;
+    padding-left: 1rem;
+}
+
+.select_cert_take:hover {
+    background: #0056b3;
+}
+
+.dropdown-menu {
+    background-color: #ECECEC;
+    color: #000000;
+    --bs-dropdown-min-width: 7rem;
+} 
+
+.dropdown-menu.show {
+    /* background-color: #ffffff; */
+    color: #000000;
+} 
+
 .form_lable {
     position: relative;
     left: 20px;

@@ -14,6 +14,7 @@
                 <th scope="col">Revoke</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
+                <th scope="col">Take cert</th>
                 <th scope="col">Remove</th>
               </tr>
             </thead>
@@ -93,6 +94,20 @@
                       >Revoke</button>
                       </td>
                       <td></td>
+                      <!-- Take cert -->
+                      <td>
+                        <div class="btn-group">
+                          <button type="button" class="select_cert_take dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="/svg/take_cert.svg" alt="Select format" style="cursor: pointer;" width="15" height="15">
+                            Select format
+                          </button>
+                          <ul class="dropdown-menu">
+                            <li><a class="dropdown-item-take" href="/take_cert?entityId={{ .EntityId }}&id={{ .Id }}&format=zip">zip</a></li>
+                            <li><a class="dropdown-item-take" href="/take_cert?entityId={{ .EntityId }}&id={{ .Id }}&format=pkcs12">pkcs12</a></li>
+                            <li><a class="dropdown-item-take" href="/take_cert?entityId={{ .EntityId }}&id={{ .Id }}&format=pkcs12-legacy">pkcs12-legacy</a></li>
+                          </ul>
+                        </div>
+                      </td>
                       <!-- Remove -->
                       <td>
                         <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
@@ -142,6 +157,7 @@
               {{ else }}
                 <tr>
                   <td colspan="7">No entity selected or no certs</td>
+                  <td></td>
                   <td></td>
                   <td></td>
                   <td></td>

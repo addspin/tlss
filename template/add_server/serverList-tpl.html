@@ -17,7 +17,8 @@
                   <td>
                       <div class="state-{{ if eq .ServerStatus "online" }}online{{ else }}offline{{ end }}" >{{ .ServerStatus }}</div>
                   </td>
-                  <td class="th-text-center">
+                  <!-- Remove server -->
+                  <td class="">
                     <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_server" hx-target=".server_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
                     onClick="const { value: hostname } = Swal.fire({
                     showClass: {

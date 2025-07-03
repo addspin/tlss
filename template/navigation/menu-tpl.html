@@ -2,33 +2,32 @@
 
 <div class="container mx-auto mb-3">
     <ul class="nav-menu nav justify-content-center nav-underline">
-      <li class="nav-item">
+      <li class="nav-item disable">
         <a class="nav-link {{if eq .Title "Index"}}active{{else}}{{end}}" aria-current="page" 
-           hx-get="/index" 
-           hx-target="#body" 
-           hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Overview</a>
+            hx-get="/index" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Overview</a>
       </li>
-      <li class="nav-item">
-        <a class="nav-link {{if eq .Title "Add server"}}active{{else}}{{end}}" aria-current="page"  
+      <li class="nav-item dropdown">
+        <a class="dropdown-toggle nav-link {{if eq .Title "Add server"}}active{{else}}{{end}}" aria-current="page" role="button" data-bs-toggle="dropdown" aria-expanded="false">Servers certs</a>
+        <ul class="dropdown-menu dropdown-menu-custom">
+          <li><a class="dropdown-item-custom"
            hx-get="/add_server" 
            hx-target="#body" 
            hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Servers</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {{if eq .Title "Add certs"}}active{{else}}{{end}}" aria-current="page"  
+           hx-push-url="true">Add servers</a></li>
+          <li><a class="dropdown-item-custom"
            hx-get="/add_certs" 
            hx-target="#body" 
            hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Servers certs</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {{if eq .Title "Revoke certs"}}active{{else}}{{end}}" aria-current="page"  
+           hx-push-url="true">Add servers certs</a></li>
+          <li><a class="dropdown-item-custom"
            hx-get="/revoke_certs" 
            hx-target="#body" 
            hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Revoke server certs</a>
+           hx-push-url="true">Revoke server certs</a></li>
+        </ul>
       </li>
       <li class="nav-item">
         <a class="nav-link {{if eq .Title "Add entity"}}active{{else}}{{end}}" aria-current="page"  

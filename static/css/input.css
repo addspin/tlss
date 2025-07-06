@@ -46,13 +46,14 @@
     font-weight: 100; 
 }
 .core-servers {
-    padding-left: 30%;
-    padding-right: 30%;
+    /* padding-left: 18%; */
+    /* padding-right: 30%; */
     font-size: 0.8rem;
     font-family: Inter;
     font-weight: 100; /* regular weight */
 }
 .core-certs {
+    margin-top: 6px;
     padding-left: 0%;
     padding-right: 0%;
     font-size: 0.8rem;
@@ -60,11 +61,79 @@
     font-weight: 100;
 }
 .left-core {
-    padding-left: 55%;
+    margin-top: 40px;
+    padding-left: 20%;
     padding-right: 0%;
     font-size: 0.8rem;
     font-family: Inter;
     font-weight: 100;
+}
+
+.left-menu-core {       
+    padding-left: 0%;
+    padding-top: 10px;
+    /* padding-right: 10%; */
+    min-height: 100vh;
+    width: 220px;
+    font-size: 0.8rem;
+    font-family: Inter;
+    font-weight: 100;
+    background-color: #181b1d;
+    /* border-left: 1px solid #a99ee8; */
+    /* border-right: 15px solid #1a1e21; */
+    text-decoration: none;
+}
+
+.left-menu {
+    gap: 10px;
+}
+
+.link-menu-left {
+    margin-left: 20px;
+    text-decoration: none;
+    color: #6ea8fe;
+}
+.link-menu-left:hover {
+    /* border-bottom: 2px solid #ffffff; */
+    color: #4f77b2;
+    background-color: #181b1d;
+    transition: all 0.1s ease;
+
+}
+
+.title-menu-left {
+    margin-left: 10px;
+    width: 100%;
+}
+
+.breadcrumb {
+    --bs-breadcrumb-margin-bottom: 0rem;
+    font-family: Inter  ;
+    font-weight: 100;
+    font-size: 0.8rem;
+}
+
+.b-example-vr {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 100vh;
+}
+
+.b-example-divider {
+    width: 100%;
+    height: 3rem;
+    background-color: #0000001a;
+    border: solid rgba(0,0,0,.15);
+    border-width: 1px 0;
+    /* box-shadow: inset 0 .5em 1.5em #0000001a,inset 0 .125em .5em #00000026; */
+}
+
+.menu-container {
+    padding-left: 0%;
+    padding-right: 0%;
+    font-size: 0.8rem;
+    font-family: Inter;
+    font-weight: 100;   
 }
 
 .form_center {
@@ -204,12 +273,12 @@
     border-color: rgb(128, 119, 176);
     border-radius: 0 5px 5px 0;
     --bs-dropdown-min-width: 9rem;
-    --bs-dropdown-padding-y: 0rem;
+    --bs-dropdown-padding-y: 1rem;
     --bs-dropdown-item-padding-y: 1rem;
 } 
 
 .dropdown-item-custom {
-    display: block; 
+    display: block;
     width: 100%;
     font-size: 1em;
     color: #ffffff;
@@ -320,15 +389,17 @@
 }
 
 .search-input-container {
-    padding-left: 28%;
-    padding-right: 28%;
+    padding-left: 20%;
+    padding-right: 30%;
     align-content: center;
     padding-top: 1%;
     font-size: 0.8rem;
+    font-family: Inter;
+    font-weight: 100;
 }
 .search-input-container-revoke {
-    padding-left: 28%;
-    padding-right: 28%;
+    padding-left: 8%;
+    padding-right: 8%;
     align-content: center;
     font-size: 0.8rem;
 }

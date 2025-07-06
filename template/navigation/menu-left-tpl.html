@@ -1,0 +1,45 @@
+{{define "menu-left-tpl"}}
+    <ul class="nav flex-column left-menu">
+        <li class="title-menu-left">Home</li>
+        <li><a class="link-menu-left" href="#">Overview</a></li>
+        <hr>
+        <li class="title-menu-left">Servers certs</li>
+        <li><a class="link-menu-left" hx-get="/add_server" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add entity</a></li>
+        <li><a class="link-menu-left" 
+            hx-get="/add_server" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add servers</a></li>
+        <li><a class="link-menu-left" 
+            hx-get="/add_certs" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add servers certs</a></li>
+        <li><a class="link-menu-left" 
+            hx-get="/revoke_certs" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Revoke servers certs</a></li>
+        <hr>
+        <li class="title-menu-left">Users certs</li>
+        <li><a class="link-menu-left" 
+            hx-get="/add_entity" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add entity</a></li>
+        <li><a class="link-menu-left" 
+            hx-get="/add_users_certs" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add users certs</a></li>
+        <li><a class="link-menu-left" 
+            hx-get="/revoke_users_certs" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Revoke users certs</a></li>
+  
+    </ul>
+{{end}}

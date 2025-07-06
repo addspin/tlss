@@ -2,8 +2,8 @@
 
 <div class="container mx-auto mb-3">
     <ul class="nav-menu nav justify-content-center nav-underline">
-      <li class="nav-item disable">
-        <a class="nav-link {{if eq .Title "Index"}}active{{else}}{{end}}" aria-current="page" 
+      <li class="nav-item ">
+        <a class="nav-link disabled {{if eq .Title "Index"}}active{{else}}{{end}}" aria-current="page" 
             hx-get="/index" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
@@ -13,43 +13,46 @@
         <a class="dropdown-toggle nav-link {{if eq .Title "Add server"}}active{{else}}{{end}}" aria-current="page" role="button" data-bs-toggle="dropdown" aria-expanded="false">Servers certs</a>
         <ul class="dropdown-menu dropdown-menu-custom">
           <li><a class="dropdown-item-custom"
-           hx-get="/add_server" 
-           hx-target="#body" 
-           hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Add servers</a></li>
+            hx-get="/add_server" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add servers</a></li>
           <li><a class="dropdown-item-custom"
-           hx-get="/add_certs" 
-           hx-target="#body" 
-           hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Add servers certs</a></li>
+            hx-get="/add_server_entity" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add entitys</a></li>
           <li><a class="dropdown-item-custom"
-           hx-get="/revoke_certs" 
-           hx-target="#body" 
-           hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Revoke server certs</a></li>
+            hx-get="/add_certs" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add servers certs</a></li>
+          <li><a class="dropdown-item-custom"
+            hx-get="/revoke_certs" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Revoke server certs</a></li>
         </ul>
       </li>
-      <li class="nav-item">
-        <a class="nav-link {{if eq .Title "Add entity"}}active{{else}}{{end}}" aria-current="page"  
-           hx-get="/add_entity" 
-           hx-target="#body" 
-           hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Entities</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {{if eq .Title "Add users certs"}}active{{else}}{{end}}" aria-current="page"  
-           hx-get="/add_users_certs" 
-           hx-target="#body" 
-           hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Users certs</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link {{if eq .Title "Revoke users certs"}}active{{else}}{{end}}" aria-current="page"  
-           hx-get="/revoke_users_certs" 
-           hx-target="#body" 
-           hx-swap="innerHTML transition:true" 
-           hx-push-url="true">Revoke users certs</a>
-      </li>
+      <li class="nav-item dropdown">
+        <a class="dropdown-toggle nav-link {{if eq .Title "Add entity"}}active{{else}}{{end}}" aria-current="page"  aria-current="page" role="button" data-bs-toggle="dropdown" aria-expanded="false">Clients certs</a>
+        <ul class="dropdown-menu dropdown-menu-custom">
+          <li><a class="dropdown-item-custom"
+            hx-get="/add_entity" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Entities</a></li>
+          <li><a class="dropdown-item-custom"
+            hx-get="/add_users_certs" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add clients certs</a></li>
+          <li><a class="dropdown-item-custom"
+            hx-get="/revoke_users_certs" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Revoke clients certs</a></li>
+      </ul>
     </ul>
   </div> 
 

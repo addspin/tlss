@@ -28,7 +28,7 @@
     padding: 5%;
 }
 .servers_table {
-    padding-left: 20%;
+    padding-left: 10%;
     padding-right: 20%;
     align-content: center;
     padding-top: 3%;
@@ -36,6 +36,17 @@
     font-family: Inter;
     font-weight: 100;
 }
+
+.server-cert-tables {
+    padding-left: 3%;
+    padding-right: 10%;
+    align-content: center;
+    padding-top: 3%;
+    font-size: 14px;
+    font-family: Inter;
+    font-weight: 100;
+}
+
 .certs_revoke_table {
     align-content: center;
     padding-top: 3%;

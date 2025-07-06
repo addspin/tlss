@@ -1,21 +1,34 @@
 {{template "header-tpl" .}}
-{{template "menu-tpl" .}}
+<!-- {{template "menu-tpl" .}} -->
 {{template "body-tpl" .}}
 
-<!-- <div class="containers"> -->
-    <div class="row">
-      <div class="col-md-3">
-        <div class="left-core">
-          <!-- Левая панель с серверами -->
-          <div id="search-server" class="search-input-container-server">
-            <input type="text" class="search-input" name="search-server" placeholder="Search servers">
-          </div>
+<div class="container-fluid">
+  <div class="row">
+    <!-- Левое меню -->
+    <div class="left-menu-core">
+      {{template "menu-left-tpl" .}}
+    </div>
+    <!-- Правая часть -->
+    <div class="col-10 p-1">
+      <div class="row">
+        <!-- Блок серверов -->
+        <div class="col-2">
+          <div class="left-core">
+            <div id="search-server" class="search-input-container-server">
+              <input type="text" class="search-input" name="search-server" placeholder="Search object">
+            </div>
             {{template "serverList-certs-tpl" .}}
+          </div>
         </div>
-      </div>
-      <div class="col-md-6">
-        <!-- Правая панель с формой для создания сертификата -->
-        <div class="core-certs">
+        
+        <!-- Блок формы создания сертификата -->
+        <div class="col-7">
+          <div><ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Overview</a></li>  
+            <li class="breadcrumb-item"><a href="#">Servers certs</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Add servers certs</li>
+          </ol></div>
+          <div class="core-certs">
           <form class="" 
             hx-post="/add_certs" 
             hx-swap="none"
@@ -191,14 +204,22 @@
           </form>
         </div>
       </div>
+      </div>
+      
+      <!-- Поиск и список сертификатов -->
+      <div class="row mt-2">
+        <div class="col-12">
+          <div id="search-certs" class="search-input-container">
+            <input type="text" class="search-input" name="search-certs" placeholder="Search certs">
+          </div>
+          <div id="response" class="server-cert-tables">
+            {{template "certList-tpl" .}}
+          </div>
+        </div>
+      </div>
     </div>
-    
-  <div id="search-certs" class="search-input-container">
-    <input type="text" class="search-input" name="search-certs" placeholder="Search certs">
   </div>
-  <div id="response" class="servers_table">
-  {{template "certList-tpl" .}}
-  </div>
+</div>
 
 <!-- index end template -->
 {{template "footer-tpl" .}}

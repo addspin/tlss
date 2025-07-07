@@ -40,6 +40,12 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		return fmt.Errorf("не удалось определить домашний каталог пользователя: %w", err)
 	}
 
+	dataTest := NewTestData()
+	port, err := dataTest.TestString(serverInfo.Port)
+	if err != nil {
+		return fmt.Errorf("не удалось преобразовать порт в строку: %w", err)
+	}
+
 	// Сохраняем сертификат на сервере в зависимости от типа приложения
 	switch data.AppType {
 	case "nginx":
@@ -56,7 +62,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		certCmd := exec.CommandContext(ctx, "ssh",
 			"-i", fmt.Sprintf("%s/.ssh/id_rsa_tlss", homeDir),
 			"-o", "StrictHostKeyChecking=no",
-			"-p", serverInfo.Port,
+			"-p", port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
 			fmt.Sprintf("echo '%s' > %s && echo '%s' > %s", string(certPEM), certPath, subCACert, subCAPath))
 
@@ -71,7 +77,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		keyCmd := exec.CommandContext(ctx, "ssh",
 			"-i", fmt.Sprintf("%s/.ssh/id_rsa_tlss", homeDir),
 			"-o", "StrictHostKeyChecking=no",
-			"-p", serverInfo.Port,
+			"-p", port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
 			fmt.Sprintf("echo '%s' > %s && chmod 600 %s", string(keyPEM), keyPath, keyPath))
 
@@ -83,7 +89,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		}
 
 		log.Printf("Сертификат и ключ успешно сохранены на удаленном сервере %s:%s по путям %s и %s",
-			serverInfo.Hostname, serverInfo.Port, certPath, keyPath)
+			serverInfo.Hostname, port, certPath, keyPath)
 
 	case "haproxy":
 		// Для HAProxy нужно объединить промежуточный сертификат, сертификат сервера и ключ в один файл
@@ -109,7 +115,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		combinedCmd := exec.CommandContext(ctx, "ssh",
 			"-i", fmt.Sprintf("%s/.ssh/id_rsa_tlss", homeDir),
 			"-o", "StrictHostKeyChecking=no",
-			"-p", serverInfo.Port,
+			"-p", port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
 			fmt.Sprintf("echo '%s' > %s && echo '%s' > %s && chmod 600 %s", combinedContent, combinedPath, subCACert, subCAPath, combinedPath))
 
@@ -122,7 +128,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		}
 
 		log.Printf("Объединенный файл сертификата и ключа успешно сохранен на удаленном сервере %s:%s по пути %s",
-			serverInfo.Hostname, serverInfo.Port, combinedPath)
+			serverInfo.Hostname, port, combinedPath)
 
 	default:
 		log.Printf("Тип приложения %s не поддерживается для сохранения сертификата", data.AppType)

@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/addspin/tlss/models"
-	"github.com/addspin/tlss/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
@@ -36,19 +35,19 @@ func RemoveServer(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		testData := utils.NewTestData()
-		id, err := testData.TestInt(data.Id)
-		if err != nil {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Отсутствуют обязательные поля: " + err.Error(),
-			})
-		}
+		// testData := utils.NewTestData()
+		// id, err := testData.TestInt(data.Id)
+		// if err != nil {
+		// 	return c.Status(400).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Отсутствуют обязательные поля: " + err.Error(),
+		// 	})
+		// }
 		tx := db.MustBegin()
 
 		// удаляем все revoke сертификаты, принадлежащие серверу
 		dataRemoveOCSP := `DELETE FROM ocsp_revoke WHERE id = ?`
-		_, err = tx.Exec(dataRemoveOCSP, id)
+		_, err = tx.Exec(dataRemoveOCSP, data.Id)
 		if err != nil {
 			tx.Rollback()
 			return c.Status(500).JSON(fiber.Map{
@@ -59,7 +58,7 @@ func RemoveServer(c fiber.Ctx) error {
 
 		// удаляем сертификаты сервера
 		dataRemoveCerts := `DELETE FROM certs WHERE server_id = ?`
-		_, err = tx.Exec(dataRemoveCerts, id)
+		_, err = tx.Exec(dataRemoveCerts, data.Id)
 		if err != nil {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{
@@ -70,7 +69,7 @@ func RemoveServer(c fiber.Ctx) error {
 
 		// В конце удаляем сам сервер
 		dataRemove := `DELETE FROM server WHERE id = ?`
-		_, err = tx.Exec(dataRemove, id)
+		_, err = tx.Exec(dataRemove, data.Id)
 		if err != nil {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{

@@ -29,7 +29,7 @@
     margin-left: 43%;
     margin-right: 43%;
     /* margin-top: 15%; */
-    font-size: 0.8rem;
+    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100; 
 }
@@ -41,14 +41,14 @@
     /* margin-right: 36%; */
     margin-top: 2%;
     /* margin-bottom: 5%; */
-    font-size: 0.8rem;
+    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100; 
 }
 .core-servers {
     /* padding-left: 18%; */
     /* padding-right: 30%; */
-    font-size: 0.8rem;
+    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100; /* regular weight */
 }
@@ -56,7 +56,7 @@
     margin-top: 6px;
     padding-left: 0%;
     padding-right: 0%;
-    font-size: 0.8rem;
+    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100;
 }
@@ -64,7 +64,7 @@
     margin-top: 40px;
     padding-left: 20%;
     padding-right: 0%;
-    font-size: 0.8rem;
+    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100;
 }
@@ -75,7 +75,7 @@
     /* padding-right: 10%; */
     min-height: 100vh;
     width: 220px;
-    font-size: 0.8rem;
+    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100;
     background-color: #181b1d;
@@ -110,7 +110,7 @@
     --bs-breadcrumb-margin-bottom: 0rem;
     font-family: Inter  ;
     font-weight: 100;
-    font-size: 0.8rem;
+    /* font-size: 0.8rem; */
 }
 
 .b-example-vr {
@@ -393,7 +393,7 @@
     padding-right: 30%;
     align-content: center;
     padding-top: 1%;
-    font-size: 0.8rem;
+    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100;
 }
@@ -401,7 +401,7 @@
     padding-left: 8%;
     padding-right: 8%;
     align-content: center;
-    font-size: 0.8rem;
+    /* font-size: 0.8rem; */
 }
 
 .search-input {

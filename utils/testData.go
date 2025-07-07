@@ -7,6 +7,7 @@ import (
 type TestDataInterface interface {
 	TestInt(data string) (int, error)
 	TestBool(data string) (bool, error)
+	TestString(data int) (string, error)
 }
 type testData struct{}
 
@@ -25,6 +26,12 @@ func (t *testData) TestBool(data string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	return convData, nil
+}
+
+// проверяем на ошибки конвертацию строки в строку
+func (t *testData) TestString(data int) (string, error) {
+	convData := strconv.Itoa(data)
 	return convData, nil
 }
 

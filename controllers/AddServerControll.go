@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
@@ -26,7 +27,6 @@ func AddServerControll(c fiber.Ctx) error {
 
 	if c.Method() == "POST" {
 		data := new(models.ServerData)
-
 		c.Bind().JSON(data)
 		log.Println(data.Hostname, data.Username, data.Password, data.TlssSSHport, data.Path)
 
@@ -38,14 +38,15 @@ func AddServerControll(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		if data.Hostname == "" || data.Username == "" || data.Password == "" || data.TlssSSHport == "" || data.Path == "" {
+		if data.Hostname == "" || data.Username == "" || data.Password == "" || data.TlssSSHport == 0 || data.Path == "" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Missing required fields",
 			})
 		}
 		// Добавить ключ доступа на удленный сервер
-		err = crypts.AddAuthorizedKeys(data.Hostname, data.TlssSSHport, data.Username, data.Password)
+		tlsPort := strconv.Itoa(data.TlssSSHport)
+		err = crypts.AddAuthorizedKeys(data.Hostname, tlsPort, data.Username, data.Password)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",

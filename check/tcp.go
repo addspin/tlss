@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
@@ -57,7 +58,8 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 		}
 		// проходимся по списку серверов и проверяем доступность
 		for _, server := range serverList {
-			conn, err := net.Dial("tcp", server.Hostname+":"+server.Port)
+			port := strconv.Itoa(server.Port)
+			conn, err := net.Dial("tcp", server.Hostname+":"+port)
 			if err != nil {
 				s.ExitCodeTcp = false // port is not available
 				// log.Println("TCP port is not available:", server.Hostname+":"+server.Port)

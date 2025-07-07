@@ -1,12 +1,19 @@
 {{template "header-tpl" .}}
-{{template "menu-tpl" .}}
+<!-- {{template "menu-tpl" .}} -->
 {{template "body-tpl" .}}
 
 <!-- <div class="containers"> -->
+  <div class="container-fluid">
     <div class="row">
-      <div class="col-md-3">
-        <div class="left-core">
-          <!-- Левая панель с сущностями -->
+      <!-- Левое меню -->
+      <div class="left-menu-core">
+        {{template "menu-left-tpl" .}}
+      </div>
+      <div class="col-10 p-1">
+        <div class="row">
+          <div class="col-2">
+            <div class="left-core">
+              <!-- Левая панель с сущностями -->
           <div id="search-server" class="search-input-container-server">
             <input type="text" class="search-input" name="search-server" placeholder="Search entity">
           </div>
@@ -14,18 +21,31 @@
         </div>
       </div>
 
-      <div class="col-md-6">
+      <div class="col-7">
         <!-- Правая панель с формой для создания сертификата -->
-        <div class="core-certs">
-          <div id="search-certs" class="search-input-container-revoke">
-            <input type="text" class="search-input" name="search-certs" placeholder="Search user certs">
-          </div>
-          <div id="response" class="certs_revoke_table">
-            {{template "certUserRevokeList-tpl" .}}
+        <div><ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="#">Overview</a></li>  
+          <li class="breadcrumb-item"><a href="#">Users certs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Revoke users certs</li>
+        </ol></div>
+
+        <!-- Поиск и список сертификатов -->
+        <div class="row mt-2">
+          <div class="col-12">
+          <div class="core-certs">
+            <div id="search-certs" class="search-input-container-revoke">
+              <input type="text" class="search-input" name="search-certs" placeholder="Search user certs">
+            </div>
+            <div id="response" class="certs_revoke_table">
+              {{template "certUserRevokeList-tpl" .}}
+            </div>
           </div>
         </div>
       </div>
+      </div>
     </div>
+  </div>
+</div>
 
 <!-- index end template -->
 {{template "footer-tpl" .}}

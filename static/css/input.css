@@ -82,6 +82,7 @@
     /* border-left: 1px solid #a99ee8; */
     /* border-right: 15px solid #1a1e21; */
     text-decoration: none;
+    cursor: pointer;
 }
 
 .left-menu {
@@ -315,7 +316,7 @@
     border-top: none;
     border-left: none;
     border-right: none;
-    background-color: transparent;
+    background-color: #212529;
     margin-top: 5px;
     width: 100%;
 }
@@ -331,7 +332,7 @@
     border-left: none;
     border-right: none;
     border-bottom: none;
-    background-color: transparent;
+    background-color: #212529;
     margin-top: 5px;
     width: 100%;
 }

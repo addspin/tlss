@@ -320,9 +320,9 @@
     margin-top: 5px;
     width: 100%;
 }
-.select_title {
+/* .select_title {
     
-}
+} */
 
 .select_certs_revoke {
     border: 1px solid #a99ee8;
@@ -426,10 +426,10 @@
     margin-bottom: 10%;
 }
 
-[class^="server_id_"] {
+/* [class^="server_id_"] {
 
 
-}
+} */
 
 /* Стили для анимации загрузки */
 

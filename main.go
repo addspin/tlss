@@ -167,7 +167,7 @@ func main() {
 			log.Fatal(err.Error())
 		}
 		// записываем в таблицу login владельца
-		loginInsert := `INSERT INTO UsersData (username) VALUES ($1)`
+		loginInsert := `INSERT INTO users (username) VALUES ($1)`
 		_, err = tx.Exec(loginInsert, login)
 		if err != nil {
 			log.Fatal(err.Error())

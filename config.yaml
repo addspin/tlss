@@ -1,6 +1,7 @@
 app:
   port: 43000
   hostname: tlss.lv.local
+  # hostname: localhost
   # useHTTPS: true
   protocol: https
   certFile: ./https/tlss.lv.local.pem

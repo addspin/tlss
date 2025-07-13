@@ -7,15 +7,15 @@
                 <th scope="col">Create date</th>
                 <th scope="col">Expire date</th>
                 <th scope="col">Expire in</th>
-                <th scope="col">Algorithm</th>
+                <th scope="col" class="th-text-center">Algorithm</th>
                 <th scope="col">Key size</th>
                 <th scope="col">Status</th>
-                <th scope="col">Recreate</th>
+                <th scope="col" class="th-text-center">Recreate</th>
                 <th scope="col">Revoke</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
                 <th scope="col">Take cert</th>
-                <th scope="col">Remove</th>
+                <th scope="col" class="th-text-center">Remove</th>
               </tr>
             </thead>
             <tbody>
@@ -31,7 +31,7 @@
                       <!-- Expire in -->
                       <td>{{ .DaysLeft }} days</td>
                       <!-- Algorithm -->
-                      <td>{{ .Algorithm }}</td>
+                      <td class="th-text-center">{{ .Algorithm }}</td>
                       <!-- Key length -->
                       <td>{{ .KeyLength }} bits</td>
                       <!-- Status -->
@@ -41,7 +41,7 @@
                         </div>
                       </td>
                       <!-- Recreate -->
-                      <td>{{ if eq .Recreate true }}Yes{{ else }}No{{ end }}</td>
+                      <td class="th-text-center">{{ if eq .Recreate true }}Yes{{ else }}No{{ end }}</td>
                       <!-- Revoke -->
                        <td>
                         <select id="revoke_reason_{{ .Id }}" name="reason_revoke" class="select_certs_revoke" type="text">  
@@ -82,7 +82,7 @@
                         confirmButtonText: 'Yes, revoke!',
                         
                         inputValidator: (value) => {
-                        if (value != {{ .CommonName }}) {
+                        if (value != '{{ .CommonName }}') {
                           return 'Вы ввели не верное имя сертификата, введите {{ .CommonName }}';
                         }
                       }
@@ -109,7 +109,7 @@
                         </div>
                       </td>
                       <!-- Remove -->
-                      <td>
+                      <td class="th-text-center">
                         <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         onClick="const { value: commonName } = Swal.fire({
                         showClass: {
@@ -136,7 +136,7 @@
                         confirmButtonText: 'Yes, delete!',
                         
                         inputValidator: (value) => {
-                        if (value != {{ .CommonName }}) {
+                        if (value != '{{ .CommonName }}') {
                           return 'Вы ввели не верное имя сертификата, введите {{ .CommonName }}';
                         }
                       }

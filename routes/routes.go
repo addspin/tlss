@@ -32,8 +32,10 @@ func Setup(app *fiber.App) {
 	app.Post("/api/v1/ocspUser", usersCertControllers.HandleOCSPUser)
 
 	// Protected routes (auth required)
-	app.Get("/add_server", controllers.AddServerControll)
-	app.Post("/add_server", controllers.AddServerControll)
+	app.Get("/add_server", controllers.AddServerControll)                 // Получение списка серверов
+	app.Post("/add_server", controllers.AddServerControll)                // Добавление сервера
+	app.Get("/add_server_entity", controllers.AddServerEntityController)  // Получение списка сущностей для серверных сертификатов
+	app.Post("/add_server_entity", controllers.AddServerEntityController) // Добавление сущности для серверных сертификатов
 	app.Post("/remove_server", controllers.RemoveServer)
 	app.Get("/add_certs", controllers.AddCertsControll)
 	app.Post("/add_certs", controllers.AddCertsControll)

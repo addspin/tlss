@@ -96,6 +96,24 @@ func RollbackCert(c fiber.Ctx) error {
 		log.Printf("Сертификат для домена %s (серийный номер: %s) успешно восстановлен и удален из OCSP", domain, serialNumber)
 
 		if data.SaveOnServer {
+			var serverInfo models.Server
+			err = db.Get(&serverInfo, "SELECT COALESCE(cert_config_path, '') as cert_config_path FROM server WHERE id = ?", data.ServerId)
+			if err != nil {
+				tx.Rollback()
+				log.Println("RollbackCert: GetServerInfo: Ошибка при получении cert_config_path из базы данных:" + err.Error())
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Ошибка при извлечении из базы данных, см. лог:" + err.Error(),
+				})
+			}
+			if serverInfo.CertConfigPath == "" {
+				tx.Rollback()
+				log.Println("RollbackCert: CheckSaveOnServer: Объект не является сервером для сохранения сертификата")
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Выбран Save on server, но объект не является сервером, сохранить сертификат невозможно",
+				})
+			}
 			// Изменим имя сертифмката с wildcard именами с  *.test.ru на test.ru
 			// в POST приходят именя с фронта, но в базе данных они хранятся без wildcard
 			data.Domain = domain

@@ -1,4 +1,4 @@
-<!-- USER ENTITIES -->
+<!-- SERVERS ENTITIES -->
 {{template "header-tpl" .}}
 <!-- {{template "menu-tpl" .}} -->
 {{template "body-tpl" .}}
@@ -17,17 +17,17 @@
       <div class="col-7">
         <div><ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="#">Overview</a></li>  
-          <li class="breadcrumb-item"><a href="#">Users certs</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Add entities</li>
+          <li class="breadcrumb-item"><a href="#">Servers certs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Add server entities</li>
         </ol></div>
       <div class="core-servers">
         <form class="" 
-          hx-post="/add_entity" 
+          hx-post="/add_server_entity" 
           hx-target="#body" 
           hx-ext="json-enc-custom" 
           parse-types="true"
           hx-on::after-request="
-            if (event.detail.xhr.responseText) {
+           if (event.detail.xhr.responseText) { 
               try {
                 const response = JSON.parse(event.detail.xhr.responseText);
                 if (response.status === 'error') {
@@ -43,22 +43,22 @@
                 }
               } catch (e) {}
             }
-          ">
-          <label for="inputUser" id= "" class="form_lable" >Add new entity</label>
+          ">  
+          <label for="inputUser" id= "" class="form_lable" >Add new server entity</label>
           <div class="input_border color-form-servers">
             <div class="row g-3 form_center_entity">
               <div class="col ">
-                  <input type="text" class="c_input" id="entity_name" name="EntityName" placeholder="Entity name" required>
+                  <input type="text" class="c_input" id="hostname" name="hostname" placeholder="Entity name" required>
               </div>
             </div>
             <div class="row g-3 form_center_entity">
               <div class="col ">
-                <input type="text" class="c_input " id="entity_description" name="EntityDescription" placeholder="Entity description" required>
+                <input type="text" class="c_input " id="description" name="description" placeholder="Entity description" required>
               </div>
             </div>
             <div class="row g-3 form_center">
               <div class="col">
-                <button type="submit" class="btn-custom btn-custom-servers mt-2">Add entity</button>
+                <button type="submit" class="btn-custom btn-custom-servers mt-2">Add server entity</button>
               </div>
             </div>
           </div>
@@ -68,10 +68,10 @@
       <div class="row mt-2">
         <div class="col-12">
           <div id="search-servers" class="search-input-container">
-            <input type="text" class="search-input" name="search-servers" placeholder="Search servers">
+            <input type="text" class="search-input" name="search-servers" placeholder="Search entity">
           </div>
           <div id="response" class="servers_table">
-            {{template "entityList-tpl" .}}
+            {{template "entityServerList-tpl" .}}
           </div>
         </div>
       </div>

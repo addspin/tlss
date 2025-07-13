@@ -1,6 +1,6 @@
 package models
 
-// структура для добавления сервера
+// структура для добавления сущности
 type EntityData struct {
 	Id                int    `json:"Id" db:"id"`
 	EntityName        string `json:"EntityName" db:"entity_name"`

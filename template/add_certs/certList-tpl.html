@@ -7,15 +7,15 @@
                 <th scope="col">Create date</th>
                 <th scope="col">Expire date</th>
                 <th scope="col">Expire in</th>
-                <th scope="col">Algorithm</th>
+                <th scope="col" class="th-text-center">Algorithm</th>
                 <th scope="col">Key size</th>
                 <th scope="col">Status</th>
-                <th scope="col">Recreate</th>
+                <th scope="col" class="th-text-center">Recreate</th>
                 <th scope="col">Revoke</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
                 <th scope="col">Take cert</th>
-                <th scope="col">Remove</th>
+                <th scope="col" class="th-text-center">Remove</th>
               </tr>
             </thead>
             <tbody>
@@ -43,7 +43,7 @@
                       <!-- Recreate -->
                       <td class="th-text-center">{{ if eq .Recreate true }}Yes{{ else }}No{{ end }}</td>
                       <!-- Revoke -->
-                       <td>
+                       <td class="th-text-center">
                         <!-- <label class="select_title">TEST</label> -->
                         <select id="revoke_reason_{{ .Id }}" name="reason_revoke" class="select_certs_revoke" type="text">  
                           <option value="keyCompromise">keyCompromise</option>
@@ -51,7 +51,7 @@
                           <option value="unspecified" selected>unspecified</option>
                         </select>
                       </td>
-                      <td>
+                      <td class="th-text-center">
                         <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         hx-vals='js:{
                             "id": {{ .Id }}, 
@@ -96,10 +96,16 @@
                       </td>
                       <td></td>
                       <!-- Take cert -->
-                      <td class="th-text-center">
-                        <a href="/take_cert?serverId={{ .ServerId }}&id={{ .Id }}" download>
-                          <img src="/svg/take_cert.svg" alt="Take certificate" style="cursor: pointer;" width="20" height="20">
-                        </a>
+                      <td>
+                        <div class="btn-group">
+                          <button type="button" class="select_cert_take dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="/svg/take_cert.svg" alt="Select format" style="cursor: pointer;" width="15" height="15">
+                            Select format
+                          </button>
+                          <ul class="dropdown-menu">
+                            <li><a class="dropdown-item-take" href="/take_cert?serverId={{ .ServerId }}&id={{ .Id }}&format=zip">zip</a></li>
+                          </ul>
+                        </div>
                       </td>
                       <!-- Remove -->
                       <td class="th-text-center">

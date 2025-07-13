@@ -1,24 +1,23 @@
-{{define "serverList-tpl"}}
+<!-- SERVER ENTITIES -->
+{{define "entityServerList-tpl"}}
+
             <table class="table">
               <thead>
               <tr>
-                <th scope="col">Hostname</th>
-                <th scope="col">Path certs</th>
-                <th scope="col">Status</th>
+                <th scope="col">Entity name</th>
+                <th scope="col">Entity description</th>
+                <th scope="col"></th>
                 <th scope="col" class="th-text-center">Remove</th>
               </tr>
             </thead>
             <tbody>
-              {{ range .serverList }}
+              {{ range .serverEntityList }}
               <tr class="server_id_{{ .Id }}">
                   <td>{{ .Hostname }}</td>
-                  <td>{{ .CertConfigPath }}</td>
-                  <td>
-                      <div class="state-{{ if eq .ServerStatus "online" }}online{{ else }}offline{{ end }}" >{{ .ServerStatus }}</div>
-                  </td>
-                  <!-- Remove server -->
+                  <td>{{ .Description }}</td>
+                  <td></td>
                   <td class="th-text-center">
-                    <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_server" hx-target=".server_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="false" 
+                    <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_server" hx-target=".server_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                     onClick="const { value: hostname } = Swal.fire({
                     showClass: {
                     popup: `
@@ -36,7 +35,7 @@
                     },
                     customClass: 'custom-alert',
                     input: 'text',
-                    title: 'Вы уверены, что хотите удалить сервер - {{ .Hostname }}?', 
+                    title: 'Вы уверены, что хотите удалить сущность - {{ .Hostname }}?', 
                     text: 'Для подтверждения введите {{ .Hostname }}', 
                     showCancelButton: true,
                     confirmButtonColor: '#983636',
@@ -44,8 +43,8 @@
                     confirmButtonText: 'Yes, delete it!',
                     
                     inputValidator: (value) => {
-                    if (value != {{ .Hostname }}) {
-                      return 'Вы ввели не верное имя сервера, введите {{ .Hostname }}';
+                    if (value != '{{ .Hostname }}') {
+                      return 'Вы ввели не верное имя сущности, введите {{ .Hostname }}';
                     }
                   }
                   }).then((result) => {

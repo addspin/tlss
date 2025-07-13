@@ -16,7 +16,7 @@
                          statusInput.value = '{{ .ServerStatus }}';
                          statusInput.setAttribute('value', '{{ .ServerStatus }}');">
           {{ .Hostname }}
-          <span class="state-{{ if eq .ServerStatus "online" }}online-server-certs{{ else }}offline-server-certs{{ end }}"></span>
+          <span class="state-{{ if eq .CertConfigPath "" }}entity-server-certs{{ else if eq .ServerStatus "online" }}online-server-certs{{ else }}offline-server-certs{{ end }}"></span>
         </button>
       </div>
     </div>

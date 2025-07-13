@@ -51,9 +51,9 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 		}
 		// извлекаем список северов из базы данных
 		serverList := []models.Server{}
-		err = db.Select(&serverList, "SELECT hostname, port FROM server")
+		err = db.Select(&serverList, "SELECT hostname, port FROM server WHERE port IS NOT NULL")
 		if err != nil {
-			log.Printf("Ошибка выбора серверов: %v", err)
+			log.Printf("TCP checker: Ошибка извлечения серверов из базы данных: %v", err)
 			continue
 		}
 		// проходимся по списку серверов и проверяем доступность

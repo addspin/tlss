@@ -4,42 +4,50 @@
         <li><a class="link-menu-left" href="#" disabled>Overview</a></li>
         <hr>
         <li class="title-menu-left">Servers certs</li>
-        <li><a class="link-menu-left" hx-get="/add_server" 
+        <li><a class="link-menu-left {{if eq .Title "Add server entity"}}active{{else}}{{end}}" 
+            hx-get="/add_server_entity" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Add entity</a></li>
-        <li><a class="link-menu-left" 
+        <li><a class="link-menu-left {{if eq .Title "Add server"}}active{{else}}{{end}}" 
             hx-get="/add_server" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Add servers</a></li>
-        <li><a class="link-menu-left" 
+        <li><a class="link-menu-left {{if eq .Title "Add certs"}}active{{else}}{{end}}" 
             hx-get="/add_certs" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Add servers certs</a></li>
-        <li><a class="link-menu-left" 
+        <li><a class="link-menu-left {{if eq .Title "Revoke certs"}}active{{else}}{{end}}" 
             hx-get="/revoke_certs" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Revoke servers certs</a></li>
         <hr>
         <li class="title-menu-left">Users certs</li>
-        <li><a class="link-menu-left" 
+        <li><a class="link-menu-left {{if eq .Title "Add entity"}}active{{else}}{{end}}" 
             hx-get="/add_entity" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Add entity</a></li>
-        <li><a class="link-menu-left" 
+        <li><a class="link-menu-left {{if eq .Title "Add users certs"}}active{{else}}{{end}}" 
             hx-get="/add_users_certs" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Add users certs</a></li>
-        <li><a class="link-menu-left" 
+        <li><a class="link-menu-left {{if eq .Title "Revoke users certs"}}active{{else}}{{end}}``" 
             hx-get="/revoke_users_certs" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Revoke users certs</a></li>
-  
+        <hr>
+        <li class="title-menu-left">API</li>
+        <li><a class="link-menu-left disabled" aria-disabled="true"
+            hx-get="" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">API lists</a></li>
+    
     </ul>
 {{end}}

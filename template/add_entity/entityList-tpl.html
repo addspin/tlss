@@ -1,3 +1,4 @@
+<!-- USER ENTITIES -->
 {{define "entityList-tpl"}}
 
             <table class="table">
@@ -6,7 +7,7 @@
                 <th scope="col">Entity name</th>
                 <th scope="col">Entity description</th>
                 <th scope="col"></th>
-                <th scope="col">Remove</th>
+                <th scope="col" class="th-text-center">Remove</th>
               </tr>
             </thead>
             <tbody>
@@ -15,7 +16,7 @@
                   <td>{{ .EntityName }}</td>
                   <td>{{ .EntityDescription }}</td>
                   <td></td>
-                  <td>
+                  <td class="th-text-center">
                     <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_entity" hx-target=".entity_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                     onClick="const { value: hostname } = Swal.fire({
                     showClass: {
@@ -42,7 +43,7 @@
                     confirmButtonText: 'Yes, delete it!',
                     
                     inputValidator: (value) => {
-                    if (value != {{ .EntityName }}) {
+                    if (value != '{{ .EntityName }}') {
                       return 'Вы ввели не верное имя сущности, введите {{ .EntityName }}';
                     }
                   }

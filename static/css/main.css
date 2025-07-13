@@ -28,8 +28,8 @@
     padding: 5%;
 }
 .servers_table {
-    padding-left: 10%;
-    padding-right: 20%;
+    padding-left: 3%;
+    padding-right: 10%;
     align-content: center;
     padding-top: 3%;
     font-size: 14px;
@@ -58,7 +58,7 @@
     font-weight: bold;
     font-family: Inter;
     font-variant: all-small-caps;
-    font-size: small;
+    font-size: medium;
 }
 
 .table td, .table th {
@@ -115,6 +115,13 @@
     margin-left: 5%;
 }
 
+.state-entity-server-certs {
+    width: 10px;
+    height: 10px;
+    background-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+}
 
 .state-valid-certs {
     background: #2ba03d;

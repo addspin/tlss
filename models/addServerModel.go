@@ -7,6 +7,7 @@ type Server struct {
 	Username       string `db:"username"`
 	CertConfigPath string `db:"cert_config_path"`
 	ServerStatus   string `db:"server_status"`
+	Description    string `db:"description"`
 }
 
 // структура для добавления сервера
@@ -17,6 +18,7 @@ type ServerData struct {
 	Password    string `json:"password"`
 	TlssSSHport int    `json:"tlssSSHport"`
 	Path        string `json:"path"`
+	Description string `json:"description"`
 }
 
 var SchemaServer = `
@@ -26,5 +28,6 @@ CREATE TABLE IF NOT EXISTS server (
 	port INTEGER,
 	username TEXT,
 	cert_config_path TEXT,
-	server_status TEXT DEFAULT 'offline'
+	server_status TEXT DEFAULT 'offline',
+	description TEXT
 );`

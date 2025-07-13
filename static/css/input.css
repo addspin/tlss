@@ -82,7 +82,6 @@
     /* border-left: 1px solid #a99ee8; */
     /* border-right: 15px solid #1a1e21; */
     text-decoration: none;
-    cursor: pointer;
 }
 
 .left-menu {
@@ -92,14 +91,22 @@
 .link-menu-left {
     margin-left: 20px;
     text-decoration: none;
+    cursor: pointer;
     color: #6ea8fe;
 }
 .link-menu-left:hover {
-    /* border-bottom: 2px solid #ffffff; */
+    /* border-left: 4px solid #ffffff; */
+    /* padding-left: 4px; */
     color: #4f77b2;
     background-color: #181b1d;
     transition: all 0.1s ease;
-
+}
+.link-menu-left.active {
+    border-left: 4px solid #ffffff;
+    padding-left: 4px;
+    color: #4f77b2;
+    background-color: #181b1d;
+    transition: all 0.01s ease;
 }
 
 .title-menu-left {
@@ -242,24 +249,33 @@
     display: block; 
     width: 100%;
     font-size: 0.9em;
-    color: #000000;
+    font-family: Inter;
+    font-weight: 100;
+    color: #ffffff;
     text-decoration: none;
     padding-left: 1rem;
+    margin: 0 8px;
 }
 
 .dropdown-item-take:hover {
     background: #007bff;
     padding-left: 1rem;
-}
+    font-family: Inter;
+    font-weight: 100;
+    font-size: 0.9em;
+    width: auto;
+    margin: 0 8px;
+    border-radius: 5px; /* закругленные углы для лучшего вида */
+} 
 
 .select_cert_take:hover {
     background: #0056b3;
 }
 
 .dropdown-menu {
-    background-color: #ECECEC;
-    color: #000000;
-    --bs-dropdown-min-width: 7rem;
+    background-color: #212529;
+    color: #ffffff;
+    /* --bs-dropdown-min-width: 7rem; */
 } 
 
 .dropdown-menu-custom {
@@ -296,7 +312,7 @@
 
 .dropdown-menu.show {
     /* background-color: #ffffff; */
-    color: #000000;
+    color: #ffffff;
 } 
 
 .form_lable {

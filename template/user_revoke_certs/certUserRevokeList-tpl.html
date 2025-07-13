@@ -7,11 +7,11 @@
                 <th scope="col">Create date</th>
                 <th scope="col">Expire in</th>
                 <th scope="col">Revoke date</th>
-                <th scope="col">Algorithm</th>
+                <th scope="col" class="th-text-center">Algorithm</th>
                 <th scope="col">Key length</th>
                 <th scope="col">Reason</th>
                 <th scope="col">Rollback</th>
-                <th scope="col">Remove</th>
+                <th scope="col" class="th-text-center">Remove</th>
               </tr>
             </thead>
             <tbody>
@@ -27,7 +27,7 @@
                       <!-- Revoke date -->
                       <td>{{ .DataRevoke }}</td>
                       <!-- Algorithm -->
-                      <td>{{ .Algorithm }}</td>
+                      <td class="th-text-center">{{ .Algorithm }}</td>
                       <!-- Key length -->
                       <td>{{ .KeyLength }} bits</td>
                       <!-- Reason -->
@@ -76,7 +76,7 @@
                       });"
                         >Rollback</td>
                       <!-- Remove -->
-                      <td>
+                      <td class="th-text-center">
                         <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_users_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         onClick="const { value: commonName } = Swal.fire({
                         showClass: {

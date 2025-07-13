@@ -108,7 +108,7 @@ func AddCertsControll(c fiber.Ctx) error {
 	}
 	if c.Method() == "GET" {
 		serverList := []models.Server{}
-		err := db.Select(&serverList, "SELECT id, hostname, server_status FROM server")
+		err := db.Select(&serverList, "SELECT id, hostname, server_status, COALESCE(cert_config_path, '') as cert_config_path FROM server")
 		if err != nil {
 			log.Fatal(err)
 		}

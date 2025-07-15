@@ -74,13 +74,13 @@
     padding-top: 10px;
     /* padding-right: 10%; */
     min-height: 100vh;
-    width: 220px;
+    width: 240px;
     /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100;
-    background-color: #181b1d;
+    background-color: #212529;
     /* border-left: 1px solid #a99ee8; */
-    /* border-right: 15px solid #1a1e21; */
+    border-right: 8px solid #1a1e21;
     text-decoration: none;
 }
 
@@ -98,14 +98,14 @@
     /* border-left: 4px solid #ffffff; */
     /* padding-left: 4px; */
     color: #4f77b2;
-    background-color: #181b1d;
+    background-color: transparent;
     transition: all 0.1s ease;
 }
 .link-menu-left.active {
     border-left: 4px solid #ffffff;
     padding-left: 4px;
     color: #4f77b2;
-    background-color: #181b1d;
+    background-color: transparent;
     transition: all 0.01s ease;
 }
 

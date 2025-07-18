@@ -21,7 +21,6 @@ type StatusCodeTcp struct {
 
 func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 	ticker := time.NewTicker(timeTicker)
-	log.Println("TCP check started")
 	defer ticker.Stop()
 	s.MutexTcp.Lock()
 	defer s.MutexTcp.Unlock()
@@ -30,23 +29,24 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Printf("Ошибка открытия базы данных: %v", err)
+		log.Printf("TCP checker: Ошибка открытия базы данных: %v", err)
 		return
 	}
-	fmt.Println("Подключено к базе данных: ", database)
+	fmt.Println("TCP checker: Подключено к базе данных: ", database)
 	defer db.Close()
 
 	var checkServerList bool
 	for range ticker.C {
+		log.Println("TCP checker: Проверка доступности серверов началась")
 		// проверяем, есть хотя бы один сервер в базе данных?
 		err = db.Get(&checkServerList, "SELECT EXISTS(SELECT 1 FROM server)")
 		if err != nil {
-			log.Printf("Ошибка проверки списка серверов: %v", err)
+			log.Printf("TCP checker: Ошибка проверки списка серверов: %v", err)
 			continue
 		}
 		// если нет, пишем что в базе нет серверов
 		if !checkServerList {
-			log.Println("В базе данных нет серверов")
+			log.Println("TCP checker: В базе данных ничего нет")
 			continue
 		}
 		// извлекаем список северов из базы данных
@@ -56,11 +56,16 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 			log.Printf("TCP checker: Ошибка извлечения серверов из базы данных: %v", err)
 			continue
 		}
+		// Проверка на наличие сервера в базе данных
+		if len(serverList) == 0 {
+			log.Println("TCP checker: В базе данных нет серверов для проверки")
+			continue
+		}
 		// проходимся по списку серверов и проверяем доступность
 		testData := utils.NewTestData()
 		port, err := testData.TestString(serverList[0].Port)
 		if err != nil {
-			log.Printf("Ошибка преобразования порта: %v", err)
+			log.Printf("TCP checker: Ошибка преобразования порта: %v", err)
 			continue
 		}
 		for _, server := range serverList {
@@ -68,20 +73,20 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 			if err != nil {
 				s.ExitCodeTcp = false // port is not available
 				// log.Println("TCP port is not available:", server.Hostname+":"+server.Port)
-				log.Printf("TCP порт не доступен: %s:%d, ошибка: %v", server.Hostname, server.Port, err)
+				log.Printf("TCP checker: порт не доступен: %s:%d, ошибка: %v", server.Hostname, server.Port, err)
 				_, err = db.Exec("UPDATE server SET server_status = ? WHERE hostname = ? AND port = ?", "offline", server.Hostname, server.Port)
 				if err != nil {
-					log.Printf("Ошибка обновления статуса сервера: %v", err)
+					log.Printf("TCP checker: Ошибка обновления статуса сервера: %v", err)
 					continue
 				}
 			} else {
 				s.ExitCodeTcp = true // port is available
 				// log.Println("TCP port is available:", server.Hostname+":"+server.Port)
-				log.Printf("TCP порт доступен: %s:%d", server.Hostname, server.Port)
+				log.Printf("TCP checker: порт доступен: %s:%d", server.Hostname, server.Port)
 				// меняем значение в базе данных c offline на online
 				_, err = db.Exec("UPDATE server SET server_status = ? WHERE hostname = ? AND port = ?", "online", server.Hostname, server.Port)
 				if err != nil {
-					log.Printf("Error updating server status: %v", err)
+					log.Printf("TCP checker: Ошибка обновления статуса сервера: %v", err)
 				}
 				conn.Close()
 			}

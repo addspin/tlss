@@ -80,7 +80,7 @@ func AddServerEntityController(c fiber.Ctx) error {
 				}
 
 				serverEntityList := []models.Server{}
-				err := db.Select(&serverEntityList, "SELECT id, hostname, COALESCE(description, '') as description FROM server WHERE cert_config_path IS NULL OR cert_config_path = ''")
+				err := db.Select(&serverEntityList, "SELECT id, TRIM(hostname) as hostname, COALESCE(description, '') as description FROM server WHERE cert_config_path IS NULL OR cert_config_path = ''")
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -94,7 +94,7 @@ func AddServerEntityController(c fiber.Ctx) error {
 	}
 	if c.Method() == "GET" {
 		serverEntityList := []models.Server{}
-		err := db.Select(&serverEntityList, "SELECT id, hostname, COALESCE(description, '') as description FROM server WHERE cert_config_path IS NULL OR cert_config_path = ''")
+		err := db.Select(&serverEntityList, "SELECT id, TRIM(hostname) as hostname, COALESCE(description, '') as description FROM server WHERE cert_config_path IS NULL OR cert_config_path = ''")
 		if err != nil {
 			log.Fatal(err)
 		}

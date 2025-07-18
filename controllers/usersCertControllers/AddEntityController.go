@@ -82,7 +82,7 @@ func AddEntityController(c fiber.Ctx) error {
 				})
 			}
 			entityList := []models.EntityData{}
-			error := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
+			error := db.Select(&entityList, "SELECT id, TRIM(entity_name) as entity_name, TRIM(entity_description) as entity_description FROM entity")
 			if error != nil {
 				log.Fatal(err)
 			}
@@ -95,7 +95,7 @@ func AddEntityController(c fiber.Ctx) error {
 	}
 	if c.Method() == "GET" {
 		entityList := []models.EntityData{}
-		err := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
+		err := db.Select(&entityList, "SELECT id, TRIM(entity_name) as entity_name, TRIM(entity_description) as entity_description FROM entity")
 		if err != nil {
 			log.Fatal(err)
 		}

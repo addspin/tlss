@@ -176,9 +176,9 @@ func CertListController(c fiber.Ctx) error {
 		}
 		// Обрабатываем wildcard домены для отображения
 		if len(certList) > 0 {
-			wildcard := certList[0].Wildcard
+			// wildcard := certList[0].Wildcard
 			for i := range certList {
-				if wildcard {
+				if certList[i].Wildcard {
 					certList[i].Domain = "*." + certList[i].Domain
 				}
 			}

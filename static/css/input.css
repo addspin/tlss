@@ -442,10 +442,11 @@
     margin-bottom: 10%;
 }
 
-/* [class^="server_id_"] {
-
-
-} */
+[class^="server_id_"] {
+    font-family: Inter;
+    font-weight: 100;
+    font-size: 0.8rem;
+}
 
 /* Стили для анимации загрузки */
 

@@ -17,11 +17,13 @@
       <div class="col-7">
         <div><ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="#">Overview</a></li>  
-          <li class="breadcrumb-item"><a href="#">Servers certs</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Add server entities</li>
+          <li class="breadcrumb-item active" aria-current="page">Add entities</li>
+          <li class="breadcrumb-item"><a href="/add_server">Add servers</a></li>
+          <li class="breadcrumb-item"><a href="/add_certs">Add servers certs</a></li>
+          <li class="breadcrumb-item"><a href="/revoke_certs">Revoke servers certs</a></li>
         </ol></div>
       <div class="core-servers">
-        <form class="" 
+        <form class=""  
           hx-post="/add_server_entity" 
           hx-target="#body" 
           hx-ext="json-enc-custom" 

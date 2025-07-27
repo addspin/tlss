@@ -16,6 +16,11 @@ import (
 	"software.sslmate.com/src/go-pkcs12"
 )
 
+const (
+	rootCAFileName = "root_ca_tlss.pem"
+	subCAFileName  = "sub_ca_tlss.pem"
+)
+
 func TakeCert(c fiber.Ctx) error {
 	// ---------------------------------------Database inicialization for add server
 	database := viper.GetString("database.path")
@@ -53,6 +58,16 @@ func TakeCert(c fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
 			"message": fmt.Sprintf("Не удалось получить промежуточный сертификат: %v", err),
+		})
+	}
+
+	// Извлекаем Root CA сертификат из базы данных
+	var rootCACert string
+	err = db.Get(&rootCACert, "SELECT public_key FROM root_ca_tlss WHERE id = 1")
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": fmt.Sprintf("Не удалось получить корневой сертификат: %v", err),
 		})
 	}
 
@@ -113,13 +128,14 @@ func TakeCert(c fiber.Ctx) error {
 		zipWriter := zip.NewWriter(&buf)
 
 		// Добавляем Sub CA сертификат
-		subCAFile, err := zipWriter.Create("sub_ca.crt")
+		subCAFile, err := zipWriter.Create(subCAFileName)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Ошибка создания архива",
 			})
 		}
+
 		_, err = subCAFile.Write([]byte(subCACert))
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
@@ -127,6 +143,23 @@ func TakeCert(c fiber.Ctx) error {
 				"message": "Ошибка записи Sub CA в архив",
 			})
 		}
+
+		// Добавляем Root CA сертификат
+		rootCAFile, err := zipWriter.Create(rootCAFileName)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка создания архива",
+			})
+		}
+		_, err = rootCAFile.Write([]byte(rootCACert))
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка записи Root CA в архив",
+			})
+		}
+
 		if serverId != "" {
 			// Добавляем публичный ключ (сертификат)
 			publicKeyFile, err := zipWriter.Create(*domain + ".crt")

@@ -42,7 +42,7 @@ sub_ca_tlss:
   key_size: 4096
 
 crl:
-  crlURL: http://10.13.1.36:43000/api/v1/crl
+  crlURL: https://tlss.lv.local:43000/api/v1/crl
   updateInterval: 720 # minutes 12 hours
   version: 2
 

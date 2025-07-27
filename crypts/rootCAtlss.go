@@ -86,7 +86,7 @@ func GenerateRootCA() error {
 		},
 	}
 
-	// Create certificate
+	// Создание корневого CA сертификата
 	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
 		return err
@@ -99,7 +99,7 @@ func GenerateRootCA() error {
 		return err
 	}
 
-	// Save certificate to file
+	// Сохранение корневого CA сертификата в файл
 	certFile, err := os.Create(certPath)
 	if err != nil {
 		return err
@@ -113,15 +113,20 @@ func GenerateRootCA() error {
 	if err != nil {
 		return err
 	}
+	// Сохранение корневого CA сертификата в PEM формате в память для передачи в базу данных
+	rootCACertPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: certBytes,
+	})
 
-	// Save private key to file
+	// Сохранение приватного ключа в файл
 	keyFile, err := os.Create(viper.GetString("root_ca_tlss.key"))
 	if err != nil {
 		return err
 	}
 	defer keyFile.Close()
 
-	// Encode and write the private key in PEM format
+	// Кодирование и запись приватного ключа в PEM формате
 	err = pem.Encode(keyFile, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
@@ -130,8 +135,25 @@ func GenerateRootCA() error {
 		return err
 	}
 
-	// After successful certificate creation, ensure the state is updated
-	result, err := db.Exec("UPDATE root_ca_tlss SET root_ca_status = 0, create_time = ?, common_name = ?, country_name = ?, state_province = ?, locality_name = ?, organization = ?, organization_unit = ?, email = ?, ttl = ?, serial_number = ?, data_revoke = ?, reason_revoke = ? WHERE id = 1",
+	// После успешного создания сертификата, обновляем состояние в базе данных
+	result, err := db.Exec(`
+	UPDATE root_ca_tlss
+	SET 
+		root_ca_status = 0,
+		create_time = ?,
+		common_name = ?,
+		country_name = ?,
+		state_province = ?,
+		locality_name = ?,
+		organization = ?,
+		organization_unit = ?,
+		email = ?,
+		ttl = ?,
+		public_key = ?,
+		serial_number = ?,
+		data_revoke = ?,
+		reason_revoke = ?
+		WHERE id = 1`,
 		time.Now().Format(time.RFC3339),
 		viper.GetString("root_ca_tlss.commonName"),
 		viper.GetString("root_ca_tlss.countryName"),
@@ -141,6 +163,7 @@ func GenerateRootCA() error {
 		viper.GetString("root_ca_tlss.organizationUnit"),
 		viper.GetString("root_ca_tlss.email"),
 		viper.GetInt("root_ca_tlss.ttl"),
+		string(rootCACertPEM),
 		serialNumberStr,
 		"",
 		"",

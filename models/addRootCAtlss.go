@@ -11,6 +11,7 @@ type RootCA struct {
 	Organization     string `db:"organization"`
 	OrganizationUnit string `db:"organization_unit"`
 	Email            string `db:"email"`
+	PublicKey        string `db:"public_key"`
 	SerialNumber     string `db:"serial_number"`
 	DataRevoke       string `db:"data_revoke"`
 	ReasonRevoke     string `db:"reason_revoke"`
@@ -29,6 +30,7 @@ CREATE TABLE IF NOT EXISTS root_ca_tlss (
     organization TEXT,
     organization_unit TEXT,
     email TEXT,
+    public_key TEXT,
     root_ca_status INTEGER,
 	serial_number TEXT,
 	data_revoke TEXT,

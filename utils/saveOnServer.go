@@ -12,6 +12,11 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+const (
+	rootCAFileName = "root_ca_tlss.pem"
+	subCAFileName  = "sub_ca_tlss.pem"
+)
+
 type SaveOnServerInterface interface {
 	SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM []byte, keyPEM []byte) error
 }
@@ -34,6 +39,13 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		return fmt.Errorf("не удалось получить промежуточный сертификат: %w", err)
 	}
 
+	// Получаем корневой сертификат из таблицы root_ca_tlss
+	var rootCACert string
+	err = db.Get(&rootCACert, "SELECT public_key FROM root_ca_tlss WHERE id = 1")
+	if err != nil {
+		return fmt.Errorf("не удалось получить корневой сертификат: %w", err)
+	}
+
 	// Получаем домашний каталог пользователя
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -52,7 +64,8 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		// Создаем пути для файлов сертификата и ключа на удаленном сервере
 		certPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
 		keyPath := fmt.Sprintf("%s/%s.key", serverInfo.CertConfigPath, data.Domain)
-		subCAPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, "sub_ca_tlss")
+		subCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, subCAFileName)
+		rootCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, rootCAFileName)
 
 		// Используем ssh клиент для передачи сертификата и ключа
 		// Создаём контекст с таймаутом для SSH-команд
@@ -64,7 +77,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 			"-o", "StrictHostKeyChecking=no",
 			"-p", port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
-			fmt.Sprintf("echo '%s' > %s && echo '%s' > %s", string(certPEM), certPath, subCACert, subCAPath))
+			fmt.Sprintf("echo '%s' > %s && echo '%s' > %s && echo '%s' > %s", string(certPEM), certPath, subCACert, subCAPath, rootCACert, rootCAPath))
 
 		// Выполняем команды и проверяем результат
 		if err = certCmd.Run(); err != nil {
@@ -92,7 +105,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 			serverInfo.Hostname, port, certPath, keyPath)
 
 	case "haproxy":
-		// Для HAProxy нужно объединить промежуточный сертификат, сертификат сервера и ключ в один файл
+		// Для HAProxy нужно объединить сертификат сервера и ключ в один файл
 		// Получаем промежуточный сертификат из таблицы sub_ca_tlss
 		var subCACert string
 		err = db.Get(&subCACert, "SELECT public_key FROM sub_ca_tlss WHERE id = 1")
@@ -100,13 +113,21 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 			return fmt.Errorf("не удалось получить промежуточный сертификат: %w", err)
 		}
 
+		// Получаем корневой сертификат из таблицы root_ca_tlss
+		var rootCACert string
+		err = db.Get(&rootCACert, "SELECT public_key FROM root_ca_tlss WHERE id = 1")
+		if err != nil {
+			return fmt.Errorf("не удалось получить корневой сертификат: %w", err)
+		}
+
 		// Объединяем промежуточный сертификат, сертификат сервера и его ключ в один файл
 		// Порядок: сертификат сервера, промежуточный сертификат, ключ
-		combinedContent := fmt.Sprintf("%s\n%s\n%s", string(certPEM), subCACert, string(keyPEM))
+		combinedContent := fmt.Sprintf("%s\n%s", string(certPEM), string(keyPEM))
 
 		// Путь для сохранения объединенного файла на удаленном сервере
 		combinedPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
-		subCAPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, "sub_ca_tlss")
+		subCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, subCAFileName)
+		rootCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, rootCAFileName)
 
 		// Используем ssh клиент для передачи объединенного файла
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -117,7 +138,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 			"-o", "StrictHostKeyChecking=no",
 			"-p", port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
-			fmt.Sprintf("echo '%s' > %s && echo '%s' > %s && chmod 600 %s", combinedContent, combinedPath, subCACert, subCAPath, combinedPath))
+			fmt.Sprintf("echo '%s' > %s && echo '%s' > %s && echo '%s' > %s && chmod 600 %s", combinedContent, combinedPath, subCACert, subCAPath, rootCACert, rootCAPath, combinedPath))
 
 		// Выполняем команду и проверяем результат
 		if err = combinedCmd.Run(); err != nil {

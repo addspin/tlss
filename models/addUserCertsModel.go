@@ -30,20 +30,21 @@ package models
 
 // структура для добавления сертификата
 type UserCertsData struct {
-	Id               int    `json:"Id" db:"id"`
-	EntityId         int    `json:"EntityId" db:"entity_id"`
-	Algorithm        string `json:"Algorithm" db:"algorithm"`
-	KeyLength        int    `json:"KeyLength" db:"key_length"`
-	TTL              int    `json:"TTL" db:"ttl"`
-	Recreate         bool   `json:"Recreate" db:"recreate"`
-	CommonName       string `json:"CommonName" db:"common_name"`
-	CountryName      string `json:"CountryName" db:"country_name"`
-	StateProvince    string `json:"StateProvince" db:"state_province"`
-	LocalityName     string `json:"LocalityName" db:"locality_name"`
-	Organization     string `json:"Organization" db:"organization"`
-	OrganizationUnit string `json:"OrganizationUnit" db:"organization_unit"`
-	Email            string `json:"Email" db:"email"`
-	Password         string `json:"Password" db:"password"`
+	Id               int      `json:"Id" db:"id"`
+	EntityId         int      `json:"EntityId" db:"entity_id"`
+	Algorithm        string   `json:"Algorithm" db:"algorithm"`
+	KeyLength        int      `json:"KeyLength" db:"key_length"`
+	TTL              int      `json:"TTL" db:"ttl"`
+	Recreate         bool     `json:"Recreate" db:"recreate"`
+	CommonName       string   `json:"CommonName" db:"common_name"`
+	SAN              []string `json:"SAN" db:"san"`
+	CountryName      string   `json:"CountryName" db:"country_name"`
+	StateProvince    string   `json:"StateProvince" db:"state_province"`
+	LocalityName     string   `json:"LocalityName" db:"locality_name"`
+	Organization     string   `json:"Organization" db:"organization"`
+	OrganizationUnit string   `json:"OrganizationUnit" db:"organization_unit"`
+	Email            string   `json:"Email" db:"email"`
+	Password         string   `json:"Password" db:"password"`
 	// CaName           string `json:"cert_ca_name"`
 	// CaKey            string `json:"cert_ca_key"`
 	PublicKey      string `json:"public_key" db:"public_key"`
@@ -66,6 +67,7 @@ CREATE TABLE IF NOT EXISTS  user_certs (
 	ttl INTEGER,
 	recreate BOOLEAN,
 	common_name TEXT,
+	san TEXT,
 	country_name TEXT,
 	state_province TEXT,
 	locality_name TEXT,

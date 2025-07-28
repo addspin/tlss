@@ -119,6 +119,23 @@
                   <label class="select_title" title="Обязательное поле">Common Name</label>
                   <input title="Обязательное поле" type="text" class="c_input" id="Common" name="CommonName" placeholder="CN" value="TEST WEB" required>
                 </div>
+
+                <div class="col-md-9">
+                  <label class="select_title">Subject Alternative Names</label>
+                  <div class="tags-container">
+                    <input type="text" 
+                      id="san-input"
+                      class="c_input tag-input"
+                      placeholder="Add SANs"
+                      onkeydown="if(event.key === 'Enter') { event.preventDefault(); addTag(); return false; }">
+                    
+                    <div id="san-tags" class="tags">
+                      <!-- Теги будут добавляться сюда -->
+                    </div>
+                    <input type="hidden" name="SAN" id="san-values" value="">
+                  </div>
+                </div>
+
                 <div class="indent-5"></div>
               </div>
               <div class="row g-3 form_center">

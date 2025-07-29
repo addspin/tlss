@@ -227,7 +227,7 @@
     background: #007bff;
     border-radius: 30px;
     text-align: center;
-    width: 4em;
+    width: 5em;
     border: none;
     padding: 0;
 }
@@ -448,6 +448,18 @@
     font-size: 0.8rem;
 }
 
+[class^="entity_id_"] {
+    font-family: Inter;
+    font-weight: 100;
+    font-size: 0.8rem;
+}
+
+[class^="cert_id_"] {
+    font-family: Inter;
+    font-weight: 100;
+    font-size: 0.8rem;
+}
+
 /* Стили для анимации загрузки */
 
 
@@ -455,7 +467,7 @@
     display: none;
     opacity:0;
     transition: opacity 500ms ease-in;
-    margin-left: 40%;
+    position: center;
 }
 .htmx-request .time-svg{
     display: block;

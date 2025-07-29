@@ -104,7 +104,7 @@ func AddUserCertsController(c fiber.Ctx) error {
 		}
 		log.Println("entityList", entityList)
 		return c.Render("add_user_certs/addUserCerts", fiber.Map{
-			"Title":      "Add users certs",
+			"Title":      "Add clients certs",
 			"entityList": entityList,
 		})
 	}

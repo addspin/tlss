@@ -25,22 +25,22 @@
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Revoke servers certs</a></li>
         <hr>
-        <li class="title-menu-left">Users certs</li>
+        <li class="title-menu-left">Clients certs</li>
         <li><a class="link-menu-left {{if eq .Title "Add entity"}}active{{else}}{{end}}" 
             hx-get="/add_entity" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Add entity</a></li>
-        <li><a class="link-menu-left {{if eq .Title "Add users certs"}}active{{else}}{{end}}" 
+        <li><a class="link-menu-left {{if eq .Title "Add clients certs"}}active{{else}}{{end}}" 
             hx-get="/add_users_certs" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Add users certs</a></li>
-        <li><a class="link-menu-left {{if eq .Title "Revoke users certs"}}active{{else}}{{end}}" 
+            hx-push-url="true">Add clients certs</a></li>
+        <li><a class="link-menu-left {{if eq .Title "Revoke clients certs"}}active{{else}}{{end}}" 
             hx-get="/revoke_users_certs" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Revoke users certs</a></li>
+            hx-push-url="true">Revoke clients certs</a></li>
         <hr>
         <li class="title-menu-left">API</li>
         <!-- <li><a class="link-menu-left disabled" aria-disabled="true"

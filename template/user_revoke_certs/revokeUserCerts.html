@@ -26,8 +26,8 @@
         <div><ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="#">Overview</a></li>  
           <li class="breadcrumb-item"><a href="/add_entity">Add entities</a></li>
-          <li class="breadcrumb-item"><a href="/add_users_certs">Add users certs</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Revoke users certs</li>
+          <li class="breadcrumb-item"><a href="/add_users_certs">Add clients certs</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Revoke clients certs</li>
         </ol></div>
 
         <!-- Поиск и список сертификатов -->
@@ -35,7 +35,7 @@
           <div class="col-12">
           <div class="core-certs">
             <div id="search-certs" class="search-input-container-revoke">
-              <input type="text" class="search-input" name="search-certs" placeholder="Search user certs">
+              <input type="text" class="search-input" name="search-certs" placeholder="Search clients certs">
             </div>
             <div id="response" class="certs_revoke_table">
               {{template "certUserRevokeList-tpl" .}}

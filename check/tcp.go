@@ -46,7 +46,7 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 		}
 		// если нет, пишем что в базе нет серверов
 		if !checkServerList {
-			log.Println("TCP checker: В базе данных ничего нет")
+			log.Println("TCP checker: В базе данных нет ни одного сервера")
 			continue
 		}
 		// извлекаем список северов из базы данных

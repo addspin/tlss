@@ -28,8 +28,16 @@ func AddCertsControll(c fiber.Ctx) error {
 	if c.Method() == "POST" {
 		data := new(models.CertsData)
 
-		c.Bind().JSON(data)
-		log.Println(data.SaveOnServer, data.ServerStatus, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.AppType, data.Organization, data.OrganizationUnit, data.Email)
+		err := c.Bind().JSON(data)
+		if err != nil {
+			log.Printf("AddCertsControll: %v", err)
+			return c.Status(400).JSON(
+				fiber.Map{"status": "error",
+					"message": "Cannot parse JSON!",
+					"data":    err},
+			)
+		}
+		// log.Println(data.SaveOnServer, data.ServerStatus, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.AppType, data.Organization, data.OrganizationUnit, data.Email)
 
 		if data.ServerStatus == "offline" && data.SaveOnServer {
 			return c.Status(400).JSON(fiber.Map{

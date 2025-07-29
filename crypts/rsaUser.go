@@ -136,7 +136,8 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 			}
 		}
 	}
-	customDNSNamesOID := []int{1, 3, 6, 1, 4, 1, 99999, 1, 1}
+	// customDNSNamesOID := []int{1, 3, 6, 1, 4, 1, 99999, 1, 1}
+	customDNSNamesOID := []int{1, 2, 6, 1, 4, 1, 99999}
 
 	now := time.Now()
 	expiry := now.AddDate(0, 0, data.TTL)

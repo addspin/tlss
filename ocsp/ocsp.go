@@ -3,7 +3,6 @@ package ocsp
 import (
 	"crypto/rsa"
 	"crypto/sha1"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
@@ -39,33 +38,33 @@ func StartOCSPResponder(updateInterval time.Duration) {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatalf("Не удалось подключиться к базе данных: %v", err)
+		log.Fatalf("OCSP: Не удалось подключиться к базе данных: %v", err)
 	}
 	defer db.Close()
 
 	// Создаем новый OCSP-респондер
 	responder, err := NewOCSPResponder(db, updateInterval)
 	if err != nil {
-		log.Fatalf("Не удалось создать OCSP-респондер: %v", err)
+		log.Fatalf("OCSP: Не удалось создать OCSP-респондер: %v", err)
 	}
 
 	// Генерируем или обновляем OCSP-сертификат
 	// if err := responder.GenerateOCSPCertificate(); err != nil {
-	// 	log.Printf("Ошибка создания OCSP-сертификата: %v", err)
+	// 	log.Printf("OCSP: Ошибка создания OCSP-сертификата: %v", err)
 	// }
 
 	// Запускаем обновление данных OCSP сразу при старте
 	if err := responder.UpdateOCSPData(); err != nil {
-		log.Printf("Ошибка начального обновления данных OCSP: %v", err)
+		log.Printf("OCSP: Ошибка начального обновления данных OCSP: %v", err)
 	}
 
 	// Запускаем периодическое обновление в отдельной горутине
 	ticker := time.NewTicker(updateInterval)
 	go func() {
 		for range ticker.C {
-			log.Println("Выполняется обновление данных OCSP...")
+			log.Println("OCSP: Выполняется обновление данных OCSP...")
 			if err := responder.UpdateOCSPData(); err != nil {
-				log.Printf("Ошибка обновления данных OCSP: %v", err)
+				log.Printf("OCSP: Ошибка обновления данных OCSP: %v", err)
 			}
 		}
 	}()
@@ -84,228 +83,49 @@ func NewOCSPResponder(db *sqlx.DB, updateInterval time.Duration) (*OCSPResponder
 	var subCA models.SubCA
 	err := db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
 	if err != nil {
-		return nil, fmt.Errorf("не удалось получить промежуточный CA: %v", err)
+		return nil, fmt.Errorf("OCSP: не удалось получить промежуточный CA: %v", err)
 	}
 
 	if subCA.SubCAStatus != 0 {
-		return nil, fmt.Errorf("промежуточный CA недействителен")
+		return nil, fmt.Errorf("OCSP: промежуточный CA недействителен")
 	}
 
 	// Декодируем сертификат промежуточного CA
 	subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
 	if subCACertBlock == nil {
-		return nil, fmt.Errorf("не удалось декодировать сертификат промежуточного CA")
+		return nil, fmt.Errorf("OCSP: не удалось декодировать сертификат промежуточного CA")
 	}
 
 	var err2 error
 	responder.SubCACert, err2 = x509.ParseCertificate(subCACertBlock.Bytes)
 	if err2 != nil {
-		return nil, fmt.Errorf("не удалось разобрать сертификат промежуточного CA: %v", err2)
+		return nil, fmt.Errorf("OCSP: не удалось разобрать сертификат промежуточного CA: %v", err2)
 	}
 
 	// Расшифровываем и декодируем приватный ключ промежуточного CA
 	aes := crypts.Aes{}
 	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), crypts.AesSecretKey.Key)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось расшифровать приватный ключ промежуточного CA: %v", err)
+		return nil, fmt.Errorf("OCSP: не удалось расшифровать приватный ключ промежуточного CA: %v", err)
 	}
 
 	subCAKeyBlock, _ := pem.Decode(decryptedKey)
 	if subCAKeyBlock == nil {
-		return nil, fmt.Errorf("не удалось декодировать приватный ключ промежуточного CA")
+		return nil, fmt.Errorf("OCSP: не удалось декодировать приватный ключ промежуточного CA")
 	}
 
 	var err3 error
 	responder.SubCAKey, err3 = x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
 	if err3 != nil {
-		return nil, fmt.Errorf("не удалось разобрать приватный ключ промежуточного CA: %v", err3)
+		return nil, fmt.Errorf("OCSP: не удалось разобрать приватный ключ промежуточного CA: %v", err3)
 	}
 
 	return responder, nil
 }
 
-// GenerateOCSPCertificate создает или обновляет сертификат OCSP-респондера
-// func (r *OCSPResponder) GenerateOCSPCertificate() error {
-// 	log.Println("Проверка и создание OCSP-сертификата...")
-
-// 	// Проверяем наличие действующего OCSP-сертификата в базе
-// 	var exists bool
-// 	err := r.db.Get(&exists, "SELECT EXISTS(SELECT 1 FROM ocsp_cert WHERE cert_status = 0 AND ocsp_signing_eku = true LIMIT 1)")
-// 	if err != nil {
-// 		return fmt.Errorf("ошибка проверки наличия OCSP-сертификата: %v", err)
-// 	}
-
-// 	// Если действующий OCSP-сертификат есть, загрузим его и проверим срок действия
-// 	if exists {
-// 		var ocspCert models.OCSPCertificate
-// 		err = r.db.Get(&ocspCert, "SELECT * FROM ocsp_cert WHERE cert_status = 0 AND ocsp_signing_eku = true LIMIT 1")
-// 		if err != nil {
-// 			return fmt.Errorf("не удалось загрузить существующий OCSP-сертификат: %v", err)
-// 		}
-
-// 		// Декодируем публичный ключ OCSP-сертификата
-// 		certBlock, _ := pem.Decode([]byte(ocspCert.PublicKey))
-// 		if certBlock == nil {
-// 			return fmt.Errorf("не удалось декодировать публичный ключ OCSP-сертификата")
-// 		}
-
-// 		var parsedCert *x509.Certificate
-// 		parsedCert, err = x509.ParseCertificate(certBlock.Bytes)
-// 		if err != nil {
-// 			return fmt.Errorf("не удалось разобрать OCSP-сертификат: %v", err)
-// 		}
-
-// 		// Если сертификат действующий, используем его
-// 		r.OCSPCert = parsedCert
-
-// 		// Расшифровываем и декодируем приватный ключ OCSP-сертификата
-// 		aes := crypts.Aes{}
-// 		decryptedKey, err := aes.Decrypt([]byte(ocspCert.PrivateKey), crypts.AesSecretKey.Key)
-// 		if err != nil {
-// 			return fmt.Errorf("не удалось расшифровать приватный ключ OCSP-сертификата: %v", err)
-// 		}
-
-// 		keyBlock, _ := pem.Decode(decryptedKey)
-// 		if keyBlock == nil {
-// 			return fmt.Errorf("не удалось декодировать приватный ключ OCSP-сертификата")
-// 		}
-
-// 		r.OCSPKey, err = x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
-// 		if err != nil {
-// 			return fmt.Errorf("не удалось разобрать приватный ключ OCSP-сертификата: %v", err)
-// 		}
-
-// 		log.Println("Существующий OCSP-сертификат успешно загружен")
-// 		return nil
-// 	}
-
-// 	// Создаем новый OCSP-сертификат
-// 	log.Println("Создание нового OCSP-сертификата...")
-
-// 	// Генерируем новую RSA ключевую пару для OCSP-сертификата
-// 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-// 	if err != nil {
-// 		return fmt.Errorf("не удалось сгенерировать RSA ключевую пару: %v", err)
-// 	}
-// 	r.OCSPKey = privateKey
-
-// 	// Генерируем случайный серийный номер
-// 	serialNumber, err := rand.Int(rand.Reader, big.NewInt(1).Lsh(big.NewInt(1), 128))
-// 	if err != nil {
-// 		return fmt.Errorf("не удалось сгенерировать серийный номер: %v", err)
-// 	}
-
-// 	// Получаем настройки из конфигурации для OCSP-сертификата
-// 	now := time.Now()
-// 	// OCSP-сертификаты обычно имеют меньший срок действия, чем CA-сертификаты
-// 	// Используем 30% от срока действия промежуточного CA, но не более 90 дней
-// 	ttl := int(time.Until(r.SubCACert.NotAfter).Hours() / 24 * 0.3)
-// 	if ttl > 90 {
-// 		ttl = 90 // Максимум 90 дней
-// 	}
-// 	expiry := now.AddDate(0, 0, ttl)
-
-// 	// Формируем шаблон OCSP-сертификата
-// 	template := &x509.Certificate{
-// 		SerialNumber: serialNumber,
-// 		Subject: pkix.Name{
-// 			CommonName:         "TLSS OCSP Responder",
-// 			Country:            []string{r.SubCACert.Subject.Country[0]},
-// 			Province:           []string{r.SubCACert.Subject.Province[0]},
-// 			Locality:           []string{r.SubCACert.Subject.Locality[0]},
-// 			Organization:       []string{r.SubCACert.Subject.Organization[0]},
-// 			OrganizationalUnit: []string{r.SubCACert.Subject.OrganizationalUnit[0]},
-// 		},
-// 		NotBefore:             now,
-// 		NotAfter:              expiry,
-// 		KeyUsage:              x509.KeyUsageDigitalSignature,
-// 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageOCSPSigning},
-// 		BasicConstraintsValid: true,
-// 		IsCA:                  false,
-// 	}
-
-// 	// Добавляем расширение id-pkix-ocsp-nocheck (OID: 1.3.6.1.5.5.7.48.1.5)
-// 	ocspNoCheckExt := pkix.Extension{
-// 		Id:       []int{1, 3, 6, 1, 5, 5, 7, 48, 1, 5},
-// 		Critical: false,
-// 		Value:    []byte{0x05, 0x00}, // DER-кодирование NULL
-// 	}
-// 	template.ExtraExtensions = append(template.ExtraExtensions, ocspNoCheckExt)
-
-// 	// Создаем сертификат, подписанный промежуточным CA
-// 	certDER, err := x509.CreateCertificate(rand.Reader, template, r.SubCACert, &privateKey.PublicKey, r.SubCAKey)
-// 	if err != nil {
-// 		return fmt.Errorf("не удалось создать OCSP-сертификат: %v", err)
-// 	}
-
-// 	// Конвертируем сертификат и ключ в PEM-формат
-// 	certPEM := pem.EncodeToMemory(&pem.Block{
-// 		Type:  "CERTIFICATE",
-// 		Bytes: certDER,
-// 	})
-
-// 	keyPEM := pem.EncodeToMemory(&pem.Block{
-// 		Type:  "RSA PRIVATE KEY",
-// 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-// 	})
-
-// 	// Шифруем приватный ключ
-// 	aes := crypts.Aes{}
-// 	encryptedKey, err := aes.Encrypt(keyPEM, crypts.AesSecretKey.Key)
-// 	if err != nil {
-// 		return fmt.Errorf("не удалось зашифровать приватный ключ OCSP-сертификата: %v", err)
-// 	}
-
-// 	// Парсим созданный сертификат
-// 	r.OCSPCert, err = x509.ParseCertificate(certDER)
-// 	if err != nil {
-// 		return fmt.Errorf("не удалось разобрать созданный OCSP-сертификат: %v", err)
-// 	}
-
-// 	// Вычисляем хеши для имени и ключа издателя
-// 	issuerNameHash, issuerKeyHash, hashAlgo := calculateIssuerHashes(r.SubCACert)
-
-// 	// Сохраняем OCSP-сертификат в базу данных
-// 	_, err = r.db.Exec(`
-// 		INSERT INTO ocsp_cert (
-// 			create_time, serial_number, issuer_name, public_key, private_key,
-// 			cert_status, reason_revoke, data_revoke, cert_create_time, cert_expire_time,
-// 			ocsp_signing_eku, ocsp_nocheck, issuer_subca_serial_number,
-// 			issuer_name_hash, issuer_key_hash, hash_algorithm,
-// 			this_update, next_update, ocsp_extensions
-// 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-// 	`,
-// 		now.Format(time.RFC3339),              // create_time
-// 		standardizeSerialNumber(serialNumber), // serial_number - в стандартизированном формате
-// 		"ocsp.responder",                      // issuer_name
-// 		string(certPEM),                       // public_key
-// 		string(encryptedKey),                  // private_key
-// 		0,                                     // cert_status (0 - действительный)
-// 		"",                                    // reason_revoke
-// 		"",                                    // data_revoke
-// 		now.Format(time.RFC3339),              // cert_create_time
-// 		expiry.Format(time.RFC3339),           // cert_expire_time
-// 		true,                                  // ocsp_signing_eku
-// 		true,                                  // ocsp_nocheck
-// 		r.SubCACert.SerialNumber.String(),     // issuer_subca_serial_number
-// 		issuerNameHash,                        // issuer_name_hash
-// 		issuerKeyHash,                         // issuer_key_hash
-// 		hashAlgo,                              // hash_algorithm
-// 		now.Format(time.RFC3339),              // this_update
-// 		expiry.Format(time.RFC3339),           // next_update
-// 		"",                                    // ocsp_extensions
-// 	)
-// 	if err != nil {
-// 		return fmt.Errorf("не удалось сохранить OCSP-сертификат в базу данных: %v", err)
-// 	}
-
-// 	log.Println("Новый OCSP-сертификат успешно создан и сохранен")
-// 	return nil
-// }
-
 // UpdateOCSPData обновляет данные о статусе сертификатов в базе OCSP
 func (r *OCSPResponder) UpdateOCSPData() error {
-	log.Println("Обновление данных OCSP...")
+	log.Println("OCSP: Обновление данных OCSP...")
 
 	// Получаем текущее время для записи в ThisUpdate
 	now := time.Now().UTC()
@@ -330,7 +150,7 @@ func (r *OCSPResponder) UpdateOCSPData() error {
 		return fmt.Errorf("ошибка запроса отозванных сертификатов: %v", err)
 	}
 
-	log.Printf("Найдено %d отозванных сертификатов", len(certs))
+	log.Printf("OCSP: Найдено %d отозванных сертификатов", len(certs))
 
 	// Вычисляем хеши для имени и ключа издателя
 	issuerNameHash, issuerKeyHash, hashAlgo := calculateIssuerHashes(r.SubCACert)
@@ -343,12 +163,12 @@ func (r *OCSPResponder) UpdateOCSPData() error {
 		// Устанавливаем значения по умолчанию для пустых полей
 		if cert.DataRevoke == "" {
 			cert.DataRevoke = now.Format(time.RFC3339)
-			log.Printf("Для сертификата %s установлена дата отзыва по умолчанию: %s", cert.SerialNumber, cert.DataRevoke)
+			log.Printf("OCSP: Для сертификата %s установлена дата отзыва по умолчанию: %s", cert.SerialNumber, cert.DataRevoke)
 		}
 
 		if cert.ReasonRevoke == "" {
 			cert.ReasonRevoke = "unspecified"
-			log.Printf("Для сертификата %s установлена причина отзыва по умолчанию: %s", cert.SerialNumber, cert.ReasonRevoke)
+			log.Printf("OCSP: Для сертификата %s установлена причина отзыва по умолчанию: %s", cert.SerialNumber, cert.ReasonRevoke)
 		}
 
 		// Создаем запись OCSP для кэша
@@ -404,10 +224,10 @@ func (r *OCSPResponder) UpdateOCSPData() error {
 				existingId,
 			)
 			if err != nil {
-				log.Printf("Ошибка обновления данных для отозванного сертификата %s (%s): %v", cert.SerialNumber, cert.Domain, err)
+				log.Printf("OCSP: Ошибка обновления данных для отозванного сертификата %s (%s): %v", cert.SerialNumber, cert.Domain, err)
 				continue
 			}
-			log.Printf("Обновлена запись для отозванного сертификата %s (%s)", cert.SerialNumber, cert.Domain)
+			log.Printf("OCSP: Обновлена запись для отозванного сертификата %s (%s)", cert.SerialNumber, cert.Domain)
 		} else {
 			// Если записи нет, вставляем новую в таблицу ocsp_revoke
 			_, err = r.db.Exec(`
@@ -435,10 +255,10 @@ func (r *OCSPResponder) UpdateOCSPData() error {
 				nextUpdateStr,
 			)
 			if err != nil {
-				log.Printf("Ошибка вставки данных для отозванного сертификата %s (%s): %v", cert.SerialNumber, cert.Domain, err)
+				log.Printf("OCSP: Ошибка вставки данных для отозванного сертификата %s (%s): %v", cert.SerialNumber, cert.Domain, err)
 				continue
 			}
-			log.Printf("Добавлена новая запись для отозванного сертификата %s (%s)", cert.SerialNumber, cert.Domain)
+			log.Printf("OCSP: Добавлена новая запись для отозванного сертификата %s (%s)", cert.SerialNumber, cert.Domain)
 		}
 
 		// Добавляем в кеш
@@ -450,7 +270,7 @@ func (r *OCSPResponder) UpdateOCSPData() error {
 	r.ocspCertCache = newCache
 	r.mu.Unlock()
 
-	log.Println("Обновление данных OCSP завершено успешно")
+	log.Println("OCSP: Обновление данных OCSP завершено успешно")
 	return nil
 }
 
@@ -468,15 +288,15 @@ func calculateIssuerHashes(issuerCert *x509.Certificate) (string, string, string
 	h2.Write(issuerCert.RawSubjectPublicKeyInfo)
 	keyHash := h2.Sum(nil)
 
-	// Также рассчитаем хеши с SHA-256 для отладки
-	sha256NameHash := sha256.Sum256(issuerCert.RawSubject)
-	sha256KeyHash := sha256.Sum256(issuerCert.RawSubjectPublicKeyInfo)
+	// хеши с SHA-256 для отладки
+	// sha256NameHash := sha256.Sum256(issuerCert.RawSubject)
+	// sha256KeyHash := sha256.Sum256(issuerCert.RawSubjectPublicKeyInfo)
 
-	log.Printf("Рассчитанные хеши для CA [%s]:", issuerCert.Subject.CommonName)
-	log.Printf("SHA-1 NameHash: %X", nameHash)
-	log.Printf("SHA-1 KeyHash: %X", keyHash)
-	log.Printf("SHA-256 NameHash: %X", sha256NameHash)
-	log.Printf("SHA-256 KeyHash: %X", sha256KeyHash)
+	// log.Printf("OCSP: Рассчитанные хеши для CA [%s]:", issuerCert.Subject.CommonName)
+	// log.Printf("OCSP: SHA-1 NameHash: %X", nameHash)
+	// log.Printf("OCSP: SHA-1 KeyHash: %X", keyHash)
+	// log.Printf("OCSP: SHA-256 NameHash: %X", sha256NameHash)
+	// log.Printf("OCSP: SHA-256 KeyHash: %X", sha256KeyHash)
 
 	return hex.EncodeToString(nameHash), hex.EncodeToString(keyHash), "SHA1"
 }
@@ -553,10 +373,10 @@ func (r *OCSPResponder) CreateResponse(template ocsp.Response) ([]byte, error) {
 	responseBytes, err := ocsp.CreateResponse(r.SubCACert, r.OCSPCert, responseTemplate, r.OCSPKey)
 	if err != nil {
 		// Логируем ошибку
-		log.Printf("Ошибка создания OCSP-ответа: %v", err)
+		log.Printf("OCSP: Ошибка создания OCSP-ответа: %v", err)
 
 		// Пробуем создать базовый ответ с минимальным набором полей
-		log.Printf("Пытаемся создать базовый OCSP-ответ")
+		log.Printf("OCSP: Пытаемся создать базовый OCSP-ответ")
 
 		// Создаем новый базовый шаблон с только необходимыми полями
 		basicTemplate := ocsp.Response{
@@ -569,7 +389,7 @@ func (r *OCSPResponder) CreateResponse(template ocsp.Response) ([]byte, error) {
 		// Повторяем попытку создания ответа
 		responseBytes, err2 := ocsp.CreateResponse(r.SubCACert, r.OCSPCert, basicTemplate, r.OCSPKey)
 		if err2 != nil {
-			log.Printf("Ошибка создания базового OCSP-ответа: %v", err2)
+			log.Printf("OCSP: Ошибка создания базового OCSP-ответа: %v", err2)
 
 			// Если и это не получается, создаем минимальный ответ со статусом Good
 			// Формат ответа OCSPResponseData в соответствии с RFC 6960
@@ -615,7 +435,7 @@ func (r *OCSPResponder) GetCertificateStatus(serialNumber string) (int, time.Tim
 				var err error
 				revokedAt, err = time.Parse(time.RFC3339, ocspCert.DataRevoke)
 				if err != nil {
-					log.Printf("Ошибка парсинга времени отзыва: %v, использую текущее время", err)
+					log.Printf("OCSP: Ошибка парсинга времени отзыва: %v, использую текущее время", err)
 					revokedAt = time.Now()
 				}
 			} else {
@@ -651,7 +471,7 @@ func (r *OCSPResponder) GetCertificateStatus(serialNumber string) (int, time.Tim
 					// Используем только формат RFC3339
 					revokedAt, err = time.Parse(time.RFC3339, dataRevoke)
 					if err != nil {
-						log.Printf("Ошибка парсинга времени отзыва: %v, использую текущее время", err)
+						log.Printf("OCSP: Ошибка парсинга времени отзыва: %v, использую текущее время", err)
 						revokedAt = time.Now()
 					}
 				} else {
@@ -685,7 +505,7 @@ func (r *OCSPResponder) GetCertificateStatus(serialNumber string) (int, time.Tim
 						// Используем только формат RFC3339
 						revokedAt, err = time.Parse(time.RFC3339, dataRevoke)
 						if err != nil {
-							log.Printf("Ошибка парсинга времени отзыва: %v, использую текущее время", err)
+							log.Printf("OCSP: Ошибка парсинга времени отзыва: %v, использую текущее время", err)
 							revokedAt = time.Now()
 						}
 					} else {

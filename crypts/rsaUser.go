@@ -125,6 +125,19 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	// 	dnsNames = append(dnsNames, "*."+data.Domain)
 	// }
 
+	dnsNames := []string{data.CommonName}
+	// Добавляем альтернативные имена из поля SAN, если они есть
+	if data.SAN != "" {
+		sanValues := strings.Split(data.SAN, ",")
+		for _, san := range sanValues {
+			san = strings.TrimSpace(san)
+			if san != "" && san != data.CommonName {
+				dnsNames = append(dnsNames, san)
+			}
+		}
+	}
+	customDNSNamesOID := []int{1, 3, 6, 1, 4, 1, 99999, 1, 1}
+
 	now := time.Now()
 	expiry := now.AddDate(0, 0, data.TTL)
 
@@ -142,6 +155,10 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 					Type:  []int{1, 2, 840, 113549, 1, 9, 1},
 					Value: data.Email,
 				},
+				{
+					Type:  customDNSNamesOID,
+					Value: strings.Join(dnsNames, ","),
+				},
 			},
 		},
 		NotBefore:             now,
@@ -150,6 +167,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
+		DNSNames:              dnsNames,
 		CRLDistributionPoints: []string{
 			viper.GetString("crlUser.crlURL"),
 		},
@@ -225,13 +243,13 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
                 common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
                 organization = ?, organization_unit = ?, email = ?, password = ?,
                 public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
-                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?
+                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?
             WHERE common_name = ? AND entity_id = ?`,
 			data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 			data.Organization, data.OrganizationUnit, data.Email, data.Password,
 			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, daysLeft,
+			data.SerialNumber, "", "", 0, daysLeft, data.SAN,
 			data.CommonName, data.EntityId)
 		if err != nil {
 			tx.Rollback()
@@ -245,13 +263,13 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
                 common_name, country_name, state_province, locality_name,
                 organization, organization_unit, email, password,
                 public_key, private_key, cert_create_time, cert_expire_time,
-                serial_number, data_revoke, reason_revoke, cert_status, days_left
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                serial_number, data_revoke, reason_revoke, cert_status, days_left, san
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			data.EntityId, data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 			data.Organization, data.OrganizationUnit, data.Email, data.Password,
 			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, daysLeft)
+			data.SerialNumber, "", "", 0, daysLeft, data.SAN)
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("не удалось добавить новый сертификат в базу данных: %w", err)
@@ -336,6 +354,19 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	// 	dnsNames = append(dnsNames, "*."+data.Domain)
 	// }
 
+	dnsNames := []string{data.CommonName}
+
+	// Добавляем альтернативные имена из поля SAN, если они есть
+	if data.SAN != "" {
+		sanValues := strings.Split(data.SAN, ",")
+		for _, san := range sanValues {
+			san = strings.TrimSpace(san)
+			if san != "" && san != data.CommonName {
+				dnsNames = append(dnsNames, san)
+			}
+		}
+	}
+
 	now := time.Now()
 	expiry := now.AddDate(0, 0, data.TTL)
 
@@ -361,6 +392,7 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
+		DNSNames:              dnsNames,
 		CRLDistributionPoints: []string{
 			viper.GetString("crlUser.crlURL"),
 		},
@@ -426,13 +458,13 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
                 common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
                 organization = ?, organization_unit = ?, email = ?, password = ?,
                 public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
-                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?
+                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?
             WHERE common_name = ? AND entity_id = ?`,
 		data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 		data.Organization, data.OrganizationUnit, data.Email, data.Password,
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-		data.SerialNumber, "", "", 0, daysLeft,
+		data.SerialNumber, "", "", 0, daysLeft, data.SAN,
 		data.CommonName, data.EntityId)
 	if err != nil {
 		tx.Rollback()

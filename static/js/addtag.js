@@ -50,22 +50,18 @@ function addTag() {
 function updateHiddenField() {
   const tags = document.querySelectorAll('#san-tags .tag-text');
   const values = Array.from(tags).map(tag => tag.textContent.trim());
-  // Сохраняем как JSON массив
-  document.getElementById('san-values').value = JSON.stringify(values);
+  // Сохраняем как строку через запятую
+  document.getElementById('san-values').value = values.join(',');
 }
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-  // Инициализируем поле SAN как пустой массив
-  document.getElementById('san-values').value = JSON.stringify([]);
+  // Инициализируем поле SAN как пустую строку
+  document.getElementById('san-values').value = '';
   
   // Добавляем обработчик события перед отправкой формы
   document.querySelector('form').addEventListener('htmx:beforeRequest', function(event) {
-    // Проверяем, что поле SAN существует и имеет значение
-    const sanField = document.getElementById('san-values');
-    if (sanField && sanField.value === '') {
-      // Если поле пустое, устанавливаем его как пустой массив
-      sanField.value = JSON.stringify([]);
-    }
+    // Обновляем поле SAN перед отправкой
+    updateHiddenField();
   });
 });

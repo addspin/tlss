@@ -128,8 +128,10 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	}
 
 	// Добавляем альтернативные имена из поля SAN, если они есть
-	if len(data.SAN) > 0 {
-		for _, san := range data.SAN {
+	if data.SAN != "" {
+		sanValues := strings.Split(data.SAN, ",")
+		for _, san := range sanValues {
+			san = strings.TrimSpace(san)
 			if san != "" && san != data.Domain && san != "*."+data.Domain {
 				dnsNames = append(dnsNames, san)
 			}
@@ -223,7 +225,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 			cert_create_time, cert_expire_time, serial_number, data_revoke, reason_revoke, cert_status, days_left
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		data.ServerId, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.Wildcard, data.Recreate, data.SaveOnServer,
-		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, strings.Join(data.SAN, ","),
+		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.SAN,
 		data.AppType, data.Organization, data.OrganizationUnit, data.Email,
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339), data.SerialNumber, "", "", 0, daysLeft)
 	if err != nil {
@@ -316,8 +318,10 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	}
 
 	// Добавляем альтернативные имена из поля SAN, если они есть
-	if len(data.SAN) > 0 {
-		for _, san := range data.SAN {
+	if data.SAN != "" {
+		sanValues := strings.Split(data.SAN, ",")
+		for _, san := range sanValues {
+			san = strings.TrimSpace(san)
 			if san != "" && san != data.Domain && san != "*."+data.Domain {
 				dnsNames = append(dnsNames, san)
 			}
@@ -410,7 +414,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	            serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?
 	        WHERE domain = ? AND server_id = ?`,
 		data.Algorithm, data.KeyLength, data.TTL, data.Wildcard, data.Recreate, data.SaveOnServer,
-		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, strings.Join(data.SAN, ","),
+		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.SAN,
 		data.AppType, data.Organization, data.OrganizationUnit, data.Email,
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
 		data.SerialNumber, "", "", 0, daysLeft,

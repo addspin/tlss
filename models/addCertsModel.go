@@ -35,25 +35,25 @@ package models
 
 // структура для добавления сертификата
 type CertsData struct {
-	Id               int      `json:"id" db:"id"`
-	ServerId         int      `json:"ServerId" db:"server_id"`
-	Algorithm        string   `json:"Algorithm" db:"algorithm"`
-	KeyLength        int      `json:"KeyLength" db:"key_length"`
-	TTL              int      `json:"TTL" db:"ttl"`
-	Domain           string   `json:"Domain" db:"domain"`
-	Wildcard         bool     `json:"Wildcard" db:"wildcard"`
-	Recreate         bool     `json:"Recreate" db:"recreate"`
-	ServerStatus     string   `json:"ServerStatus" db:"server_status"` // online, offline
-	SaveOnServer     bool     `json:"SaveOnServer" db:"save_on_server"`
-	CommonName       string   `json:"CommonName" db:"common_name"`
-	SAN              []string `json:"SAN" db:"san"`
-	CountryName      string   `json:"CountryName" db:"country_name"`
-	StateProvince    string   `json:"StateProvince" db:"state_province"`
-	LocalityName     string   `json:"LocalityName" db:"locality_name"`
-	AppType          string   `json:"AppType" db:"app_type"`
-	Organization     string   `json:"Organization" db:"organization"`
-	OrganizationUnit string   `json:"OrganizationUnit" db:"organization_unit"`
-	Email            string   `json:"Email" db:"email"`
+	Id               int    `json:"id" db:"id"`
+	ServerId         int    `json:"ServerId" db:"server_id"`
+	Algorithm        string `json:"Algorithm" db:"algorithm"`
+	KeyLength        int    `json:"KeyLength" db:"key_length"`
+	TTL              int    `json:"TTL" db:"ttl"`
+	Domain           string `json:"Domain" db:"domain"`
+	Wildcard         bool   `json:"Wildcard" db:"wildcard"`
+	Recreate         bool   `json:"Recreate" db:"recreate"`
+	ServerStatus     string `json:"ServerStatus" db:"server_status"` // online, offline
+	SaveOnServer     bool   `json:"SaveOnServer" db:"save_on_server"`
+	CommonName       string `json:"CommonName" db:"common_name"`
+	SAN              string `json:"SAN" db:"san"`
+	CountryName      string `json:"CountryName" db:"country_name"`
+	StateProvince    string `json:"StateProvince" db:"state_province"`
+	LocalityName     string `json:"LocalityName" db:"locality_name"`
+	AppType          string `json:"AppType" db:"app_type"`
+	Organization     string `json:"Organization" db:"organization"`
+	OrganizationUnit string `json:"OrganizationUnit" db:"organization_unit"`
+	Email            string `json:"Email" db:"email"`
 	// Password         string `json:"password"`
 	// CaName           string `json:"cert_ca_name"`
 	// CaKey            string `json:"cert_ca_key"`

@@ -30,7 +30,10 @@ func AddUserCertsController(c fiber.Ctx) error {
 		// c.Bind().JSON(data)
 
 		err := c.Bind().JSON(data)
+		log.Println(data.Algorithm, data.KeyLength, data.TTL, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email, data.SAN)
 		if err != nil {
+			log.Printf("Error: %v", err)
+			log.Printf("request: %s", string(c.Body()))
 			return c.Status(400).JSON(
 				fiber.Map{"status": "error",
 					"message": "Cannot parse JSON!",

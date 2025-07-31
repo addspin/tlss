@@ -121,18 +121,43 @@
                 </div>
 
                 <div class="col-md-9">
-                  <label class="select_title">Subject Alternative Names</label>
+                  <label class="select_title">SAN subject values</label>
                   <div class="tags-container">
                     <input type="text" 
                       id="san-input"
                       class="c_input tag-input"
-                      placeholder="Add SANs"
+                      placeholder="SAN values"
                       onkeydown="if(event.key === 'Enter') { event.preventDefault(); addTag(); return false; }">
                     
                     <div id="san-tags" class="tags">
                       <!-- Теги будут добавляться сюда -->
                     </div>
                     <input type="hidden" name="SAN" id="san-values" value="" data-string="true">
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="select_title">OID custom subject</label>
+                    <select id="select-oid-custom-subject" name="OID" class="select">  
+                      <option value="1.2.6.1.4.1.99999" selected>1.2.6.1.4.1.99999</option>
+                      <option value="1.2.6.1.4.1.99999.1">1.2.6.1.4.1.99999.1</option>
+                      <option value="1.2.6.1.4.1.99999.2">1.2.6.1.4.1.99999.2</option>
+                    </select>
+                </div>
+
+                <div class="col-md-9">
+                  <label class="select_title">OID subject values</label>
+                  <div class="tags-container">
+                    <input type="text" 
+                      id="oid-input"
+                      class="c_input tag-input"
+                      placeholder="OID values"
+                      onkeydown="if(event.key === 'Enter') { event.preventDefault(); addTag(); return false; }">
+                    
+                    <div id="oid-tags" class="tags">
+                      <!-- Теги будут добавляться сюда -->
+                    </div>
+                    <input type="hidden" name="OIDValues" id="oid-values" value="" data-string="true">
                   </div>
                 </div>
 

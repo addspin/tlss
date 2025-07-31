@@ -38,6 +38,7 @@ type UserCertsData struct {
 	Recreate         bool   `json:"Recreate" db:"recreate"`
 	CommonName       string `json:"CommonName" db:"common_name"`
 	SAN              string `json:"SAN" db:"san"`
+	OID              string `json:"OID" db:"oid"`
 	CountryName      string `json:"CountryName" db:"country_name"`
 	StateProvince    string `json:"StateProvince" db:"state_province"`
 	LocalityName     string `json:"LocalityName" db:"locality_name"`
@@ -68,6 +69,7 @@ CREATE TABLE IF NOT EXISTS  user_certs (
 	recreate BOOLEAN,
 	common_name TEXT,
 	san TEXT,
+	oid TEXT,
 	country_name TEXT,
 	state_province TEXT,
 	locality_name TEXT,

@@ -31,6 +31,11 @@
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">Add entity</a></li>
+        <li><a class="link-menu-left {{if eq .Title "Add OID"}}active{{else}}{{end}}" 
+            hx-get="/add_oid" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add OID</a></li>
         <li><a class="link-menu-left {{if eq .Title "Add clients certs"}}active{{else}}{{end}}" 
             hx-get="/add_users_certs" 
             hx-target="#body" 

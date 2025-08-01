@@ -100,12 +100,18 @@ func AddUserCertsController(c fiber.Ctx) error {
 		entityList := []models.EntityData{}
 		err := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("AddUserCertsController: %v", err)
+		}
+		oidList := []models.OIDData{}
+		err = db.Select(&oidList, "SELECT id, oid_name, oid_description FROM oid")
+		if err != nil {
+			log.Printf("AddUserCertsController: %v", err)
 		}
 		log.Println("entityList", entityList)
 		return c.Render("add_user_certs/addUserCerts", fiber.Map{
 			"Title":      "Add clients certs",
 			"entityList": entityList,
+			"oidList":    oidList,
 		})
 	}
 	return c.Status(405).JSON(fiber.Map{

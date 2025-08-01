@@ -14,6 +14,21 @@
     font-display: swap; 
 } */
 
+/* Стиль для select с placeholder */
+select[data-placeholder="true"] {
+    color: gray;
+}
+
+/* Убираем placeholder стиль когда значение выбрано */
+select[data-placeholder="false"] {
+    color: #ffffff;
+}
+
+/* Белый цвет для select при фокусе */
+select:focus {
+    color: #ffffff;
+}
+
 .color-form-certs {
     color: #a99ee8;
 }

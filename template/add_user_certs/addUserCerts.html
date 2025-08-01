@@ -126,8 +126,7 @@
                     <input type="text" 
                       id="san-input"
                       class="c_input tag-input"
-                      placeholder="SAN values"
-                      onkeydown="if(event.key === 'Enter') { event.preventDefault(); addTag(); return false; }">
+                      placeholder="SAN values: example.com, www.example.ru, John Doe">
                     
                     <div id="san-tags" class="tags">
                       <!-- Теги будут добавляться сюда -->
@@ -138,10 +137,11 @@
 
                 <div class="col-md-3">
                   <label class="select_title">OID custom subject</label>
-                    <select id="select-oid-custom-subject" name="OID" class="select">  
-                      <option value="1.2.6.1.4.1.99999" selected>1.2.6.1.4.1.99999</option>
-                      <option value="1.2.6.1.4.1.99999.1">1.2.6.1.4.1.99999.1</option>
-                      <option value="1.2.6.1.4.1.99999.2">1.2.6.1.4.1.99999.2</option>
+                    <select data-placeholder="true" id="select-oid-custom-subject" name="OID" class="select">  
+                      <option value="" disabled selected hidden>Select OID</option>
+                      {{ range .oidList }}
+                        <option value="{{ .OIDName }}">{{ .OIDName }} - {{ .OIDDescription }}</option>
+                      {{ end }}
                     </select>
                 </div>
 
@@ -151,8 +151,7 @@
                     <input type="text" 
                       id="oid-input"
                       class="c_input tag-input"
-                      placeholder="OID values"
-                      onkeydown="if(event.key === 'Enter') { event.preventDefault(); addTag(); return false; }">
+                      placeholder="Any your OID values">
                     
                     <div id="oid-tags" class="tags">
                       <!-- Теги будут добавляться сюда -->
@@ -161,7 +160,6 @@
                   </div>
                 </div>
 
-                <div class="indent-5"></div>
               </div>
               <div class="row g-3 form_center">
                 <div class="col-md-3">

@@ -51,6 +51,9 @@ func Setup(app *fiber.App) {
 
 	app.Get("/add_entity", usersCertControllers.AddEntityController)               // Получение сущности
 	app.Post("/add_entity", usersCertControllers.AddEntityController)              // Добавление сущности
+	app.Get("/add_oid", usersCertControllers.AddOIDController)                     // Получение списка OID
+	app.Post("/add_oid", usersCertControllers.AddOIDController)                    // Добавление OID
+	app.Post("/remove_oid", usersCertControllers.RemoveOID)                        // Удаление OID
 	app.Post("/remove_entity", usersCertControllers.RemoveEntity)                  // Удаление сущности
 	app.Get("/add_users_certs", usersCertControllers.AddUserCertsController)       // Получение списка сертификатов пользователей
 	app.Post("/add_users_certs", usersCertControllers.AddUserCertsController)      // Добавление сертификата пользователя

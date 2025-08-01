@@ -329,6 +329,7 @@
     width: 100%;
     position: relative;
     z-index: 1;
+    height: 110px;
 }
 
 .ascii-art {

@@ -39,6 +39,7 @@ type UserCertsData struct {
 	CommonName       string `json:"CommonName" db:"common_name"`
 	SAN              string `json:"SAN" db:"san"`
 	OID              string `json:"OID" db:"oid"`
+	OIDValues        string `json:"OIDValues" db:"oid_values"`
 	CountryName      string `json:"CountryName" db:"country_name"`
 	StateProvince    string `json:"StateProvince" db:"state_province"`
 	LocalityName     string `json:"LocalityName" db:"locality_name"`
@@ -70,6 +71,7 @@ CREATE TABLE IF NOT EXISTS  user_certs (
 	common_name TEXT,
 	san TEXT,
 	oid TEXT,
+	oid_values TEXT,
 	country_name TEXT,
 	state_province TEXT,
 	locality_name TEXT,

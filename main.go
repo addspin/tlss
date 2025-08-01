@@ -87,6 +87,12 @@ func main() {
 		log.Println(err.Error())
 	}
 
+	// create SchemaOID tables in db (хранит данные OID)
+	_, err = db.Exec(models.SchemaOID)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
 	// create SchemaUserCerts tables in db (хранит данные пользовательских сертификатов)
 	_, err = db.Exec(models.SchemaUserCerts)
 	if err != nil {

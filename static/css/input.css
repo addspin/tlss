@@ -14,20 +14,7 @@
     font-display: swap; 
 } */
 
-/* Стиль для select с placeholder */
-select[data-placeholder="true"] {
-    color: gray;
-}
 
-/* Убираем placeholder стиль когда значение выбрано */
-select[data-placeholder="false"] {
-    color: #ffffff;
-}
-
-/* Белый цвет для select при фокусе */
-select:focus {
-    color: #ffffff;
-}
 
 .color-form-certs {
     color: #a99ee8;
@@ -354,6 +341,22 @@ select:focus {
 /* .select_title {
     
 } */
+
+/* Стиль для select с placeholder */
+select[data-placeholder="true"] {
+    color: gray;
+}
+
+/* Убираем placeholder стиль когда значение выбрано */
+select[data-placeholder="false"] {
+    color: #ffffff;
+}
+
+/* Белый цвет для select при фокусе */
+select:focus {
+    color: #ffffff;
+}
+
 
 .select_certs_revoke {
     border: 1px solid #a99ee8;

@@ -1,23 +1,39 @@
-// Ждем загрузки DOM
-document.addEventListener('DOMContentLoaded', function() {
-    // Находим все select элементы с атрибутом data-placeholder
+// Инициализация select элементов только для этой страницы
+function initializeOIDSelect() {
     const selectElements = document.querySelectorAll('select[data-placeholder]');
     
     selectElements.forEach(function(selectElement) {
-        // Устанавливаем начальное состояние при загрузке страницы
         if (selectElement.value === '') {
             selectElement.setAttribute('data-placeholder', 'true');
         } else {
             selectElement.setAttribute('data-placeholder', 'false');
         }
         
-        // Обработчик изменения значения
-        selectElement.addEventListener('change', function() {
-            if (this.value === '') {
-                this.setAttribute('data-placeholder', 'true');
-            } else {
-                this.setAttribute('data-placeholder', 'false');
-            }
-        });
+        selectElement.removeEventListener('change', handleSelectChange);
+        selectElement.addEventListener('change', handleSelectChange);
     });
+}
+
+function handleSelectChange() {
+    if (this.value === '') {
+        this.setAttribute('data-placeholder', 'true');
+    } else {
+        this.setAttribute('data-placeholder', 'false');
+    }
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', initializeOIDSelect);
+
+// Реинициализация после HTMX обновлений
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.target.id === 'body') {
+        setTimeout(initializeOIDSelect, 50);
+    }
+});
+
+document.body.addEventListener('htmx:afterSettle', function(event) {
+    if (event.target.id === 'body') {
+        initializeOIDSelect();
+    }
 });

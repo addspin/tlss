@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -125,6 +126,9 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	// 	dnsNames = append(dnsNames, "*."+data.Domain)
 	// }
 
+	extraNames := []pkix.AttributeTypeAndValue{}
+
+	// Добавляем SAN
 	dnsNames := []string{data.CommonName}
 	// Добавляем альтернативные имена из поля SAN, если они есть
 	if data.SAN != "" {
@@ -136,12 +140,52 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 			}
 		}
 	}
+
+	// Добавляем custom OID
+	customOID := []int{}
+	if data.OID != "" && data.OIDValues != "" {
+		lineNumbers := strings.Split(data.OID, ".")
+		for _, num := range lineNumbers {
+			n, err := strconv.Atoi(num)
+			if err != nil {
+				return fmt.Errorf("не удалось преобразовать OID в число: %w", err)
+			}
+			customOID = append(customOID, n)
+		}
+		// Добавляем OID значения
+		customOIDValues := []string{}
+		oidValues := strings.Split(data.OIDValues, ",")
+		for _, oid := range oidValues {
+			oid = strings.TrimSpace(oid)
+			if oid != "" {
+				customOIDValues = append(customOIDValues, oid)
+			}
+		}
+
+		// если есть кастомный OID, то добавляем в extraNames шаблон email и customOID
+		extraNames = append(extraNames, pkix.AttributeTypeAndValue{
+			Type:  []int{1, 2, 840, 113549, 1, 9, 1},
+			Value: data.Email,
+		})
+		extraNames = append(extraNames, pkix.AttributeTypeAndValue{
+			Type:  customOID,
+			Value: strings.Join(customOIDValues, ","),
+		})
+	} else {
+		// если нет кастомного OID, то добавляем в extraNames шаблон email
+		extraNames = append(extraNames, pkix.AttributeTypeAndValue{
+			Type:  []int{1, 2, 840, 113549, 1, 9, 1},
+			Value: data.Email,
+		})
+	}
+
 	// customDNSNamesOID := []int{1, 3, 6, 1, 4, 1, 99999, 1, 1}
-	customDNSNamesOID := []int{1, 2, 6, 1, 4, 1, 99999}
+	// customOID := []int{1, 2, 6, 1, 4, 1, 99999}
 
 	now := time.Now()
 	expiry := now.AddDate(0, 0, data.TTL)
 
+	// Создаем шаблон сертификата,  поле ExtraNames добавлено выше
 	template := &x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
@@ -151,16 +195,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 			Locality:           []string{data.LocalityName},
 			Organization:       []string{data.Organization},
 			OrganizationalUnit: []string{data.OrganizationUnit},
-			ExtraNames: []pkix.AttributeTypeAndValue{
-				{
-					Type:  []int{1, 2, 840, 113549, 1, 9, 1},
-					Value: data.Email,
-				},
-				{
-					Type:  customDNSNamesOID,
-					Value: strings.Join(dnsNames, ","),
-				},
-			},
+			ExtraNames:         extraNames,
 		},
 		NotBefore:             now,
 		NotAfter:              expiry,

@@ -25,11 +25,21 @@
         <div class="col-7">
           <div><ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="#">Overview</a></li>  
-            <li class="breadcrumb-item"><a href="/add_server_entity">Add entities</a></li>
-            <li class="breadcrumb-item"><a href="/add_server">Add servers</a></li>
+            <li class="breadcrumb-item"><a href="#"  hx-get="/add_server_entity" 
+              hx-target="#body" 
+              hx-swap="innerHTML transition:true" 
+              hx-push-url="true">Add entities</a></li>
+            <li class="breadcrumb-item"><a href="#"  hx-get="/add_server" 
+              hx-target="#body" 
+              hx-swap="innerHTML transition:true" 
+              hx-push-url="true">Add servers</a></li>
             <li class="breadcrumb-item active" aria-current="page">Add servers certs</li>
-            <li class="breadcrumb-item"><a href="/revoke_certs">Revoke servers certs</a></li>
+            <li class="breadcrumb-item"><a href="#"  hx-get="/revoke_certs" 
+              hx-target="#body" 
+              hx-swap="innerHTML transition:true" 
+              hx-push-url="true">Revoke servers certs</a></li>
           </ol></div> 
+
           <div class="core-certs">
           <form class="" 
             hx-post="/add_certs" 
@@ -136,7 +146,7 @@
                     <input type="text" 
                       id="san-input"
                       class="c_input tag-input"
-                      placeholder="SAN values: example.com, www.example.ru, 1.1.1.1">
+                      placeholder="example.com, www.example.ru, 1.1.1.1">
                     
                     <div id="san-tags" class="tags">
                       <!-- Теги будут добавляться сюда -->

@@ -478,6 +478,12 @@ select:focus {
     font-size: 0.8rem;
 }
 
+[class^="oid_id_"] {
+    font-family: Inter;
+    font-weight: 100;
+    font-size: 0.8rem;
+}
+
 /* Стили для анимации загрузки */
 
 

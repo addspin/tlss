@@ -25,9 +25,18 @@
             <!-- Правая панель с формой для создания сертификата -->
             <div><ol class="breadcrumb">
               <li class="breadcrumb-item"><a href="#">Overview</a></li>  
-              <li class="breadcrumb-item"><a href="/add_server_entity">Add entities</a></li>
-              <li class="breadcrumb-item"><a href="/add_server">Add servers</a></li>
-              <li class="breadcrumb-item"><a href="/add_certs">Add servers certs</a></li>
+              <li class="breadcrumb-item"><a href="#" hx-get="/add_server_entity" 
+                hx-target="#body" 
+                hx-swap="innerHTML transition:true" 
+                hx-push-url="true">Add entities</a></li>
+              <li class="breadcrumb-item"><a href="#" hx-get="/add_server" 
+                hx-target="#body" 
+                hx-swap="innerHTML transition:true" 
+                hx-push-url="true">Add servers</a></li>
+              <li class="breadcrumb-item"><a href="#" hx-get="/add_certs" 
+                hx-target="#body" 
+                hx-swap="innerHTML transition:true" 
+                hx-push-url="true">Add servers certs</a></li>
               <li class="breadcrumb-item active" aria-current="page">Revoke servers certs</li>
             </ol></div>
 

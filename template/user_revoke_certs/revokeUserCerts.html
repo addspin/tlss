@@ -25,8 +25,14 @@
         <!-- Правая панель с формой для создания сертификата -->
         <div><ol class="breadcrumb">
           <li class="breadcrumb-item"><a href="#">Overview</a></li>  
-          <li class="breadcrumb-item"><a href="/add_entity">Add entities</a></li>
-          <li class="breadcrumb-item"><a href="/add_users_certs">Add clients certs</a></li>
+          <li class="breadcrumb-item"><a href="#" hx-get="/add_entity" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add entities</a></li>
+          <li class="breadcrumb-item"><a href="#" hx-get="/add_users_certs" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Add clients certs</a></li>
           <li class="breadcrumb-item active" aria-current="page">Revoke clients certs</li>
         </ol></div>
 

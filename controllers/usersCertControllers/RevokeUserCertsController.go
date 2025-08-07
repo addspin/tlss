@@ -48,7 +48,7 @@ func RevokeUserCertsController(c fiber.Ctx) error {
 		log.Println("entityList-certs", entityList)
 
 		return c.Render("user_revoke_certs/revokeUserCerts", fiber.Map{
-			"Title":      "Revoke users certs",
+			"Title":      "Revoke clients certs",
 			"entityList": entityList,
 		})
 	}

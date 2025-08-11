@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/addspin/tlss/controllers"
+	caControllers "github.com/addspin/tlss/controllers/caControllers"
 	usersCertControllers "github.com/addspin/tlss/controllers/usersCertControllers"
 	"github.com/addspin/tlss/middleware"
 	"github.com/gofiber/fiber/v3"
@@ -25,7 +26,7 @@ func Setup(app *fiber.App) {
 
 	// API routes (no auth required)
 	app.Get("/api/v1/crl", controllers.GetCRL)
-	app.Get("/api/v1/crlUser", usersCertControllers.GetUserCRL)
+	// app.Get("/api/v1/crlclient", usersCertControllers.GetUserCRL)
 	app.Get("/api/v1/ocsp/*", controllers.HandleOCSP)
 	app.Post("/api/v1/ocsp", controllers.HandleOCSP)
 	app.Get("/api/v1/ocspUser/*", usersCertControllers.HandleOCSPUser)
@@ -64,6 +65,11 @@ func Setup(app *fiber.App) {
 	app.Get("/user_cert_list", usersCertControllers.UserCertListController)              // Получение списка сертификатов пользователей
 	app.Post("/user_cert_list", usersCertControllers.UserCertListController)
 	app.Post("/rollback_users_cert", usersCertControllers.RollbackUserCert)
+
+	app.Get("/add_ca", caControllers.AddCAController)
+	app.Post("/add_ca", caControllers.AddCAController)
+	app.Get("/ca_list", caControllers.CACertListController)
+	app.Post("/remove_ca", caControllers.RemoveCA)
 
 	app.Get("/logout", controllers.LogoutController)
 }

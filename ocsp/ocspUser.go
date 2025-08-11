@@ -81,13 +81,13 @@ func NewUserOCSPResponder(db *sqlx.DB, updateInterval time.Duration) (*UserOCSPR
 	}
 
 	// Загружаем сертификат и ключ промежуточного CA
-	var subCA models.SubCA
-	err := db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCA models.CAData
+	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err != nil {
 		return nil, fmt.Errorf("не удалось получить промежуточный CA: %v", err)
 	}
 
-	if subCA.SubCAStatus != 0 {
+	if subCA.CertStatus != 0 {
 		return nil, fmt.Errorf("промежуточный CA недействителен")
 	}
 

@@ -66,13 +66,13 @@ func standardizeSerialNumber(serialNumber *big.Int) string {
 func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPem []byte, err error) {
 
 	// Получаем промежуточный CA сертификат из базы данных
-	var subCA models.SubCA
-	err = db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCA models.CAData
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err != nil {
 		return nil, nil, fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}
 
-	if subCA.SubCAStatus != 0 {
+	if subCA.CertStatus != 0 {
 		return nil, nil, fmt.Errorf("промежуточный CA сертификат недоступен")
 	}
 
@@ -256,13 +256,13 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPem []byte, err error) {
 
 	// Получаем промежуточный CA сертификат из базы данных
-	var subCA models.SubCA
-	err = db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCA models.CAData
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err != nil {
 		return nil, nil, fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}
 
-	if subCA.SubCAStatus != 0 {
+	if subCA.CertStatus != 0 {
 		return nil, nil, fmt.Errorf("промежуточный CA сертификат недоступен")
 	}
 

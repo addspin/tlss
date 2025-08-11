@@ -39,14 +39,14 @@ func checkCerts() {
 	certificates := []models.CertsData{}
 	err = db.Select(&certificates, `SELECT id, domain, cert_expire_time FROM certs WHERE cert_status = 0`)
 	if err != nil {
-		log.Println("CheckValidCerts: Ошибка запроса сертификатов:", err)
+		log.Println("CheckValidCerts: Ошибка запроса серверных сертификатов:", err)
 		return
 	}
 
 	userCertificates := []models.UserCertsData{}
 	err = db.Select(&userCertificates, "SELECT * FROM user_certs WHERE cert_status = 0")
 	if err != nil {
-		log.Println("CheckValidCerts: Ошибка запроса сертификатов:", err)
+		log.Println("CheckValidCerts: Ошибка запроса клиентских сертификатов:", err)
 		return
 	}
 

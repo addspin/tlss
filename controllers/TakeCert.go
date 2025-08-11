@@ -53,7 +53,7 @@ func TakeCert(c fiber.Ctx) error {
 
 	// Извлекаем Sub CA из базы данных
 	var subCACert string
-	err = db.Get(&subCACert, "SELECT public_key FROM sub_ca_tlss WHERE id = 1")
+	err = db.Get(&subCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Sub'")
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -63,7 +63,7 @@ func TakeCert(c fiber.Ctx) error {
 
 	// Извлекаем Root CA сертификат из базы данных
 	var rootCACert string
-	err = db.Get(&rootCACert, "SELECT public_key FROM root_ca_tlss WHERE id = 1")
+	err = db.Get(&rootCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Root'")
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -78,8 +78,9 @@ func TakeCert(c fiber.Ctx) error {
 	var domain *string
 	var commonName *string
 
+	// получение сертификата для сервера
 	if serverId != "" {
-		// Извлекаем сертификаты из базы данных
+		// Извлекаем сертификаты из базы данных (учитывайте что public_key уже содержат поля (Subject, SAN, Issuer, Extensions и т.д.)
 		err = db.Select(&certList, "SELECT domain, public_key, private_key FROM certs WHERE server_id = ? and id = ?", serverId, id)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
@@ -91,6 +92,8 @@ func TakeCert(c fiber.Ctx) error {
 		privateKey = &certList[0].PrivateKey
 		domain = &certList[0].Domain
 	}
+
+	// получение сертификата для пользователя (учитывайте что public_key уже содержат поля (Subject, SAN, Issuer, Extensions и т.д.)
 	if entityId != "" {
 		err = db.Select(&certList, "SELECT common_name, public_key, private_key FROM user_certs WHERE entity_id = ? and id = ?", entityId, id)
 		if err != nil {

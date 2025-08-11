@@ -66,13 +66,13 @@ func UserStandardizeSerialNumber(serialNumber *big.Int) string {
 func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 
 	// Получаем промежуточный CA сертификат из базы данных
-	var subCA models.SubCA
-	err := db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCA models.CAData
+	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err != nil {
 		return fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}
 
-	if subCA.SubCAStatus != 0 {
+	if subCA.CertStatus != 0 {
 		return fmt.Errorf("промежуточный CA сертификат недоступен")
 	}
 
@@ -279,13 +279,13 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
                 common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
                 organization = ?, organization_unit = ?, email = ?, password = ?,
                 public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
-                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?
+                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?, oid = ?, oid_values = ?
             WHERE common_name = ? AND entity_id = ?`,
 			data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 			data.Organization, data.OrganizationUnit, data.Email, data.Password,
 			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, daysLeft, data.SAN,
+			data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues,
 			data.CommonName, data.EntityId)
 		if err != nil {
 			tx.Rollback()
@@ -299,13 +299,13 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
                 common_name, country_name, state_province, locality_name,
                 organization, organization_unit, email, password,
                 public_key, private_key, cert_create_time, cert_expire_time,
-                serial_number, data_revoke, reason_revoke, cert_status, days_left, san
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                serial_number, data_revoke, reason_revoke, cert_status, days_left, san, oid, oid_values
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			data.EntityId, data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 			data.Organization, data.OrganizationUnit, data.Email, data.Password,
 			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, daysLeft, data.SAN)
+			data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues)
 		if err != nil {
 			tx.Rollback()
 			return fmt.Errorf("не удалось добавить новый сертификат в базу данных: %w", err)
@@ -330,13 +330,13 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 
 	// Получаем промежуточный CA сертификат из базы данных
-	var subCA models.SubCA
-	err := db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCA models.CAData
+	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err != nil {
 		return fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}
 
-	if subCA.SubCAStatus != 0 {
+	if subCA.CertStatus != 0 {
 		return fmt.Errorf("промежуточный CA сертификат недоступен")
 	}
 
@@ -403,6 +403,47 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 		}
 	}
 
+	// Подготавливаем шаблон сертификата
+	extraNames := []pkix.AttributeTypeAndValue{}
+
+	// Добавляем custom OID
+	customOID := []int{}
+	if data.OID != "" && data.OIDValues != "" {
+		lineNumbers := strings.Split(data.OID, ".")
+		for _, num := range lineNumbers {
+			n, err := strconv.Atoi(num)
+			if err != nil {
+				return fmt.Errorf("не удалось преобразовать OID в число: %w", err)
+			}
+			customOID = append(customOID, n)
+		}
+		// Добавляем OID значения
+		customOIDValues := []string{}
+		oidValues := strings.Split(data.OIDValues, ",")
+		for _, oid := range oidValues {
+			oid = strings.TrimSpace(oid)
+			if oid != "" {
+				customOIDValues = append(customOIDValues, oid)
+			}
+		}
+
+		// если есть кастомный OID, то добавляем в extraNames шаблон email и customOID
+		extraNames = append(extraNames, pkix.AttributeTypeAndValue{
+			Type:  []int{1, 2, 840, 113549, 1, 9, 1},
+			Value: data.Email,
+		})
+		extraNames = append(extraNames, pkix.AttributeTypeAndValue{
+			Type:  customOID,
+			Value: strings.Join(customOIDValues, ","),
+		})
+	} else {
+		// если нет кастомного OID, то добавляем в extraNames шаблон email
+		extraNames = append(extraNames, pkix.AttributeTypeAndValue{
+			Type:  []int{1, 2, 840, 113549, 1, 9, 1},
+			Value: data.Email,
+		})
+	}
+
 	now := time.Now()
 	expiry := now.AddDate(0, 0, data.TTL)
 
@@ -415,12 +456,7 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 			Locality:           []string{data.LocalityName},
 			Organization:       []string{data.Organization},
 			OrganizationalUnit: []string{data.OrganizationUnit},
-			ExtraNames: []pkix.AttributeTypeAndValue{
-				{
-					Type:  []int{1, 2, 840, 113549, 1, 9, 1},
-					Value: data.Email,
-				},
-			},
+			ExtraNames:         extraNames,
 		},
 		NotBefore:             now,
 		NotAfter:              expiry,
@@ -494,13 +530,13 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
                 common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
                 organization = ?, organization_unit = ?, email = ?, password = ?,
                 public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
-                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?
+                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?, oid = ?, oid_values = ?
             WHERE common_name = ? AND entity_id = ?`,
 		data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 		data.Organization, data.OrganizationUnit, data.Email, data.Password,
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-		data.SerialNumber, "", "", 0, daysLeft, data.SAN,
+		data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues,
 		data.CommonName, data.EntityId)
 	if err != nil {
 		tx.Rollback()

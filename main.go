@@ -9,7 +9,6 @@ import (
 	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
-	"github.com/addspin/tlss/ocsp"
 	"github.com/addspin/tlss/routes"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
@@ -59,21 +58,33 @@ func main() {
 		log.Println(err.Error())
 	}
 	// create SchemaRootCAtlss tables in db (хранит данные корневого CA)
-	_, err = db.Exec(models.SchemaRootCAtlss)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	// create SchemaSubCAtlss tables in db (хранит данные подчиненного CA используемый для подписания конечных сертификатов)
-	_, err = db.Exec(models.SchemaSubCAtlss)
+	// _, err = db.Exec(models.SchemaRootCAtlss)
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
+	// // create SchemaSubCAtlss tables in db (хранит данные подчиненного CA используемый для подписания конечных сертификатов)
+	// _, err = db.Exec(models.SchemaSubCAtlss)
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
+
+	// create SchemaCA tables in db (хранит данные CA)
+	_, err = db.Exec(models.SchemaCA)
 	if err != nil {
 		log.Println(err.Error())
 	}
 
-	// create SchemaCrlInfo tables in db (хранит данные CRL)
+	// create SchemaCrlInfo tables in db (хранит данные CRL server)
 	_, err = db.Exec(models.SchemaCrlInfo)
 	if err != nil {
 		log.Println(err.Error())
 	}
+
+	// create SchemaCrlInfoUser tables in db (хранит данные CRL user)
+	// _, err = db.Exec(models.SchemaCrlInfoUser)
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
 
 	// create Users tables in db (хранит данные Users)
 	_, err = db.Exec(models.UsersData)
@@ -196,17 +207,7 @@ func main() {
 			//записываем расшифрованный ключ в переменную
 			crypts.AesSecretKey.Key = decryptKey
 		}
-		//---------------------------------------Generate root CA
-		err = crypts.GenerateRootCA()
-		if err != nil {
-			log.Printf("Error generating root CA: %v", err)
-		}
-
-		//---------------------------------------Generate sub CA
-		err = crypts.GenerateSubCA()
-		if err != nil {
-			log.Printf("Error generating sub CA: %v", err)
-		}
+		// Генерация CA теперь выполняется через эндпоинт Add CA
 	}
 	// если в базе есть ключ то расшифровываем и передаем в переменную
 	var keyData []models.Key
@@ -241,31 +242,21 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	//---------------------------------------Generate root CA
-	err = crypts.GenerateRootCA()
-	if err != nil {
-		log.Printf("Error generating root CA: %v", err)
-	}
+	// Генерация CA теперь выполняется через эндпоинт Add CA
 
-	//---------------------------------------Generate sub CA
-	err = crypts.GenerateSubCA()
-	if err != nil {
-		log.Printf("Error generating sub CA: %v", err)
-	}
-
-	//---------------------------------------Generate CRL
+	//---------------------------------------Generate Server CRL
 	updateInterval := time.Duration(viper.GetInt("crl.updateInterval")) * time.Minute
 	// запускаем генерацию CRL через заданный интервал времени
 	go crl.StartCRLGeneration(updateInterval)
 
 	//---------------------------------------Start OCSP Responder
 	// OCSP-респондер работает отдельно от контроллера, обновляя базу данных
-	ocspUpdateInterval := time.Duration(viper.GetInt("ocsp.updateInterval")) * time.Minute
-	go ocsp.StartOCSPResponder(ocspUpdateInterval)
+	// ocspUpdateInterval := time.Duration(viper.GetInt("ocsp.updateInterval")) * time.Minute
+	// go ocsp.StartOCSPResponder(ocspUpdateInterval)
 
 	//---------------------------------------Start User OCSP Responder
-	userOcspUpdateInterval := time.Duration(viper.GetInt("ocspUser.updateInterval")) * time.Minute
-	go ocsp.StartUserOCSPResponder(userOcspUpdateInterval)
+	// userOcspUpdateInterval := time.Duration(viper.GetInt("ocspUser.updateInterval")) * time.Minute
+	// go ocsp.StartUserOCSPResponder(userOcspUpdateInterval)
 
 	// --------------------------------------Start check server
 	checkServerTime := time.Duration(viper.GetInt("checkServer.time")) * time.Second

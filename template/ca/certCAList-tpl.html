@@ -1,0 +1,120 @@
+{{define "certCAList-tpl"}}
+
+            <table class="table">
+              <thead>
+              <tr>
+                <th scope="col">Common name</th>
+                <th scope="col">Create date</th>
+                <th scope="col">Expire date</th>
+                <th scope="col">Expire in</th>
+                <th scope="col" class="th-text-center">Algorithm</th>
+                <th scope="col">Key size</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="th-text-center">Recreate</th>
+                <th scope="col">Revoke\Recreate</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+                <th scope="col">Take cert</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{ if .certList }}
+                {{ range .certList }}
+                  <tr class="cert_id_{{ .Id }}" name="{{ .Id }}">
+                    <!-- Entity -->
+                      <td>{{ .CommonName }}</td>
+                      <!-- Create date -->
+                      <td>{{ .CertCreateTime }}</td>
+                      <!-- Expire date -->
+                      <td>{{ .CertExpireTime }}</td>
+                      <!-- Expire in -->
+                      <td>{{ .DaysLeft }} days</td>
+                      <!-- Algorithm -->
+                      <td class="th-text-center">{{ .Algorithm }}</td>
+                      <!-- Key length -->
+                      <td>{{ .KeyLength }} bits</td>
+                      <!-- Status -->
+                      <td>
+                        <div class="state-{{ if eq .CertStatus 0 }}valid-certs{{ else if eq .CertStatus 1 }}expired-certs{{ else if eq .CertStatus 2 }}revoked-certs{{ end }}" >
+                          {{ if eq .CertStatus 0 }}valid{{ else if eq .CertStatus 1 }}expired{{ else if eq .CertStatus 2 }}revoked{{ end }}
+                        </div>
+                      </td>
+                      <!-- Recreate -->
+                      <td class="th-text-center">{{ if eq .Recreate true }}Yes{{ else }}No{{ end }}</td>
+                      <!-- Revoke -->
+                       <td>
+                        <select id="revoke_reason_{{ .Id }}" name="reason_revoke" class="select_certs_revoke" type="text">  
+                          <option value="keyCompromise">keyCompromise</option>
+                          <option value="superseded">superseded</option>
+                          <option value="unspecified" selected>unspecified</option>
+                        </select>
+                      </td>
+                      <td>
+                        <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_ca_certs" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
+                        hx-vals='js:{
+                            "Id": {{ .Id }}, 
+                            "ReasonRevoke": document.getElementById("revoke_reason_{{ .Id }}").value
+                        }'
+                        onClick="const { value: commonName } = Swal.fire({
+                        showClass: {
+                        popup: `
+                          animate__animated
+                          animate__fadeInUp
+                          animate__fast
+                        `
+                        },
+                        hideClass: {
+                          popup: `
+                            animate__animated
+                            animate__fadeOutDown
+                            animate__fast
+                          `
+                        },
+                        customClass: 'custom-alert',
+                        input: 'text',
+                        title: '{{ if eq .TypeCA "Root" }} Вы отзываете Root CA все сертификаты подписанные этим CA будут отозваны! {{ else }} Вы отзываете Sub CA все сертификаты подписанные этим Sub CA будут отозваны! {{ end }} - {{ .CommonName }}?', 
+                        text: 'Для подтверждения введите {{ .CommonName }}', 
+                        showCancelButton: true,
+                        confirmButtonColor: '#983636',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Yes, revoke!',
+                        
+                        inputValidator: (value) => {
+                        if (value != '{{ .CommonName }}') {
+                          return 'Вы ввели не верное имя сертификата, введите {{ .CommonName }}';
+                        }
+                      }
+                      }).then((result) => {
+                        if (result.isConfirmed) {
+                          htmx.trigger(this, 'revoke'); 
+                        }
+                      });"
+                      >Revoke</button>
+                      </td>
+                      <td></td>
+                      <!-- Take cert -->
+                      <td>
+                        <div class="btn-group">
+                          <button type="button" class="select_cert_take dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="/svg/take_cert.svg" alt="Select format" style="cursor: pointer;" width="15" height="15">
+                            Select format
+                          </button>
+                          <ul class="dropdown-menu">
+                            <li><a class="dropdown-item-take" href="/take_cert?Id={{ .Id }}&id={{ .Id }}&format=zip">zip</a></li>
+                          </ul>
+                        </div>
+                      </td>
+                  </tr>
+                {{ end }}
+              {{ else }}
+                <tr>
+                  <td colspan="12">No CA certificates found</td>
+                </tr>
+              {{ end }}
+            </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+{{end}}

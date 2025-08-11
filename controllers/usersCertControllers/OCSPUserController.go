@@ -299,8 +299,8 @@ func processOCSPRequestWithSubCA(ctx fiber.Ctx, db *sqlx.DB, ocspRequest *ocspli
 	}
 
 	// Загружаем приватный ключ SubCA для подписи
-	var subCA models.SubCA
-	err = db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCA models.CAData
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err == nil {
 		// Расшифровываем и декодируем приватный ключ SubCA
 		aes := crypts.Aes{}
@@ -379,8 +379,8 @@ func createMalformedRequestResponse(ctx fiber.Ctx) error {
 	}
 
 	// Загружаем приватный ключ SubCA для подписи
-	var subCA models.SubCA
-	err = db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCA models.CAData
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err == nil {
 		// Расшифровываем и декодируем приватный ключ SubCA
 		aes := crypts.Aes{}
@@ -446,8 +446,8 @@ func createInternalErrorResponse(ctx fiber.Ctx, subCACert *x509.Certificate) err
 	}
 	defer db.Close()
 
-	var subCA models.SubCA
-	err = db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCA models.CAData
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err == nil {
 		// Расшифровываем и декодируем приватный ключ SubCA
 		aes := crypts.Aes{}
@@ -482,13 +482,13 @@ func createInternalErrorResponse(ctx fiber.Ctx, subCACert *x509.Certificate) err
 // LoadCertificatesAndKeys загружает сертификаты и ключи, необходимые для OCSP-ответа
 func LoadCertificatesAndKeys(db *sqlx.DB) (*x509.Certificate, error) {
 	// Загружаем промежуточный сертификат CA
-	var subCA models.SubCA
-	err := db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCA models.CAData
+	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err != nil {
 		return nil, fmt.Errorf("не удалось получить промежуточный CA: %v", err)
 	}
 
-	if subCA.SubCAStatus != 0 {
+	if subCA.CertStatus != 0 {
 		return nil, fmt.Errorf("промежуточный CA недействителен")
 	}
 

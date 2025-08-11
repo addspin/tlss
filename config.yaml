@@ -17,47 +17,51 @@ database:
 checkServer:
   time: 30 # seconds
 
-root_ca_tlss:
-  path: ./root_ca_tlss/root_ca_tlss.pem
-  key: ./root_ca_tlss/root_ca_tlss.key
-  ttl: 24855
-  commonName: TLSS Root CA
-  countryName: RU
-  stateProvince: Moscow
-  localityName: Moscow
-  organization: TLSS
-  organizationUnit: TLSS
-  email: tlss@tlss.ru
-  key_size: 4096
+ca_tlss:
+  path_cert: ./root_ca_tlss/root_ca_tlss.pem
+  path_key: ./root_ca_tlss/root_ca_tlss.key
+
+# root_ca_tlss:
+#   path: ./root_ca_tlss/root_ca_tlss.pem
+#   key: ./root_ca_tlss/root_ca_tlss.key
+#   ttl: 24855
+#   commonName: TLSS Root CA
+#   countryName: RU
+#   stateProvince: Moscow
+#   localityName: Moscow
+#   organization: TLSS
+#   organizationUnit: TLSS
+#   email: tlss@tlss.ru
+#   key_size: 4096
   
-sub_ca_tlss:
-  ttl: 24855
-  commonName: TLSS Sub CA
-  countryName: RU
-  stateProvince: Moscow
-  localityName: Moscow
-  organization: TLSS
-  organizationUnit: TLSS
-  email: tlss@tlss.ru
-  key_size: 4096
+# sub_ca_tlss:
+#   ttl: 24855
+#   commonName: TLSS Sub CA
+#   countryName: RU
+#   stateProvince: Moscow
+#   localityName: Moscow
+#   organization: TLSS
+#   organizationUnit: TLSS
+#   email: tlss@tlss.ru
+#   key_size: 4096
 
 crl:
   crlURL: https://tlss.lv.local:43000/api/v1/crl
-  updateInterval: 720 # minutes 12 hours
+  updateInterval: 1 # minutes 12 hours
   version: 2
 
 ocsp:
-  ocspURL: http://10.13.1.36:43000/api/v1/ocsp
+  ocspURL: http://tlss.lv.local:43000/api/v1/ocsp
   updateInterval: 720 # minutes 12 hours
   version: 2
 
-crlUser:
-  crlURL: http://10.13.1.36:43000/api/v1/crlUser
-  updateInterval: 720 # minutes 12 hours
-  version: 2
+# crlUser:
+#   crlURL: http://tlss.lv.local:43000/api/v1/crlclient
+#   updateInterval: 1 # minutes 12 hours
+#   version: 2
 
 ocspUser:
-  ocspURL: http://10.13.1.36:43000/api/v1/ocspUser
+  ocspURL: http://tlss.lv.local:43000/api/v1/ocspUser
   updateInterval: 1 # minutes 12 hours
   version: 2
 

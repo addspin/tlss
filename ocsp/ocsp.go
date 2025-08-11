@@ -45,7 +45,8 @@ func StartOCSPResponder(updateInterval time.Duration) {
 	// Создаем новый OCSP-респондер
 	responder, err := NewOCSPResponder(db, updateInterval)
 	if err != nil {
-		log.Fatalf("OCSP: Не удалось создать OCSP-респондер: %v", err)
+		log.Printf("OCSP: Не удалось создать OCSP-респондер: %v", err)
+		return
 	}
 
 	// Генерируем или обновляем OCSP-сертификат
@@ -80,13 +81,18 @@ func NewOCSPResponder(db *sqlx.DB, updateInterval time.Duration) (*OCSPResponder
 	}
 
 	// Загружаем сертификат и ключ промежуточного CA
-	var subCA models.SubCA
-	err := db.Get(&subCA, "SELECT * FROM sub_ca_tlss WHERE id = 1")
+	var subCAs []models.CAData
+	err := db.Select(&subCAs, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' LIMIT 1")
 	if err != nil {
 		return nil, fmt.Errorf("OCSP: не удалось получить промежуточный CA: %v", err)
 	}
+	if len(subCAs) == 0 {
+		log.Printf("OCSP: промежуточный CA не найден. OCSP-обновления будут пропущены")
+		return responder, nil
+	}
+	subCA := subCAs[0]
 
-	if subCA.SubCAStatus != 0 {
+	if subCA.CertStatus != 0 {
 		return nil, fmt.Errorf("OCSP: промежуточный CA недействителен")
 	}
 
@@ -126,6 +132,12 @@ func NewOCSPResponder(db *sqlx.DB, updateInterval time.Duration) (*OCSPResponder
 // UpdateOCSPData обновляет данные о статусе сертификатов в базе OCSP
 func (r *OCSPResponder) UpdateOCSPData() error {
 	log.Println("OCSP: Обновление данных OCSP...")
+
+	// Если отсутствует сертификат SubCA, пропускаем обновление, но не падаем
+	if r.SubCACert == nil {
+		log.Printf("OCSP: нет сертификата SubCA. Пропускаю обновление OCSP")
+		return nil
+	}
 
 	// Получаем текущее время для записи в ThisUpdate
 	now := time.Now().UTC()

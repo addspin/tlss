@@ -43,6 +43,7 @@ func TakeCert(c fiber.Ctx) error {
 	entityId := c.Query("entityId")
 	id := c.Query("id")
 	format := c.Query("format")
+	typeCA := c.Query("typeCA")
 
 	// if serverId == "" || id == "" || entityId == "" {
 	// 	return c.Status(400).JSON(fiber.Map{
@@ -69,6 +70,96 @@ func TakeCert(c fiber.Ctx) error {
 			"status":  "error",
 			"message": fmt.Sprintf("Не удалось получить корневой сертификат: %v", err),
 		})
+	}
+
+	// Извелкаем првиатный ключ Sub CA
+	var subCAKey string
+	err = db.Get(&subCAKey, "SELECT private_key FROM ca_certs WHERE type_ca = 'Sub'")
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": fmt.Sprintf("Не удалось получить приватный ключ Sub CA: %v", err),
+		})
+	}
+	aes := crypts.Aes{}
+	// Расшифровываем приватный ключ Sub CA
+	decryptedSubCAKey, err := aes.Decrypt([]byte(subCAKey), crypts.AesSecretKey.Key)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Ошибка расшифровки приватного ключа Sub CA",
+		})
+	}
+	subCAKeyBlock, _ := pem.Decode(decryptedSubCAKey)
+	if subCAKeyBlock == nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Не удалось декодировать PEM приватного ключа Sub CA",
+		})
+	}
+
+	if format == "zip" && typeCA == "Root" {
+		// Создаем ZIP архив
+		var buf bytes.Buffer
+		zipWriter := zip.NewWriter(&buf)
+
+		// Добавляем Root CA сертификат
+		rootCAFile, err := zipWriter.Create(rootCAFileName)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка создания архива",
+			})
+		}
+		_, err = rootCAFile.Write([]byte(rootCACert))
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка записи Root CA в архив",
+			})
+		}
+		if err = zipWriter.Close(); err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка закрытия архива",
+			})
+		}
+		c.Set("Content-Type", "application/zip")
+		c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", "root_ca_tlss.zip"))
+		c.Set("Content-Length", fmt.Sprintf("%d", buf.Len()))
+		return c.Send(buf.Bytes())
+	}
+
+	if format == "zip" && typeCA == "Sub" {
+		// Создаем ZIP архив
+		var buf bytes.Buffer
+		zipWriter := zip.NewWriter(&buf)
+
+		// Добавляем Root CA сертификат
+		subCAFile, err := zipWriter.Create(subCAFileName)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка создания архива",
+			})
+		}
+		_, err = subCAFile.Write([]byte(subCACert))
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка записи Sub CA в архив",
+			})
+		}
+		if err = zipWriter.Close(); err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка закрытия архива",
+			})
+		}
+		c.Set("Content-Type", "application/zip")
+		c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", "sub_ca_tlss.zip"))
+		c.Set("Content-Length", fmt.Sprintf("%d", buf.Len()))
+		return c.Send(buf.Bytes())
 	}
 
 	// Объявляем certList до условных блоков
@@ -107,23 +198,25 @@ func TakeCert(c fiber.Ctx) error {
 		privateKey = &certList[0].PrivateKey
 	}
 
-	// Расшифровываем приватный ключ
-	aes := crypts.Aes{}
-	decryptedKey, err := aes.Decrypt([]byte(*privateKey), crypts.AesSecretKey.Key)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Ошибка расшифровки приватного ключа",
-		})
-	}
+	// Расшифровываем приватный ключ сертификатов
+	var decryptedKey []byte
+	if privateKey != nil {
+		decryptedKey, err = aes.Decrypt([]byte(*privateKey), crypts.AesSecretKey.Key)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка расшифровки приватного ключа",
+			})
+		}
 
-	// Проверяем, что приватный ключ корректно расшифрован
-	subCAKeyBlock, _ := pem.Decode(decryptedKey)
-	if subCAKeyBlock == nil {
-		return c.Status(500).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Не удалось декодировать PEM приватного ключа",
-		})
+		// Проверяем, что приватный ключ корректно расшифрован
+		subCAKeyBlock, _ = pem.Decode(decryptedKey)
+		if subCAKeyBlock == nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Не удалось декодировать PEM приватного ключа",
+			})
+		}
 	}
 	if format == "zip" || serverId != "" {
 		// Создаем ZIP архив
@@ -254,7 +347,7 @@ func TakeCert(c fiber.Ctx) error {
 		return c.Send(buf.Bytes())
 	}
 
-	if entityId != "" || format == "pkcs12" {
+	if entityId != "" && (format == "pkcs12" || format == "pkcs12-legacy") {
 		var password string
 		// Если это пользовательский сертификат, получаем пароль из базы данных
 		var encryptedPassword string

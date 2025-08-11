@@ -178,6 +178,7 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 			return err
 		}
 	}
+	data.CommonName = "TLSS Sub CA"
 	if err := GenerateRSASubCA(data, db); err != nil {
 		return fmt.Errorf("GenerateRSARootCA: Ошибка при генерации Sub CA %w", err)
 	}

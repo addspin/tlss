@@ -4,6 +4,7 @@
               <thead>
               <tr>
                 <th scope="col">Common name</th>
+                <th scope="col">Type CA</th>
                 <th scope="col">Create date</th>
                 <th scope="col">Expire date</th>
                 <th scope="col">Expire in</th>
@@ -23,6 +24,8 @@
                   <tr class="cert_id_{{ .Id }}" name="{{ .Id }}">
                     <!-- Entity -->
                       <td>{{ .CommonName }}</td>
+                      <!-- Type CA -->
+                      <td>{{ .TypeCA }}</td>
                       <!-- Create date -->
                       <td>{{ .CertCreateTime }}</td>
                       <!-- Expire date -->
@@ -53,6 +56,7 @@
                         <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_ca_certs" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
                         hx-vals='js:{
                             "Id": {{ .Id }}, 
+                            "TypeCA": {{ .TypeCA }},
                             "ReasonRevoke": document.getElementById("revoke_reason_{{ .Id }}").value
                         }'
                         onClick="const { value: commonName } = Swal.fire({

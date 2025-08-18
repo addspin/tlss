@@ -21,6 +21,12 @@ ca_tlss:
   path_cert: ./root_ca_tlss/root_ca_tlss.pem
   path_key: ./root_ca_tlss/root_ca_tlss.key
 
+root_ca_tlss:
+  commonName: TLSS Root CA
+
+sub_ca_tlss:
+  commonName: TLSS Sub CA
+
 # root_ca_tlss:
 #   path: ./root_ca_tlss/root_ca_tlss.pem
 #   key: ./root_ca_tlss/root_ca_tlss.key

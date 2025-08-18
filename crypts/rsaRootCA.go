@@ -113,72 +113,43 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 
 	// PEM для БД
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
+	tx := db.MustBegin()
+	// currentTime := time.Now().Format(time.RFC3339)
+	// certStatus := 0   // 0 - valid
+	// revokeStatus := 2 // 2 - revoked
 
-	// Обновляем/вставляем запись в ca_certs (type_ca = 'Root')
+	// Перед вставкой нового сертификата помечаем текущий активный Root CA и Sub CA как отозванный
+	// _, err = tx.Exec(`UPDATE ca_certs SET
+	// 	cert_status = ?,
+	// 	data_revoke = ?,
+	// 	reason_revoke = ?
+	// 	WHERE cert_status = ?`, revokeStatus, currentTime, "superseded", certStatus)
+	// if err != nil {
+	// 	return fmt.Errorf("root CA: ошибка при обновлении метки об отзыве сертификата: %w", err)
+	// }
+
+	// Всегда вставляем новую запись в ca_certs (type_ca = 'Root') для генерации нового ID
 	daysLeft := int(time.Until(notAfter).Hours() / 24)
-	updateRes, err := db.Exec(`
-        UPDATE ca_certs SET
-            algorithm = ?,
-            type_ca = 'Root',
-            key_length = ?,
-            ttl = ?,
-            recreate = ?,
-            common_name = ?,
-            country_name = ?,
-            state_province = ?,
-            locality_name = ?,
-            organization = ?,
-            organization_unit = ?,
-            email = ?,
-            public_key = ?,
-            private_key = '',
-            cert_create_time = ?,
-            cert_expire_time = ?,
-            days_left = ?,
-            serial_number = ?,
-            data_revoke = '',
-            reason_revoke = '',
-            cert_status = 0
-        WHERE type_ca = 'Root'
-    `,
-		data.Algorithm,
-		keyBits,
-		data.TTL,
-		data.Recreate,
-		"TLSS Root CA",
-		data.CountryName,
-		data.StateProvince,
-		data.LocalityName,
-		data.Organization,
-		data.OrganizationUnit,
-		data.Email,
-		string(certPEM),
-		notBefore.Format(time.RFC3339),
-		notAfter.Format(time.RFC3339),
-		daysLeft,
-		serialNumberStr,
+	_, err = db.Exec(`
+		INSERT INTO ca_certs (
+			algorithm, type_ca, key_length, ttl, recreate, common_name, country_name, state_province, locality_name,
+			organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time,
+			days_left, serial_number, data_revoke, reason_revoke, cert_status
+		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+	`,
+		data.Algorithm, "Root", keyBits, data.TTL, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
+		data.Organization, data.OrganizationUnit, data.Email, string(certPEM), "", notBefore.Format(time.RFC3339), notAfter.Format(time.RFC3339),
+		daysLeft, serialNumberStr, "", "", 0,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("root CA: ошибка при вставке нового сертификата: %w", err)
 	}
-	rows, _ := updateRes.RowsAffected()
-	if rows == 0 {
-		_, err = db.Exec(`
-            INSERT INTO ca_certs (
-                algorithm, type_ca, key_length, ttl, recreate, common_name, country_name, state_province, locality_name,
-                organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time,
-                days_left, serial_number, data_revoke, reason_revoke, cert_status
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        `,
-			data.Algorithm, "Root", keyBits, data.TTL, data.Recreate, "TLSS Root CA", data.CountryName, data.StateProvince, data.LocalityName,
-			data.Organization, data.OrganizationUnit, data.Email, string(certPEM), "", notBefore.Format(time.RFC3339), notAfter.Format(time.RFC3339),
-			daysLeft, serialNumberStr, "", "", 0,
-		)
-		if err != nil {
-			return err
-		}
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("root CA: ошибка при коммите: %w", err)
 	}
-	data.CommonName = "TLSS Sub CA"
+	// Когда отзывается Root CA автоматически пересоздается Sub CA
+	data.CommonName = viper.GetString("sub_ca_tlss.commonName") // Значение Sub CA из config
 	if err := GenerateRSASubCA(data, db); err != nil {
 		return fmt.Errorf("GenerateRSARootCA: Ошибка при генерации Sub CA %w", err)
 	}

@@ -69,7 +69,7 @@ func Setup(app *fiber.App) {
 	app.Get("/add_ca", caControllers.AddCAController)
 	app.Post("/add_ca", caControllers.AddCAController)
 	app.Get("/ca_list", caControllers.CACertListController)
-	app.Post("/remove_ca", caControllers.RemoveCA)
+	app.Post("/revoke_ca_certs", caControllers.RevokeCACert)
 
 	app.Get("/logout", controllers.LogoutController)
 }

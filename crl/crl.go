@@ -48,23 +48,23 @@ func getRevocationReason(reason string) int {
 	switch r {
 	case "", "unspecified":
 		return 0
-	case "keyCompromise", "key_compromise":
+	case "keyCompromise":
 		return 1
-	case "cacompromise", "ca_compromise":
+	case "cacompromise":
 		return 2
-	case "affiliationchanged", "affiliation_changed":
+	case "affiliationchanged":
 		return 3
 	case "superseded":
 		return 4
-	case "cessationofoperation", "cessation_of_operation":
+	case "cessationofoperation":
 		return 5
-	case "certificatehold", "certificate_hold":
+	case "certificatehold":
 		return 6
-	case "removefromcrl", "remove_from_crl":
+	case "removefromcrl":
 		return 8
-	case "privilegewithdrawn", "privilege_withdrawn":
+	case "privilegewithdrawn":
 		return 9
-	case "aacompromise", "aa_compromise":
+	case "aacompromise":
 		return 10
 	default:
 		return 0
@@ -76,45 +76,45 @@ func GenerateCRL() error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		return fmt.Errorf("Server CRL: не удалось подключиться к базе данных: %w", err)
+		return fmt.Errorf("server CRL: не удалось подключиться к базе данных: %w", err)
 	}
 	defer db.Close()
 
 	// Получаем сертификат и ключ промежуточного CA
 	var subCA models.CAData
-	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
-		return fmt.Errorf("Server CRL: не удалось получить промежуточный CA: %w", err)
+		return fmt.Errorf("server CRL: не удалось получить промежуточный CA: %w", err)
 	}
 
 	if subCA.CertStatus != 0 {
-		return fmt.Errorf("Server CRL: промежуточный CA недействителен")
+		return fmt.Errorf("server CRL: промежуточный CA недействителен")
 	}
 
 	// Декодируем сертификат промежуточного CA
 	subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
 	if subCACertBlock == nil {
-		return fmt.Errorf("Server CRL: не удалось декодировать сертификат промежуточного CA")
+		return fmt.Errorf("server CRL: не удалось декодировать сертификат промежуточного CA")
 	}
 	subCACert, err := x509.ParseCertificate(subCACertBlock.Bytes)
 	if err != nil {
-		return fmt.Errorf("Server CRL: не удалось разобрать сертификат промежуточного CA: %w", err)
+		return fmt.Errorf("server CRL: не удалось разобрать сертификат промежуточного CA: %w", err)
 	}
 
 	// Расшифровываем и декодируем приватный ключ промежуточного CA
 	aes := crypts.Aes{}
 	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), crypts.AesSecretKey.Key)
 	if err != nil {
-		return fmt.Errorf("Server CRL: не удалось расшифровать приватный ключ промежуточного CA: %w", err)
+		return fmt.Errorf("server CRL: не удалось расшифровать приватный ключ промежуточного CA: %w", err)
 	}
 
 	subCAKeyBlock, _ := pem.Decode(decryptedKey)
 	if subCAKeyBlock == nil {
-		return fmt.Errorf("Server CRL: не удалось декодировать приватный ключ промежуточного CA")
+		return fmt.Errorf("server CRL: не удалось декодировать приватный ключ промежуточного CA")
 	}
 	subCAKey, err := x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
 	if err != nil {
-		return fmt.Errorf("Server CRL: не удалось разобрать приватный ключ промежуточного CA: %w", err)
+		return fmt.Errorf("server CRL: не удалось разобрать приватный ключ промежуточного CA: %w", err)
 	}
 
 	// Получаем отозванные сертификаты из базы данных
@@ -127,7 +127,7 @@ func GenerateCRL() error {
 		WHERE cert_status = 2
 	`)
 	if err != nil {
-		return fmt.Errorf("Server CRL: не удалось получить отозванные сертификаты: %w", err)
+		return fmt.Errorf("server CRL: не удалось получить отозванные сертификаты: %w", err)
 	}
 
 	// Создаем записи CRL
@@ -139,7 +139,7 @@ func GenerateCRL() error {
 			// Используем только формат RFC3339
 			revocationTime, err = time.Parse(time.RFC3339, cert.DataRevoke)
 			if err != nil {
-				log.Printf("Server CRL: Ошибка парсинга времени отзыва: %v, использую текущее время", err)
+				log.Printf("server CRL: Ошибка парсинга времени отзыва: %v, использую текущее время", err)
 				revocationTime = time.Now()
 			}
 		} else {
@@ -196,10 +196,10 @@ func GenerateCRL() error {
 			crlInfo.LastUpdate, crlInfo.NextUpdate, crlInfo.CrlNumber,
 			subCACert.SubjectKeyId, crlInfo.CrlURL)
 		if err != nil {
-			return fmt.Errorf("Server CRL: не удалось вставить информацию о CRL: %w", err)
+			return fmt.Errorf("server CRL: не удалось вставить информацию о CRL: %w", err)
 		}
 	} else if err != nil {
-		return fmt.Errorf("Server CRL: не удалось получить информацию о CRL: %w", err)
+		return fmt.Errorf("server CRL: не удалось получить информацию о CRL: %w", err)
 	} else {
 		// Обновляем существующую информацию о CRL
 		crlInfo.LastUpdate = time.Now().Format(time.RFC3339)
@@ -212,7 +212,7 @@ func GenerateCRL() error {
 				crl_number = ?
 		`, crlInfo.LastUpdate, crlInfo.NextUpdate, crlInfo.CrlNumber)
 		if err != nil {
-			return fmt.Errorf("Server CRL: не удалось обновить информацию о CRL: %w", err)
+			return fmt.Errorf("server CRL: не удалось обновить информацию о CRL: %w", err)
 		}
 	}
 
@@ -228,14 +228,14 @@ func GenerateCRL() error {
 	// Генерируем CRL
 	crlBytes, err := x509.CreateRevocationList(rand.Reader, template, subCACert, subCAKey)
 	if err != nil {
-		return fmt.Errorf("Server CRL: не удалось создать CRL: %w", err)
+		return fmt.Errorf("server CRL: не удалось создать CRL: %w", err)
 	}
 
 	// Сохраняем CRL в файл
 	crlPath := "./crlFile/revoked.crl"
 	err = saveCRLToFile(crlBytes, crlPath)
 	if err != nil {
-		return fmt.Errorf("Server CRL: не удалось сохранить CRL: %w", err)
+		return fmt.Errorf("server CRL: не удалось сохранить CRL: %w", err)
 	}
 
 	log.Printf("Server CRL: Успешно сгенерирован CRL с %d отозванными сертификатами", len(revokedEntries))

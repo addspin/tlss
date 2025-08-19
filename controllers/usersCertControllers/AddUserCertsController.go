@@ -73,7 +73,7 @@ func AddUserCertsController(c fiber.Ctx) error {
 		var certErr error
 		switch data.Algorithm {
 		case "RSA":
-			certErr = crypts.GenerateUserRSACertificate(data, db)
+			_, _, certErr = crypts.GenerateUserRSACertificate(data, db)
 		// Добавляем другие алгоритмы по мере необходимости
 		default:
 			return c.Status(400).JSON(fiber.Map{

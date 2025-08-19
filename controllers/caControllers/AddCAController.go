@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
@@ -52,27 +51,35 @@ func AddCAController(c fiber.Ctx) error {
 		}
 
 		// Генерируем сертификат в зависимости от алгоритма
-		var certErr error
-		switch data.TypeCA {
-		case "Root":
-			certErr = crypts.GenerateRSARootCA(data, db)
-		case "Sub":
-			certErr = crypts.GenerateRSASubCA(data, db)
-		// Добавляем другие алгоритмы по мере необходимости
-		default:
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Unsupported algorithm: " + data.Algorithm,
-			})
-		}
-		// Если есть ошибка вернуть
+		data.ReasonRevoke = "superseded"
+		certErr := RevokeCACertWithData(data, db)
 		if certErr != nil {
-			log.Printf("Certificate generation error: %v", certErr)
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Failed to generate certificate: " + certErr.Error(),
 			})
 		}
+
+		// switch data.TypeCA {
+		// case "Root":
+		// 	certErr = RevokeCACert(c, data)
+		// case "Sub":
+		// 	certErr = crypts.GenerateRSASubCA(data, db)
+		// // Добавляем другие алгоритмы по мере необходимости
+		// default:
+		// 	return c.Status(400).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Unsupported algorithm: " + data.Algorithm,
+		// 	})
+		// }
+		// Если есть ошибка вернуть
+		// if certErr != nil {
+		// 	log.Printf("Certificate generation error: %v", certErr)
+		// 	return c.Status(500).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Failed to generate certificate: " + certErr.Error(),
+		// 	})
+		// }
 
 		return c.JSON(fiber.Map{
 			"status":     "success",

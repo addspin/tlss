@@ -67,7 +67,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 
 	// Получаем промежуточный CA сертификат из базы данных
 	var subCA models.CAData
-	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
 		return nil, nil, fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}
@@ -257,7 +257,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 
 	// Получаем промежуточный CA сертификат из базы данных
 	var subCA models.CAData
-	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
 		return nil, nil, fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}

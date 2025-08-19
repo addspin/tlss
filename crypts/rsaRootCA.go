@@ -130,7 +130,7 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 
 	// Всегда вставляем новую запись в ca_certs (type_ca = 'Root') для генерации нового ID
 	daysLeft := int(time.Until(notAfter).Hours() / 24)
-	_, err = db.Exec(`
+	_, err = tx.Exec(`
 		INSERT INTO ca_certs (
 			algorithm, type_ca, key_length, ttl, recreate, common_name, country_name, state_province, locality_name,
 			organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time,

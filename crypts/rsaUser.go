@@ -63,56 +63,56 @@ func UserStandardizeSerialNumber(serialNumber *big.Int) string {
 
 // Генерирует RSA сертификат, подписанный промежуточным CA,
 // и сохраняет его в базу данных
-func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
+func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPem, keyPem []byte, err error) {
 
 	// Получаем промежуточный CA сертификат из базы данных
 	var subCA models.CAData
-	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
 	if err != nil {
-		return fmt.Errorf("не удалось получить промежуточный CA: %w", err)
+		return nil, nil, fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}
 
 	if subCA.CertStatus != 0 {
-		return fmt.Errorf("промежуточный CA сертификат недоступен")
+		return nil, nil, fmt.Errorf("промежуточный CA сертификат недоступен")
 	}
 
 	// Декодируем промежуточный CA сертификат
 	subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
 	if subCACertBlock == nil {
-		return fmt.Errorf("не удалось декодировать PEM промежуточного CA сертификата")
+		return nil, nil, fmt.Errorf("не удалось декодировать PEM промежуточного CA сертификата")
 	}
 	subCACert, err := x509.ParseCertificate(subCACertBlock.Bytes)
 	if err != nil {
-		return fmt.Errorf("не удалось разобрать промежуточный CA сертификат: %w", err)
+		return nil, nil, fmt.Errorf("не удалось разобрать промежуточный CA сертификат: %w", err)
 	}
 
 	// Расшифровываем приватный ключ промежуточного CA
 	aes := Aes{}
 	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), AesSecretKey.Key)
 	if err != nil {
-		return fmt.Errorf("не удалось расшифровать приватный ключ промежуточного CA: %w", err)
+		return nil, nil, fmt.Errorf("не удалось расшифровать приватный ключ промежуточного CA: %w", err)
 	}
 
 	// Декодируем приватный ключ промежуточного CA
 	subCAKeyBlock, _ := pem.Decode(decryptedKey)
 	if subCAKeyBlock == nil {
-		return fmt.Errorf("не удалось декодировать PEM приватного ключа промежуточного CA")
+		return nil, nil, fmt.Errorf("не удалось декодировать PEM приватного ключа промежуточного CA")
 	}
 	subCAKey, err := x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
 	if err != nil {
-		return fmt.Errorf("не удалось разобрать приватный ключ промежуточного CA: %w", err)
+		return nil, nil, fmt.Errorf("не удалось разобрать приватный ключ промежуточного CA: %w", err)
 	}
 
 	// Генерируем новую RSA ключевую пару для сертификата
 	privateKey, err := rsa.GenerateKey(rand.Reader, data.KeyLength)
 	if err != nil {
-		return fmt.Errorf("не удалось сгенерировать RSA ключевую пару: %w", err)
+		return nil, nil, fmt.Errorf("не удалось сгенерировать RSA ключевую пару: %w", err)
 	}
 
 	// Генерируем случайный серийный номер
 	serialNumber, err := rand.Int(rand.Reader, big.NewInt(1).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		return fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
+		return nil, nil, fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
 	}
 
 	// Стандартизируем серийный номер и сохраняем
@@ -148,7 +148,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 		for _, num := range lineNumbers {
 			n, err := strconv.Atoi(num)
 			if err != nil {
-				return fmt.Errorf("не удалось преобразовать OID в число: %w", err)
+				return nil, nil, fmt.Errorf("не удалось преобразовать OID в число: %w", err)
 			}
 			customOID = append(customOID, n)
 		}
@@ -215,7 +215,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	// Создаем сертификат
 	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, &privateKey.PublicKey, subCAKey)
 	if err != nil {
-		return fmt.Errorf("не удалось создать сертификат: %w", err)
+		return nil, nil, fmt.Errorf("не удалось создать сертификат: %w", err)
 	}
 
 	// Кодируем сертификат и приватный ключ в PEM
@@ -233,7 +233,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	if len(AesSecretKey.Key) > 0 {
 		encryptedKey, err = aes.Encrypt(keyPEM, AesSecretKey.Key)
 		if err != nil {
-			return fmt.Errorf("не удалось зашифровать приватный ключ: %w", err)
+			return nil, nil, fmt.Errorf("не удалось зашифровать приватный ключ: %w", err)
 		}
 	} else {
 		// Если AesSecretKey.Key не доступен, сохраняем ключ без шифрования
@@ -245,7 +245,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	// Шифруем password
 	encryptedPassword, err := aes.Encrypt([]byte(data.Password), AesSecretKey.Key)
 	if err != nil {
-		return fmt.Errorf("не удалось зашифровать password: %w", err)
+		return nil, nil, fmt.Errorf("не удалось зашифровать password: %w", err)
 	}
 	data.Password = string(encryptedPassword)
 
@@ -269,7 +269,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	err = tx.Get(&exists, `SELECT EXISTS(SELECT 1 FROM user_certs WHERE common_name = ? AND entity_id = ?)`, data.CommonName, data.EntityId)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("ошибка проверки существования common_name: %v", err)
+		return nil, nil, fmt.Errorf("ошибка проверки существования common_name: %v", err)
 	}
 
 	if exists {
@@ -289,7 +289,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 			data.CommonName, data.EntityId)
 		if err != nil {
 			tx.Rollback()
-			return fmt.Errorf("не удалось обновить существующий сертификат в базе данных: %w", err)
+			return nil, nil, fmt.Errorf("не удалось обновить существующий сертификат в базе данных: %w", err)
 		}
 		log.Printf("Сертификат для common_name %s обновлен в базе данных (ID: %d)", data.CommonName, data.Id)
 	} else {
@@ -308,14 +308,14 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 			data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues)
 		if err != nil {
 			tx.Rollback()
-			return fmt.Errorf("не удалось добавить новый сертификат в базу данных: %w", err)
+			return nil, nil, fmt.Errorf("не удалось добавить новый сертификат в базу данных: %w", err)
 		}
 		log.Printf("Новый сертификат для common_name %s добавлен в базу данных", data.CommonName)
 	}
 
 	// Если все операции прошли успешно, фиксируем транзакцию
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+		return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
 	}
 	txCommitted = true
 
@@ -324,7 +324,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	} else {
 		log.Printf("Успешно сгенерирован новый RSA сертификат для common_name %s", data.CommonName)
 	}
-	return nil
+	return certPEM, keyPEM, nil
 }
 
 func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {

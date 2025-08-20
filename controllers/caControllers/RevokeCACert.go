@@ -426,10 +426,15 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 		} else {
 			if numWorkers < 2 {
 				numWorkers = 1
+
 			} else if numWorkers%2 != 0 {
 				numWorkers = (numWorkers - 1) / 2
+
 			} else if numWorkers > 100 && numWorkers%2 != 0 {
 				numWorkers = numWorkers / 2
+
+			} else {
+				numWorkers = 2
 			}
 		}
 

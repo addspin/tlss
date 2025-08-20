@@ -364,7 +364,6 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 		}
 
 		// Отзываем все сертификаты подписанные CA
-
 		// Удаляем все отозванные клиентские сертификаты
 		_, err = tx.Exec(`DELETE FROM user_certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
 		if err != nil {
@@ -418,75 +417,26 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 		certList := []models.CertsData{}
 		err = db.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
 		if err != nil {
-			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка сертификатов серверов: %w", err)
+			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка серверных сертификатов: %w", err)
 		}
 
 		numWorkers := len(certList)
-		if numWorkers%2 != 0 {
-			numWorkers = (numWorkers - 1) / 2
-		}
-		if numWorkers > 100 && numWorkers%2 != 0 {
-			numWorkers = numWorkers / 2
-		}
-
-		serverJobs := make(chan models.CertsData, len(certList))
-		serverResultsErrors := make(chan error, len(certList))
-
-		for _, cert := range certList {
-			serverJobs <- cert
-		}
-		close(serverJobs)
-
-		var wg sync.WaitGroup
-		for w := 1; w <= numWorkers; w++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for cert := range serverJobs {
-					var certPEM []byte
-					var keyPEM []byte
-					var certErr error
-
-					switch cert.Algorithm {
-					case "RSA":
-						certPEM, keyPEM, certErr = crypts.GenerateRSACertificate(&cert, db)
-						if certErr != nil {
-							serverResultsErrors <- fmt.Errorf("RevokeCACertWithData: root ca: Ошибка генерации rsa сертификатов: %w", certErr)
-							continue
-						}
-						if cert.SaveOnServer {
-							saveOnServer := utils.NewSaveOnServer()
-							err := saveOnServer.SaveOnServer(&cert, db, certPEM, keyPEM)
-							if err != nil {
-								log.Printf("RevokeCACertWithData: root ca: Ошибка сохранения сертификата на сервер: %v", err)
-							}
-						}
-						serverResultsErrors <- nil // успешно обработано
-					default:
-						serverResultsErrors <- fmt.Errorf("RevokeCACertWithData: root ca: Неподдерживаемый алгоритм: %s", cert.Algorithm)
-					}
-				}
-			}()
-		}
-
-		go func() {
-			wg.Wait()
-			close(serverResultsErrors)
-		}()
-
-		// Собираем ошибки
-		var errors []error
-		for err := range serverResultsErrors {
-			if err != nil {
-				errors = append(errors, err)
+		if numWorkers == 0 {
+			// Нет сертификатов для обработки
+		} else {
+			if numWorkers < 2 {
+				numWorkers = 1
+			} else if numWorkers%2 != 0 {
+				numWorkers = (numWorkers - 1) / 2
+			} else if numWorkers > 100 && numWorkers%2 != 0 {
+				numWorkers = numWorkers / 2
 			}
 		}
 
-		if len(errors) > 0 {
-			for _, err := range errors {
-				log.Printf("Ошибка при обработке сертификата: %v", err)
-			}
-			return fmt.Errorf("RevokeCACertWithData: обнаружены ошибки при обработке %d сертификатов", len(errors))
+		// Обрабатываем серверные сертификаты
+		err = processServerCertificates(certList, db, numWorkers)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: root ca: %w", err)
 		}
 
 		// получаем и пересоздаем все клиентские сертификаты
@@ -496,49 +446,10 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка клиентских сертификатов: %w", err)
 		}
 
-		userJobs := make(chan models.UserCertsData, len(userCertList))
-		userResultsErrors := make(chan error, len(userCertList))
-
-		for _, userCert := range userCertList {
-			userJobs <- userCert
-		}
-		close(userJobs)
-
-		for w := 1; w <= numWorkers; w++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				for userCert := range userJobs {
-					var certErr error
-					switch userCert.Algorithm {
-					case "RSA":
-						_, _, certErr = crypts.GenerateUserRSACertificate(&userCert, db)
-						userResultsErrors <- certErr
-					default:
-						userResultsErrors <- fmt.Errorf("RevokeCACertWithData: root ca: Неподдерживаемый алгоритм: %s", userCert.Algorithm)
-					}
-				}
-			}()
-
-			go func() {
-				wg.Wait()
-				close(userResultsErrors)
-			}()
-
-			// Собираем ошибки
-			var errors []error
-			for err := range userResultsErrors {
-				if err != nil {
-					errors = append(errors, err)
-				}
-			}
-
-			if len(errors) > 0 {
-				for _, err := range errors {
-					log.Printf("Ошибка при обработке сертификата: %v", err)
-				}
-				return fmt.Errorf("RevokeCACertWithData: обнаружены ошибки при обработке %d сертификатов", len(errors))
-			}
+		// Обрабатываем пользовательские сертификаты
+		err = processUserCertificates(userCertList, db, numWorkers)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: root ca: %w", err)
 		}
 		return nil
 	}
@@ -569,7 +480,7 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 		}
 
 		// Отзываем все сертификаты подписанные CA
-		// Серверные сертификаты
+		// Помечаем все серверные сертификаты как отозванные
 		_, err = tx.Exec(`UPDATE certs SET 
 			cert_status = ?, 
 			data_revoke = ?, 
@@ -580,7 +491,7 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при отзыве серверных сертификатов: %w", err)
 		}
 
-		// Клиентские сертификаты
+		// Помечаем все клиентские сертификаты как отозванные
 		_, err = tx.Exec(`UPDATE user_certs SET 
 			cert_status = ?, 
 			data_revoke = ?, 
@@ -606,54 +517,177 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 		// Пересоздаем все сертификаты и сохраняем на сервере если такие имеются
 		// получаем и пересоздаем все серверные сертификаты
 		certList := []models.CertsData{}
-		err = db.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, server_status, app_type, ttl, server_id, wildcard, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+		err = db.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
 		if err != nil {
-			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при получении списка серверов: %w", err)
+			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при получении списка серверных сертификатов: %w", err)
 		}
-		for _, cert := range certList {
-			var certPEM []byte
-			var keyPEM []byte
-			var certErr error
-			switch cert.Algorithm {
-			case "RSA":
-				certPEM, keyPEM, certErr = crypts.GenerateRSACertificate(&cert, db)
-				if certErr != nil {
-					return fmt.Errorf("RevokeCACertWithData: sub ca: Ошибка генерации rsa сертификатов: %w", certErr)
-				}
-				if cert.SaveOnServer {
-					saveOnServer := utils.NewSaveOnServer()
-					err = saveOnServer.SaveOnServer(&cert, db, certPEM, keyPEM)
-					if err != nil {
-						log.Printf("RevokeCACertWithData: sub ca: Ошибка сохранения сертификата на сервер: %v", err)
-					}
-				}
-			default:
-				return fmt.Errorf("RevokeCACertWithData: sub ca: Неподдерживаемый алгоритм: %s", cert.Algorithm)
-			}
+
+		numWorkers := len(certList)
+		if numWorkers%2 != 0 {
+			numWorkers = (numWorkers - 1) / 2
+		}
+		if numWorkers > 100 && numWorkers%2 != 0 {
+			numWorkers = numWorkers / 2
+		}
+
+		// Обрабатываем серверные сертификаты
+		err = processServerCertificates(certList, db, numWorkers)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: sub ca: %w", err)
 		}
 
 		// получаем и пересоздаем все клиентские сертификаты
 		userCertList := []models.UserCertsData{}
-		err = db.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+		err = db.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
 		if err != nil {
-			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при получении списка клиентских сертификатов: %w", err)
-		}
-		for _, userCert := range userCertList {
-			var certErr error
-			switch userCert.Algorithm {
-			case "RSA":
-				_, _, certErr = crypts.GenerateUserRSACertificate(&userCert, db)
-				if certErr != nil {
-					return fmt.Errorf("RevokeCACertWithData: sub ca: Ошибка генерации rsa сертификатов: %w", certErr)
-				}
-			default:
-				return fmt.Errorf("RevokeCACertWithData: sub ca: Неподдерживаемый алгоритм: %s", userCert.Algorithm)
-			}
+			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка клиентских сертификатов: %w", err)
 		}
 
-		// Все операции завершены успешно
+		// Обрабатываем пользовательские сертификаты
+		err = processUserCertificates(userCertList, db, numWorkers)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: sub ca: %w", err)
+		}
+		return nil
+	}
+	return fmt.Errorf("RevokeCACertWithData: неподдерживаемый тип CA: %s", typeCA)
+}
+
+// Функция для обработки серверных сертификатов
+func processServerCertificates(certList []models.CertsData, db *sqlx.DB, numWorkers int) error {
+	if len(certList) == 0 {
 		return nil
 	}
 
-	return fmt.Errorf("RevokeCACertWithData: неподдерживаемый тип CA: %s", typeCA)
+	serverJobs := make(chan models.CertsData, len(certList))
+	serverResultsErrors := make(chan error, len(certList))
+	var dbMutex sync.Mutex
+
+	// Отправляем задания
+	for _, cert := range certList {
+		serverJobs <- cert
+	}
+	close(serverJobs)
+
+	// Запускаем воркеры
+	var wg sync.WaitGroup
+	for w := 1; w <= numWorkers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for cert := range serverJobs {
+				var certPEM []byte
+				var keyPEM []byte
+				var certErr error
+
+				switch cert.Algorithm {
+				case "RSA":
+					dbMutex.Lock()
+					certPEM, keyPEM, certErr = crypts.GenerateRSACertificate(&cert, db)
+					dbMutex.Unlock()
+
+					if certErr != nil {
+						serverResultsErrors <- fmt.Errorf("ошибка генерации rsa сертификатов: %w", certErr)
+						continue
+					}
+					if cert.SaveOnServer {
+						saveOnServer := utils.NewSaveOnServer()
+						dbMutex.Lock()
+						err := saveOnServer.SaveOnServer(&cert, db, certPEM, keyPEM)
+						dbMutex.Unlock()
+						if err != nil {
+							log.Printf("Ошибка сохранения сертификата на сервер: %v", err)
+						}
+					}
+					serverResultsErrors <- nil
+				default:
+					serverResultsErrors <- fmt.Errorf("неподдерживаемый алгоритм: %s", cert.Algorithm)
+				}
+			}
+		}()
+	}
+
+	// Ждем завершения и закрываем канал
+	go func() {
+		wg.Wait()
+		close(serverResultsErrors)
+	}()
+
+	// Собираем ошибки
+	var errors []error
+	for err := range serverResultsErrors {
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+
+	if len(errors) > 0 {
+		for _, err := range errors {
+			log.Printf("Ошибка при обработке серверного сертификата: %v", err)
+		}
+		return fmt.Errorf("обнаружены ошибки при обработке %d серверных сертификатов", len(errors))
+	}
+
+	return nil
+}
+
+// Функция для обработки пользовательских сертификатов
+func processUserCertificates(userCertList []models.UserCertsData, db *sqlx.DB, numWorkers int) error {
+	if len(userCertList) == 0 {
+		return nil
+	}
+
+	userJobs := make(chan models.UserCertsData, len(userCertList))
+	userResultsErrors := make(chan error, len(userCertList))
+	var dbMutex sync.Mutex
+
+	// Отправляем задания
+	for _, userCert := range userCertList {
+		userJobs <- userCert
+	}
+	close(userJobs)
+
+	// Запускаем воркеры
+	var userWg sync.WaitGroup
+	for w := 1; w <= numWorkers; w++ {
+		userWg.Add(1)
+		go func() {
+			defer userWg.Done()
+			for userCert := range userJobs {
+				var certErr error
+				switch userCert.Algorithm {
+				case "RSA":
+					dbMutex.Lock()
+					_, _, certErr = crypts.GenerateUserRSACertificate(&userCert, db)
+					dbMutex.Unlock()
+					userResultsErrors <- certErr
+				default:
+					userResultsErrors <- fmt.Errorf("неподдерживаемый алгоритм: %s", userCert.Algorithm)
+				}
+			}
+		}()
+	}
+
+	// ОДНА горутина для закрытия канала ПОСЛЕ завершения всех воркеров
+	go func() {
+		userWg.Wait()
+		close(userResultsErrors)
+	}()
+
+	// Собираем ошибки ПОСЛЕ цикла создания воркеров
+	var userErrors []error
+	for err := range userResultsErrors {
+		if err != nil {
+			userErrors = append(userErrors, err)
+		}
+	}
+
+	if len(userErrors) > 0 {
+		for _, err := range userErrors {
+			log.Printf("Ошибка при обработке пользовательского сертификата: %v", err)
+		}
+		return fmt.Errorf("RevokeCACertWithData: обнаружены ошибки при обработке %d пользовательских сертификатов", len(userErrors))
+	}
+
+	return nil
 }

@@ -420,23 +420,8 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка серверных сертификатов: %w", err)
 		}
 
+		// Требуется кэшировать запросы к БД для получения CA
 		numWorkers := len(certList)
-		if numWorkers == 0 {
-			// Нет сертификатов для обработки
-		} else {
-			if numWorkers < 2 {
-				numWorkers = 1
-
-			} else if numWorkers%2 != 0 {
-				numWorkers = (numWorkers - 1) / 2
-
-			} else if numWorkers > 100 && numWorkers%2 != 0 {
-				numWorkers = numWorkers / 2
-
-			} else {
-				numWorkers = 2
-			}
-		}
 
 		// Обрабатываем серверные сертификаты
 		err = processServerCertificates(certList, db, numWorkers)
@@ -528,12 +513,6 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 		}
 
 		numWorkers := len(certList)
-		if numWorkers%2 != 0 {
-			numWorkers = (numWorkers - 1) / 2
-		}
-		if numWorkers > 100 && numWorkers%2 != 0 {
-			numWorkers = numWorkers / 2
-		}
 
 		// Обрабатываем серверные сертификаты
 		err = processServerCertificates(certList, db, numWorkers)
@@ -566,7 +545,7 @@ func processServerCertificates(certList []models.CertsData, db *sqlx.DB, numWork
 
 	serverJobs := make(chan models.CertsData, len(certList))
 	serverResultsErrors := make(chan error, len(certList))
-	var dbMutex sync.Mutex
+	// var dbMutex sync.Mutex
 
 	// Отправляем задания
 	for _, cert := range certList {
@@ -587,9 +566,9 @@ func processServerCertificates(certList []models.CertsData, db *sqlx.DB, numWork
 
 				switch cert.Algorithm {
 				case "RSA":
-					dbMutex.Lock()
+					// dbMutex.Lock()
 					certPEM, keyPEM, certErr = crypts.GenerateRSACertificate(&cert, db)
-					dbMutex.Unlock()
+					// dbMutex.Unlock()
 
 					if certErr != nil {
 						serverResultsErrors <- fmt.Errorf("ошибка генерации rsa сертификатов: %w", certErr)
@@ -597,9 +576,9 @@ func processServerCertificates(certList []models.CertsData, db *sqlx.DB, numWork
 					}
 					if cert.SaveOnServer {
 						saveOnServer := utils.NewSaveOnServer()
-						dbMutex.Lock()
+						// dbMutex.Lock()
 						err := saveOnServer.SaveOnServer(&cert, db, certPEM, keyPEM)
-						dbMutex.Unlock()
+						// dbMutex.Unlock()
 						if err != nil {
 							log.Printf("Ошибка сохранения сертификата на сервер: %v", err)
 						}

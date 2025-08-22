@@ -72,7 +72,6 @@ func RevokeCACert(c fiber.Ctx) error {
 			}
 
 			// Отзываем все сертификаты подписанные CA
-
 			// Удаляем все отозванные клиентские сертификаты
 			_, err = tx.Exec(`DELETE FROM user_certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
 			if err != nil {
@@ -121,75 +120,59 @@ func RevokeCACert(c fiber.Ctx) error {
 				})
 			}
 
+			// Коммитим текущую транзакцию перед пересозданием сертификатов
+			err = tx.Commit()
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "RevokeCACertWithData: root ca: Ошибка при сохранении изменений перед пересозданием сертификатов: " + err.Error(),
+				})
+			}
+
 			// Пересоздаем Root CA и Sub CA
-			crypts.GenerateRSARootCA(data, db)
+			// crypts.GenerateRSARootCA(data, db)
 
 			// Пересоздаем все сертификаты и сохраняем на сервере если такие имеются
 			// получаем и пересоздаем все серверные сертификаты
-			certList := []models.CertsData{}
-			err = tx.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, server_status, app_type, ttl, server_id, wildcard, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
-			if err != nil {
-				return c.Status(500).JSON(fiber.Map{
-					"status":  "error",
-					"message": "Ошибка при получении списка серверов: " + err.Error(),
-				})
-			}
+			// certList := []models.CertsData{}
+			// err = db.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+			// if err != nil {
+			// 	return c.Status(500).JSON(fiber.Map{
+			// 		"status":  "error",
+			// 		"message": "RevokeCACertWithData: root ca: ошибка при получении списка серверных сертификатов: " + err.Error(),
+			// 	})
+			// }
 
-			for _, cert := range certList {
-				var certPEM []byte
-				var keyPEM []byte
-				var certErr error
-				switch cert.Algorithm {
-				case "RSA":
-					certPEM, keyPEM, certErr = crypts.GenerateRSACertificate(&cert, db)
-					if certErr != nil {
-						return c.Status(500).JSON(fiber.Map{
-							"status":  "error",
-							"message": "revoke ca: Ошибка генерации rsa сертификатов: " + certErr.Error(),
-						})
-					}
-					if cert.SaveOnServer {
-						saveOnServer := utils.NewSaveOnServer()
-						err = saveOnServer.SaveOnServer(&cert, db, certPEM, keyPEM)
-						if err != nil {
-							log.Printf("revoke ca: Ошибка сохранения сертификата на сервер: %v", err)
-						}
-					}
-				default:
-					return c.Status(400).JSON(fiber.Map{
-						"status":  "error",
-						"message": "revoke ca: Неподдерживаемый алгоритм: " + cert.Algorithm,
-					})
-				}
-			}
+			// // Требуется кэшировать запросы к БД для получения CA
+			// numWorkers := len(certList)
 
-			// получаем и пересоздаем все клиентские сертификаты
-			userCertList := []models.UserCertsData{}
-			err = tx.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
-			if err != nil {
-				return c.Status(500).JSON(fiber.Map{
-					"status":  "error",
-					"message": "Ошибка при получении списка клиентских сертификатов: " + err.Error(),
-				})
-			}
-			for _, userCert := range userCertList {
-				var certErr error
-				switch userCert.Algorithm {
-				case "RSA":
-					_, _, certErr = crypts.GenerateUserRSACertificate(&userCert, db)
-					if certErr != nil {
-						return c.Status(500).JSON(fiber.Map{
-							"status":  "error",
-							"message": "revoke ca: Ошибка генерации rsa сертификатов: " + certErr.Error(),
-						})
-					}
-				default:
-					return c.Status(400).JSON(fiber.Map{
-						"status":  "error",
-						"message": "revoke ca: Неподдерживаемый алгоритм: " + userCert.Algorithm,
-					})
-				}
-			}
+			// // Обрабатываем серверные сертификаты
+			// err = processServerCertificates(certList, db, numWorkers)
+			// if err != nil {
+			// 	return c.Status(500).JSON(fiber.Map{
+			// 		"status":  "error",
+			// 		"message": "RevokeCACertWithData: root ca: ошибка при обработке серверных сертификатов: " + err.Error(),
+			// 	})
+			// }
+
+			// // получаем и пересоздаем все клиентские сертификаты
+			// userCertList := []models.UserCertsData{}
+			// err = db.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+			// if err != nil {
+			// 	return c.Status(500).JSON(fiber.Map{
+			// 		"status":  "error",
+			// 		"message": "RevokeCACertWithData: root ca: ошибка при получении списка клиентских сертификатов: " + err.Error(),
+			// 	})
+			// }
+
+			// // Обрабатываем пользовательские сертификаты
+			// err = processUserCertificates(userCertList, db, numWorkers)
+			// if err != nil {
+			// 	return c.Status(500).JSON(fiber.Map{
+			// 		"status":  "error",
+			// 		"message": "RevokeCACertWithData: root ca: ошибка при обработке клиентских сертификатов: " + err.Error(),
+			// 	})
+			// }
 		}
 
 		if typeCA == "Sub" {
@@ -255,92 +238,89 @@ func RevokeCACert(c fiber.Ctx) error {
 				})
 			}
 
+			// Коммитим текущую транзакцию перед пересозданием сертификатов
+			err = tx.Commit()
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "RevokeCACertWithData: sub ca: Ошибка при сохранении изменений перед пересозданием сертификатов: " + err.Error(),
+				})
+			}
 			// Пересоздаем Sub CA
-			crypts.GenerateRSASubCA(data, db)
+			// crypts.GenerateRSASubCA(data, db)
 
 			// Пересоздаем все сертификаты и сохраняем на сервере если такие имеются
 			// получаем и пересоздаем все серверные сертификаты
-			certList := []models.CertsData{}
-			err = tx.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, server_status, app_type, ttl, server_id, wildcard, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
-			if err != nil {
-				return c.Status(500).JSON(fiber.Map{
-					"status":  "error",
-					"message": "Ошибка при получении списка серверов: " + err.Error(),
-				})
-			}
-			for _, cert := range certList {
-				var certPEM []byte
-				var keyPEM []byte
-				var certErr error
-				switch cert.Algorithm {
-				case "RSA":
-					certPEM, keyPEM, certErr = crypts.GenerateRSACertificate(&cert, db)
-					if certErr != nil {
-						return c.Status(500).JSON(fiber.Map{
-							"status":  "error",
-							"message": "revoke ca: Ошибка генерации rsa сертификатов: " + certErr.Error(),
-						})
-					}
-					if cert.SaveOnServer {
-						saveOnServer := utils.NewSaveOnServer()
-						err = saveOnServer.SaveOnServer(&cert, db, certPEM, keyPEM)
-						if err != nil {
-							log.Printf("revoke ca: Ошибка сохранения сертификата на сервер: %v", err)
-						}
-					}
-				default:
-					return c.Status(400).JSON(fiber.Map{
-						"status":  "error",
-						"message": "revoke ca: Неподдерживаемый алгоритм: " + cert.Algorithm,
-					})
-				}
-			}
+			// certList := []models.CertsData{}
+			// err = db.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+			// if err != nil {
+			// 	return c.Status(500).JSON(fiber.Map{
+			// 		"status":  "error",
+			// 		"message": "RevokeCACertWithData: sub ca: ошибка при получении списка серверных сертификатов: " + err.Error(),
+			// 	})
+			// }
 
-			// получаем и пересоздаем все клиентские сертификаты
-			userCertList := []models.UserCertsData{}
-			err = tx.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
-			if err != nil {
-				return c.Status(500).JSON(fiber.Map{
-					"status":  "error",
-					"message": "Ошибка при получении списка клиентских сертификатов: " + err.Error(),
-				})
-			}
-			for _, userCert := range userCertList {
-				var certErr error
-				switch userCert.Algorithm {
-				case "RSA":
-					_, _, certErr = crypts.GenerateUserRSACertificate(&userCert, db)
-					if certErr != nil {
-						return c.Status(500).JSON(fiber.Map{
-							"status":  "error",
-							"message": "revoke ca: Ошибка генерации rsa сертификатов: " + certErr.Error(),
-						})
-					}
-				default:
-					return c.Status(400).JSON(fiber.Map{
-						"status":  "error",
-						"message": "revoke ca: Неподдерживаемый алгоритм: " + userCert.Algorithm,
-					})
-				}
-			}
-		}
+			// numWorkers := len(certList)
 
-		if err != nil {
-			tx.Rollback() // Откатываем транзакцию при ошибке
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "sub ca: Ошибка при отзыве сертификата: " + err.Error(),
-			})
-		}
-		err = tx.Commit() // Проверяем ошибку при коммите
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "root/sub ca: Ошибка при сохранении изменений: " + err.Error(),
-			})
+			// // Обрабатываем серверные сертификаты
+			// err = processServerCertificates(certList, db, numWorkers)
+			// if err != nil {
+			// 	return c.Status(500).JSON(fiber.Map{
+			// 		"status":  "error",
+			// 		"message": "RevokeCACertWithData: sub ca: ошибка при обработке серверных сертификатов: " + err.Error(),
+			// 	})
+			// }
+
+			// // получаем и пересоздаем все клиентские сертификаты
+			// userCertList := []models.UserCertsData{}
+			// err = db.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+			// if err != nil {
+			// 	return c.Status(500).JSON(fiber.Map{
+			// 		"status":  "error",
+			// 		"message": "RevokeCACertWithData: sub ca: ошибка при получении списка клиентских сертификатов: " + err.Error(),
+			// 	})
+			// }
+
+			// // Обрабатываем пользовательские сертификаты
+			// err = processUserCertificates(userCertList, db, numWorkers)
+			// if err != nil {
+			// 	return c.Status(500).JSON(fiber.Map{
+			// 		"status":  "error",
+			// 		"message": "RevokeCACertWithData: sub ca: ошибка при обработке клиентских сертификатов: " + err.Error(),
+			// 	})
+			// }
 		}
 	}
-	return c.Render("ca/certCAList-tpl", fiber.Map{})
+	// Получаем актуальный список CA сертификатов после операции
+	certList := []models.CAData{}
+	err = db.Select(&certList, "SELECT id, algorithm, type_ca, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, cert_create_time, cert_expire_time, days_left, data_revoke, reason_revoke, cert_status FROM ca_certs WHERE cert_status IN (0, 1)")
+	if err != nil {
+		log.Printf("Ошибка при получении списка CA сертификатов: %v", err)
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Ошибка при получении списка сертификатов",
+		})
+	}
+
+	// Преобразуем формат времени
+	for i := range certList {
+		if certList[i].CertCreateTime != "" {
+			createTime, err := time.Parse(time.RFC3339, certList[i].CertCreateTime)
+			if err == nil {
+				certList[i].CertCreateTime = createTime.Format("02.01.2006 15:04:05")
+			}
+		}
+		if certList[i].CertExpireTime != "" {
+			expireTime, err := time.Parse(time.RFC3339, certList[i].CertExpireTime)
+			if err == nil {
+				certList[i].CertExpireTime = expireTime.Format("02.01.2006 15:04:05")
+			}
+		}
+	}
+	log.Printf("certList after revoke: %v", certList)
+	return c.Render("ca/certCAList-tpl", fiber.Map{
+		"certList": certList,
+	})
 }
 
 func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {

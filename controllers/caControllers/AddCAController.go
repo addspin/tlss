@@ -114,7 +114,7 @@ func CACertListController(c fiber.Ctx) error {
 		// Получаем список сертификатов
 		certList := []models.CAData{}
 		// Получаем список сертификатов с фильтрацией по статусу 0 - valid, 1 - expired
-		err = db.Select(&certList, "SELECT id, algorithm, type_ca, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, cert_create_time, cert_expire_time, days_left, data_revoke, reason_revoke, cert_status FROM ca_certs WHERE cert_status IN (0, 1)")
+		err = db.Select(&certList, "SELECT id, algorithm, type_ca, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, cert_create_time, cert_expire_time, days_left, data_revoke, reason_revoke, cert_status FROM ca_certs WHERE cert_status IN (0, 1)")
 		if err != nil {
 			log.Fatal(err)
 		}

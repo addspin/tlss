@@ -21,7 +21,7 @@
             <tbody>
               {{ if .certList }}
                 {{ range .certList }}
-                  <tr class="cert_id_{{ .Id }}" name="{{ .Id }}">
+                  <tr class="{{ if eq .TypeCA "Root" }}ca-cert-item{{ else }}cert_id_{{ .Id }}{{ end }}" name="{{ .Id }}">
                     <!-- Entity -->
                       <td>{{ .CommonName }}</td>
                       <!-- Type CA -->
@@ -53,47 +53,45 @@
                         </select>
                       </td>
                       <td>
-                        <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_ca_certs" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
+                        <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_ca_certs" hx-target="{{ if eq .TypeCA "Root" }}.ca-cert-item{{ else }}.cert_id_{{ .Id }}{{ end }}" hx-ext="json-enc-custom" parse-types="true" 
                         hx-vals='js:{
-                            "Id": {{ .Id }}, 
-                            "TypeCA": {{ .TypeCA }},
+                            "TypeCA": "{{ .TypeCA }}",
                             "ReasonRevoke": document.getElementById("revoke_reason_{{ .Id }}").value
                         }'
-                        onClick="const { value: commonName } = Swal.fire({
-                        showClass: {
-                        popup: `
-                          animate__animated
-                          animate__fadeInUp
-                          animate__fast
-                        `
-                        },
-                        hideClass: {
-                          popup: `
-                            animate__animated
-                            animate__fadeOutDown
-                            animate__fast
-                          `
-                        },
-                        customClass: 'custom-alert',
-                        input: 'text',
-                        title: '{{ if eq .TypeCA "Root" }} Вы отзываете Root CA, все сертификаты подписанные этим CA будут отозваны, а отозванные сертификаты будут удалены! {{ else }} Вы отзываете Sub CA, все сертификаты подписанные этим Sub CA будут отозваны, а отозванные сертификаты будут удалены! {{ end }}?', 
-                        text: 'Для подтверждения введите {{ .CommonName }}', 
-                        showCancelButton: true,
-                        confirmButtonColor: '#983636',
-                        cancelButtonColor: '#3085d6',
-                        confirmButtonText: 'Yes, revoke!',
-                        
-                        inputValidator: (value) => {
-                        if (value != '{{ .CommonName }}') {
-                          return 'Вы ввели не верное имя сертификата, введите {{ .CommonName }}';
-                        }
-                      }
-                      }).then((result) => {
-                        if (result.isConfirmed) {
-                          htmx.trigger(this, 'revoke'); 
-                        }
-                      });"
-                      >Revoke</button>
+                        onClick="Swal.fire({
+                            showClass: {
+                                popup: `
+                                  animate__animated
+                                  animate__fadeInUp
+                                  animate__fast
+                                `
+                            },
+                            hideClass: {
+                                popup: `
+                                  animate__animated
+                                  animate__fadeOutDown
+                                  animate__fast
+                                `
+                            },
+                            customClass: 'custom-alert',
+                            input: 'text',
+                            title: '{{ if eq .TypeCA "Root" }}Вы отзываете Root CA, все сертификаты подписанные этим CA будут отозваны, а отозванные сертификаты будут удалены!{{ else }}Вы отзываете Sub CA, все сертификаты подписанные этим Sub CA будут отозваны, а отозванные сертификаты будут удалены!{{ end }}?', 
+                            text: 'Для подтверждения введите {{ .CommonName }}', 
+                            showCancelButton: true,
+                            confirmButtonColor: '#983636',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Yes, revoke!',
+                            inputValidator: (value) => {
+                                if (value != '{{ .CommonName }}') {
+                                    return 'Вы ввели не верное имя сертификата, введите {{ .CommonName }}';
+                                }
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                htmx.trigger(this, 'revoke'); 
+                            }
+                        });"
+                        >Revoke</button>
                       </td>
                       <td></td>
                       <!-- Take cert -->
@@ -112,7 +110,7 @@
                 {{ end }}
               {{ else }}
                 <tr>
-                  <td colspan="12">No CA certificates found</td>
+                  <td colspan="13">No CA certificates found</td>
                 </tr>
               {{ end }}
             </tbody>

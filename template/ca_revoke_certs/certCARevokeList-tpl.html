@@ -19,7 +19,7 @@
               {{ if .certList }}
                 {{ range .certList }}
                   <tr class="cert_id_{{ .Id }}" name="{{ .Id }}">
-                    <!-- Domain -->
+                    <!-- CommonName -->
                       <td>{{ .CommonName }}</td>
                       <!-- Type CA -->
                       <td>{{ .TypeCA }}</td>
@@ -104,7 +104,7 @@
                 {{ end }}
               {{ else }}
                 <tr>
-                  <td colspan="7">No server selected or no revoked certs</td>
+                  <td colspan="7">No revoked CA certs</td>
                   <td></td>
                   <td></td>
                   <td></td>

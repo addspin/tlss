@@ -291,36 +291,8 @@ func RevokeCACert(c fiber.Ctx) error {
 			// }
 		}
 	}
-	// Получаем актуальный список CA сертификатов после операции
-	certList := []models.CAData{}
-	err = db.Select(&certList, "SELECT id, algorithm, type_ca, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, cert_create_time, cert_expire_time, days_left, data_revoke, reason_revoke, cert_status FROM ca_certs WHERE cert_status IN (0, 1)")
-	if err != nil {
-		log.Printf("Ошибка при получении списка CA сертификатов: %v", err)
-		return c.Status(500).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Ошибка при получении списка сертификатов",
-		})
-	}
 
-	// Преобразуем формат времени
-	for i := range certList {
-		if certList[i].CertCreateTime != "" {
-			createTime, err := time.Parse(time.RFC3339, certList[i].CertCreateTime)
-			if err == nil {
-				certList[i].CertCreateTime = createTime.Format("02.01.2006 15:04:05")
-			}
-		}
-		if certList[i].CertExpireTime != "" {
-			expireTime, err := time.Parse(time.RFC3339, certList[i].CertExpireTime)
-			if err == nil {
-				certList[i].CertExpireTime = expireTime.Format("02.01.2006 15:04:05")
-			}
-		}
-	}
-	log.Printf("certList after revoke: %v", certList)
-	return c.Render("ca/certCAList-tpl", fiber.Map{
-		"certList": certList,
-	})
+	return c.Render("ca/certCAList-tpl", fiber.Map{})
 }
 
 func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {

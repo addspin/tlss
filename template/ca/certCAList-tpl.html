@@ -21,7 +21,7 @@
             <tbody>
               {{ if .certList }}
                 {{ range .certList }}
-                  <tr class="{{ if eq .TypeCA "Root" }}ca-cert-item{{ else }}cert_id_{{ .Id }}{{ end }}" name="{{ .Id }}">
+                  <tr class="cert_id_{{ .Id }}" name="{{ .Id }}">
                     <!-- Entity -->
                       <td>{{ .CommonName }}</td>
                       <!-- Type CA -->
@@ -53,7 +53,7 @@
                         </select>
                       </td>
                       <td>
-                        <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_ca_certs" hx-target="{{ if eq .TypeCA "Root" }}.ca-cert-item{{ else }}.cert_id_{{ .Id }}{{ end }}" hx-ext="json-enc-custom" parse-types="true" 
+                        <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_ca_certs" hx-target='{{ if eq .TypeCA "Root" }}tbody{{ else }}.cert_id_{{ .Id }}{{ end }}' hx-ext="json-enc-custom" parse-types="true" 
                         hx-vals='js:{
                             "TypeCA": "{{ .TypeCA }}",
                             "ReasonRevoke": document.getElementById("revoke_reason_{{ .Id }}").value

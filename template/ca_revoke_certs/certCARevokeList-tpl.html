@@ -1,0 +1,122 @@
+{{define "certCARevokeList-tpl"}}
+
+            <table class="table">
+              <thead>
+              <tr>
+                <th scope="col">Common name</th>
+                <th scope="col">Type CA</th>
+                <th scope="col">Create date</th>
+                <th scope="col">Expire in</th>
+                <th scope="col">Revoke date</th>
+                <th scope="col" class="th-text-center">Algorithm</th>
+                <th scope="col">Key length</th>
+                <th scope="col">Reason</th>
+                <th scope="col"></th>
+                <th scope="col" class="th-text-center">Remove</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{ if .certList }}
+                {{ range .certList }}
+                  <tr class="cert_id_{{ .Id }}" name="{{ .Id }}">
+                    <!-- Domain -->
+                      <td>{{ .CommonName }}</td>
+                      <!-- Type CA -->
+                      <td>{{ .TypeCA }}</td>
+                      <!-- Create date -->
+                      <td>{{ .CertCreateTime }}</td>
+                      <!-- Expire in -->
+                      <td>{{ .DaysLeft }} days</td>
+                      <!-- Revoke date -->
+                      <td>{{ .DataRevoke }}</td>
+                      <!-- Algorithm -->
+                      <td class="th-text-center">{{ .Algorithm }}</td>
+                      <!-- Key length -->
+                      <td>{{ .KeyLength }} bits</td>
+                      <!-- Reason -->
+                      <td>{{ .ReasonRevoke }}</td>
+                     
+                      <!-- Remove -->
+                      <td class="th-text-center">
+                        <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_ca_cert" hx-target=".cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
+                        hx-on::after-request="
+                          if (event.detail.xhr.responseText) {
+                            try {
+                              const response = JSON.parse(event.detail.xhr.responseText);
+                              if (response.status === 'error') {
+                                Swal.fire({
+                                  showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                                  hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                                  customClass: 'custom-alert',
+                                  icon: 'error',
+                                  title: 'Ошибка',
+                                  text: response.message,
+                                  confirmButtonColor: '#3085d6'
+                                });
+                              }
+                            } catch (e) {
+                              console.error('Ошибка при обработке ответа:', e);
+                            }
+                          }
+                        "
+                        onClick="const { value: domainRemove } = Swal.fire({
+                        showClass: {
+                        popup: `
+                          animate__animated
+                          animate__fadeInUp
+                          animate__fast
+                        `
+                        },
+                        hideClass: {
+                          popup: `
+                            animate__animated
+                            animate__fadeOutDown
+                            animate__fast
+                          `
+                        },
+                        customClass: 'custom-alert',
+                        input: 'text',
+                        title: 'Вы уверены, что хотите удалить сертификат - {{ .CommonName }}?', 
+                        text: 'Для подтверждения введите {{ .CommonName }}', 
+                        showCancelButton: true,
+                        confirmButtonColor: '#983636',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Yes, delete!',
+                        
+                        inputValidator: (value) => {
+                        if (value != '{{ .CommonName }}') {
+                          return 'Вы ввели не верное имя сертификата, введите {{ .CommonName }}';
+                        }
+                      }
+                      }).then((result) => {
+                        if (result.isConfirmed) {
+                          htmx.trigger(this, 'remove'); 
+                        }
+                      });"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="trash" viewBox="0 0 16 16">
+                              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                              <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                            </svg>
+                        </button>
+                        </td>
+                  </tr>
+                {{ end }}
+              {{ else }}
+                <tr>
+                  <td colspan="7">No server selected or no revoked certs</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              {{ end }}
+            </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+    
+
+
+{{end}}

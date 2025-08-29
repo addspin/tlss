@@ -98,7 +98,10 @@ func AddCertsControll(c fiber.Ctx) error {
 				saveOnServer := utils.NewSaveOnServer()
 				err = saveOnServer.SaveOnServer(data, db, certPEM, keyPEM)
 				if err != nil {
-					log.Printf("Ошибка сохранения сертификата на сервер: %v", err)
+					return c.Status(400).JSON(fiber.Map{
+						"status":  "error",
+						"message": "Ошибка сохранения сертификата на сервер: " + err.Error(),
+					})
 				}
 			}
 		default:

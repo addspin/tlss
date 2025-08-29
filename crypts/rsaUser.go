@@ -67,7 +67,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPe
 
 	// Получаем промежуточный CA сертификат из базы данных
 	var subCA models.CAData
-	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
+	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
 		return nil, nil, fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}
@@ -205,7 +205,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPe
 		IsCA:                  false,
 		DNSNames:              dnsNames,
 		CRLDistributionPoints: []string{
-			viper.GetString("crlUser.crlURL"),
+			viper.GetString("SubCAcrl.crlURL"),
 		},
 		OCSPServer: []string{
 			viper.GetString("ocspUser.ocspURL"),
@@ -331,7 +331,7 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 
 	// Получаем промежуточный CA сертификат из базы данных
 	var subCA models.CAData
-	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub'")
+	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
 		return fmt.Errorf("не удалось получить промежуточный CA: %w", err)
 	}
@@ -466,7 +466,7 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 		IsCA:                  false,
 		DNSNames:              dnsNames,
 		CRLDistributionPoints: []string{
-			viper.GetString("crlUser.crlURL"),
+			viper.GetString("SubCAcrl.crlURL"),
 		},
 		OCSPServer: []string{
 			viper.GetString("ocspUser.ocspURL"),

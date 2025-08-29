@@ -30,7 +30,10 @@ var publicRoutes = []string{
 	"/",
 	"/login",
 	"/index",
-	"/api/v1/crl",
+	"/api/v1/crl/subca/der",
+	"/api/v1/crl/rootca/der",
+	"/api/v1/crl/subca/pem",
+	"/api/v1/crl/rootca/pem",
 	"/api/v1/ocsp",
 }
 

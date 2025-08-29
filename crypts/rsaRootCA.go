@@ -66,9 +66,7 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 		MaxPathLen:            1,
-		CRLDistributionPoints: []string{
-			viper.GetString("crl.crlURL"),
-		},
+		CRLDistributionPoints: []string{viper.GetString("RootCAcrl.crlURL")},
 	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
@@ -113,20 +111,16 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 
 	// PEM для БД
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
-	tx := db.MustBegin()
-	// currentTime := time.Now().Format(time.RFC3339)
-	// certStatus := 0   // 0 - valid
-	// revokeStatus := 2 // 2 - revoked
+	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
 
-	// Перед вставкой нового сертификата помечаем текущий активный Root CA и Sub CA как отозванный
-	// _, err = tx.Exec(`UPDATE ca_certs SET
-	// 	cert_status = ?,
-	// 	data_revoke = ?,
-	// 	reason_revoke = ?
-	// 	WHERE cert_status = ?`, revokeStatus, currentTime, "superseded", certStatus)
-	// if err != nil {
-	// 	return fmt.Errorf("root CA: ошибка при обновлении метки об отзыве сертификата: %w", err)
-	// }
+	// Шифруем приватный ключ перед записью в БД
+	aes := Aes{}
+	encryptedKey, err := aes.Encrypt(keyPEM, AesSecretKey.Key)
+	if err != nil {
+		return fmt.Errorf("root CA: ошибка при шифровании приватного ключа: %w", err)
+	}
+
+	tx := db.MustBegin()
 
 	// Всегда вставляем новую запись в ca_certs (type_ca = 'Root') для генерации нового ID
 	daysLeft := int(time.Until(notAfter).Hours() / 24)
@@ -138,7 +132,7 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 	`,
 		data.Algorithm, "Root", keyBits, data.TTL, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
-		data.Organization, data.OrganizationUnit, data.Email, string(certPEM), "", notBefore.Format(time.RFC3339), notAfter.Format(time.RFC3339),
+		data.Organization, data.OrganizationUnit, data.Email, string(certPEM), string(encryptedKey), notBefore.Format(time.RFC3339), notAfter.Format(time.RFC3339),
 		daysLeft, serialNumberStr, "", "", 0,
 	)
 	if err != nil {

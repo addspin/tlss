@@ -12,7 +12,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -169,7 +171,7 @@ func WriteKeyToFile(keyBytesPriv, keyBytesPub []byte, saveFileToPriv, saveFileTo
 // Returns:
 //
 // - error: an error if there was a problem adding the public key or connecting to the remote server.
-func AddAuthorizedKeys(hostname, tlssSSHport, username, password string) error {
+func AddAuthorizedKeys(hostname, tlssSSHport, username, password, path string) error {
 	// var hostKey ssh.PublicKey
 
 	home, err := os.UserHomeDir()
@@ -194,25 +196,33 @@ func AddAuthorizedKeys(hostname, tlssSSHport, username, password string) error {
 		},
 		// HostKeyCallback: ssh.FixedHostKey(parsedPubKey),
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         time.Duration(viper.GetInt("add_server.waitingToConnect")) * time.Second,
 	}
 	client, err := ssh.Dial("tcp", hostname+":"+tlssSSHport, config)
 	if err != nil {
-		return fmt.Errorf("failed to dial: %v", err)
+		log.Println("addServer: ошибка подключения к серверу:", err)
+		return fmt.Errorf("ошибка подключения к серверу: %w", err)
 	}
 	defer client.Close()
 
+	TestPathCert, err := client.NewSession()
+	if err != nil {
+		return fmt.Errorf("addServer: ошибка создания сессии: %w", err)
+	}
+	defer TestPathCert.Close()
+
+	cmdPathCertTest := "test -d " + path + " || { echo 'Директория " + path + " не существует'; exit 1; }"
+
+	err = TestPathCert.Run(cmdPathCertTest)
+	if err != nil {
+		return fmt.Errorf("addServer: ошибка, путь хранения сертификата не существует: %w", err)
+	}
+
 	sessionTestCert, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("failed to create session: %v", err)
+		return fmt.Errorf("addServer: ошибка создания сессии: %w", err)
 	}
 	defer sessionTestCert.Close()
-
-	// var b bytes.Buffer
-	// session.Stdout = &b
-	// d, err := session.Output("grep -c '" + string(pubKey) + "' ~/.ssh/authorized_keys")
-	// if err != nil {
-	// 	log.Fatal("Failed to run: " + err.Error())
-	// }
 
 	// add cert to authorized_keys
 	cmdAddCert := "echo '" + string(pubKey) + "' >> ~/.ssh/authorized_keys"
@@ -221,7 +231,7 @@ func AddAuthorizedKeys(hostname, tlssSSHport, username, password string) error {
 
 	output, err := sessionTestCert.CombinedOutput(cmdTestCert)
 	if err != nil {
-		return fmt.Errorf("failed to run command sessionTestCert: %v", err)
+		return fmt.Errorf("addServer: ошибка выполнения команды sessionTestCert: %w", err)
 	}
 	sessionTestCert.Close()
 
@@ -230,14 +240,14 @@ func AddAuthorizedKeys(hostname, tlssSSHport, username, password string) error {
 	outputString = strings.TrimSpace(outputString)
 	sessionAddCert, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("failed to create session: %v", err)
+		return fmt.Errorf("addServer: ошибка создания сессии: %w", err)
 	}
 	defer sessionAddCert.Close()
 
 	if outputString == "0" {
 		err := sessionAddCert.Run(cmdAddCert)
 		if err != nil {
-			return fmt.Errorf("failed to run sessionAddCert: %v", err)
+			return fmt.Errorf("addServer: ошибка выполнения команды sessionAddCert: %w", err)
 		}
 		sessionAddCert.Close()
 	}

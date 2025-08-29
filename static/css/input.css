@@ -5,52 +5,26 @@
     font-style: normal;
     font-display: swap; /* Улучшает производительность загрузки */
 }
-
-/* @font-face {
-    font-family: 'Roboto';
-    src: url('/fonts/Roboto/static/Roboto_Condensed-Light.woff2') format('woff2');
-    font-weight: 100 900;
-    font-style: normal;
-    font-display: swap; 
-} */
-
-
-
 .color-form-certs {
     color: #a99ee8;
 }
-
 .color-form-servers {
     color: #a99ee8;
 }
-
 .core-login {
-    /* padding-top: 20%; */
-    /* padding-left: 43%;
-    padding-right: 43%; */
     margin-left: 43%;
     margin-right: 43%;
-    /* margin-top: 15%; */
-    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100; 
 }
-
-
 .core-login-logo {
     margin-left:36%;
     padding-right: 36%;
-    /* margin-right: 36%; */
     margin-top: 2%;
-    /* margin-bottom: 5%; */
-    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100; 
 }
 .core-servers {
-    /* padding-left: 18%; */
-    /* padding-right: 30%; */
-    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100; /* regular weight */
 }
@@ -58,7 +32,13 @@
     margin-top: 6px;
     padding-left: 0%;
     padding-right: 0%;
-    /* font-size: 0.8rem; */
+    font-family: Inter;
+    font-weight: 100;
+}
+.core-ca-certs {
+    margin-top: 6px;
+    padding-left: 3%;
+    padding-right: 10%;
     font-family: Inter;
     font-weight: 100;
 }
@@ -66,18 +46,20 @@
     margin-top: 40px;
     padding-left: 20%;
     padding-right: 0%;
-    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100;
 }
-
+.left-ca-core {
+    padding-left: 20%;
+    padding-right: 0%;
+    font-family: Inter;
+    font-weight: 100;
+}
 .left-menu-core {       
     padding-left: 0%;
     padding-top: 10px;
-    /* padding-right: 10%; */
     min-height: 100vh;
     width: 250px;
-    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100;
     background-color: #212529;
@@ -85,11 +67,9 @@
     border-right: 8px solid #1a1e21;
     text-decoration: none;
 }
-
 .left-menu {
     gap: 10px;
 }
-
 .link-menu-left {
     margin-left: 20px;
     text-decoration: none;
@@ -97,8 +77,6 @@
     color: #6ea8fe;
 }
 .link-menu-left:hover {
-    /* border-left: 4px solid #ffffff; */
-    /* padding-left: 4px; */
     color: #4f77b2;
     background-color: transparent;
     transition: all 0.1s ease;
@@ -110,34 +88,27 @@
     background-color: transparent;
     transition: all 0.01s ease;
 }
-
 .title-menu-left {
     margin-left: 10px;
     width: 100%;
 }
-
 .breadcrumb {
     --bs-breadcrumb-margin-bottom: 0rem;
     font-family: Inter  ;
     font-weight: 100;
-    /* font-size: 0.8rem; */
 }
-
 .b-example-vr {
     flex-shrink: 0;
     width: 1.5rem;
     height: 100vh;
 }
-
 .b-example-divider {
     width: 100%;
     height: 3rem;
     background-color: #0000001a;
     border: solid rgba(0,0,0,.15);
     border-width: 1px 0;
-    /* box-shadow: inset 0 .5em 1.5em #0000001a,inset 0 .125em .5em #00000026; */
 }
-
 .menu-container {
     padding-left: 0%;
     padding-right: 0%;
@@ -145,12 +116,10 @@
     font-family: Inter;
     font-weight: 100;   
 }
-
 .form_center {
     padding-left: 5%;
     padding-right: 5%;
 }
-
 .form_center_login {
     padding-left: 5%;
     padding-right: 5%;
@@ -160,10 +129,8 @@
 .form_center_entity {
     padding-left: 5%;
     padding-right: 5%;
-    /* padding-top: 1%; */
     padding-bottom: 2%;
 }
-
 .c_input {
     border: 1px solid #a99ee8;
     border-color: rgb(128, 119, 176);
@@ -173,16 +140,11 @@
     border-right: none;
     background-color: transparent;
     width: 100%;
-    /* font: -webkit-small-control; */
-    /* flex: 100%; */
 }
-
 .c_input:focus {
     outline: none;
     border-color: #bcb0ff;
 }
-
-
 .input_border_login {
     text-align: left;
     border: 1px solid #a99ee8;
@@ -192,9 +154,7 @@
     background-color: transparent;
     width: 100%;
     margin-top: 5%;
-
 }
-
 .input_border {
     text-align: left;
     border: 1px solid #a99ee8;
@@ -203,10 +163,7 @@
     border-radius: 5px;
     background-color: transparent;
     width: 100%;
-    /* border-left: none;
-    border-right: none; */
 }
-
 .input_border_button {
     text-align: left;
     border: 1px solid #a99ee8;
@@ -216,15 +173,12 @@
     background-color: transparent;
     width: 100%;
 }
-
 .input_border_button:active {
     background-color: #30363B !important;
 }
-
 .input_border_button:focus {
     background-color: #30363B !important;
 }
-
 .select_cert_revoke { 
     background: #007bff;
     border-radius: 30px;
@@ -233,11 +187,9 @@
     border: none;
     padding: 0;
 }
-
 .select_cert_revoke:hover {
     background: #0056b3;
 }
-
 .select_cert_take { 
     background: #007bff;
     border-radius: 30px;
@@ -246,7 +198,6 @@
     border: none;
     padding: 0;
 }
-
 .dropdown-item-take {
     display: block; 
     width: 100%;
@@ -258,7 +209,6 @@
     padding-left: 1rem;
     margin: 0 8px;
 }
-
 .dropdown-item-take:hover {
     background: #007bff;
     padding-left: 1rem;
@@ -269,17 +219,13 @@
     margin: 0 8px;
     border-radius: 5px; /* закругленные углы для лучшего вида */
 } 
-
 .select_cert_take:hover {
     background: #0056b3;
 }
-
 .dropdown-menu {
     background-color: #212529;
     color: #ffffff;
-    /* --bs-dropdown-min-width: 7rem; */
 } 
-
 .dropdown-menu-custom {
     background-color: #181c1f;
     color: #ffffff;
@@ -295,7 +241,6 @@
     --bs-dropdown-padding-y: 1rem;
     --bs-dropdown-item-padding-y: 1rem;
 } 
-
 .dropdown-item-custom {
     display: block;
     width: 100%;
@@ -304,7 +249,6 @@
     text-decoration: none;
     padding-left: 1rem;
 }
-
 .dropdown-item-custom:hover {
     background: #1d2226;
     color: #6ea8fe;
@@ -313,10 +257,8 @@
 }
 
 .dropdown-menu.show {
-    /* background-color: #ffffff; */
     color: #ffffff;
 } 
-
 .form_lable {
     position: relative;
     left: 20px;
@@ -326,7 +268,6 @@
     padding-left: 1%;
     padding-right: 1%;
 }
-
 .select {
     border: 1px solid #a99ee8;
     border-color: rgb(128, 119, 176);
@@ -338,26 +279,18 @@
     margin-top: 5px;
     width: 100%;
 }
-/* .select_title {
-    
-} */
-
 /* Стиль для select с placeholder */
 select[data-placeholder="true"] {
     color: gray;
 }
-
 /* Убираем placeholder стиль когда значение выбрано */
 select[data-placeholder="false"] {
     color: #ffffff;
 }
-
 /* Белый цвет для select при фокусе */
 select:focus {
     color: #ffffff;
 }
-
-
 .select_certs_revoke {
     border: 1px solid #a99ee8;
     border-color: rgb(128, 119, 176);
@@ -380,21 +313,17 @@ select:focus {
 .indent-5 {
     margin-top: 5%;
 }
-
 .switch_label {
     margin-top: 5%;
 }
-
 .btn-container {
     display: flex;
     justify-content: space-between;
 }
-
 .btn-container-right {
     text-align: right;
     justify-content: flex-end;
 }
-
 .btn-custom {
     background-color: #007bff; 
     color: white; 
@@ -405,30 +334,23 @@ select:focus {
     transition: background-color 0.3s; 
     
 }
-
 .btn-custom-certs {
     padding: 1px 8%; 
-    /* width: 20%; */
 }
-
 .btn-custom-servers {
     padding: 1px 8%; 
 }
-
 .btn-custom-login {
     width: 100%;
 }
-
 .btn-custom:hover {
     background-color: #0056b3; /* Темнее при наведении */
 }
-
 .search-input-container {
     padding-left: 20%;
     padding-right: 30%;
     align-content: center;
     padding-top: 1%;
-    /* font-size: 0.8rem; */
     font-family: Inter;
     font-weight: 100;
 }
@@ -436,9 +358,7 @@ select:focus {
     padding-left: 8%;
     padding-right: 8%;
     align-content: center;
-    /* font-size: 0.8rem; */
 }
-
 .search-input {
     width: 100%; /* Ширина 100% */
     border: none; /* Без рамки */
@@ -447,46 +367,37 @@ select:focus {
     color: #ffffff; /* Цвет текста */
     transition: border-color 0.3s; /* Плавный переход цвета рамки */
 }
-
 .search-input:focus {
     outline: none; /* Убираем обводку */
     border-color: #bcb0ff; /* Цвет рамки при фокусе */
 }
-
 .search-input-container-server {
     padding-left: 0%;
     padding-right: 0%;
     align-content: center;
     margin-bottom: 10%;
 }
-
 [class^="server_id_"] {
     font-family: Inter;
     font-weight: 100;
     font-size: 0.8rem;
 }
-
 [class^="entity_id_"] {
     font-family: Inter;
     font-weight: 100;
     font-size: 0.8rem;
 }
-
 [class^="cert_id_"] {
     font-family: Inter;
     font-weight: 100;
     font-size: 0.8rem;
 }
-
 [class^="oid_id_"] {
     font-family: Inter;
     font-weight: 100;
     font-size: 0.8rem;
 }
-
 /* Стили для анимации загрузки */
-
-
 .time-svg{
     display: none;
     opacity:0;
@@ -508,21 +419,16 @@ select:focus {
     display: block;
     
 }
-
-
 /* tags */
-
 .tags-container {
     margin-bottom: 10px;
-}
-  
+} 
 .tags {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 5px;
 }
-  
 .tag {
     background: #30363B;
     color: #ffffff;
@@ -534,7 +440,6 @@ select:focus {
     border: 1px solid #a99ee8;
     font-size: 0.9em;
 }
-  
 .tag .close {
     cursor: pointer;
     color: #ffffff;
@@ -548,16 +453,13 @@ select:focus {
     font-size: 14px;
     font-weight: bold;
 }
-
 .tag .close:hover {
     cursor: pointer;
     background: #666666;
 }
-
 .tag-text {
     margin-right: 2px;
 }
-
 /* Стиль для поля ввода тегов */
 .tag-input {
     border: 1px solid #a99ee8;
@@ -569,7 +471,6 @@ select:focus {
     background-color: transparent;
     width: 100%;
 }
-
 .tag-input:focus {
     outline: none;
     border-color: #bcb0ff;

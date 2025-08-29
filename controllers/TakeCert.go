@@ -54,7 +54,7 @@ func TakeCert(c fiber.Ctx) error {
 
 	// Извлекаем Sub CA из базы данных
 	var subCACert string
-	err = db.Get(&subCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Sub'")
+	err = db.Get(&subCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -64,7 +64,7 @@ func TakeCert(c fiber.Ctx) error {
 
 	// Извлекаем Root CA сертификат из базы данных
 	var rootCACert string
-	err = db.Get(&rootCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Root'")
+	err = db.Get(&rootCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Root' AND cert_status = 0")
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -74,7 +74,7 @@ func TakeCert(c fiber.Ctx) error {
 
 	// Извелкаем првиатный ключ Sub CA
 	var subCAKey string
-	err = db.Get(&subCAKey, "SELECT private_key FROM ca_certs WHERE type_ca = 'Sub'")
+	err = db.Get(&subCAKey, "SELECT private_key FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",

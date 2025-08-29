@@ -74,8 +74,14 @@ func main() {
 		log.Println(err.Error())
 	}
 
-	// create SchemaCrlInfo tables in db (хранит данные CRL server)
-	_, err = db.Exec(models.SchemaCrlInfo)
+	// create SchemaCrlInfoSubCA tables in db (хранит данные CRL подписанных сертификатами Sub CA)
+	_, err = db.Exec(models.SchemaCrlInfoSubCA)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// create SchemaCrlInfoRootCA tables in db (хранит данные CRL подписанных сертификатами Root CA)
+	_, err = db.Exec(models.SchemaCrlInfoRootCA)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -245,9 +251,13 @@ func main() {
 	// Генерация CA теперь выполняется через эндпоинт Add CA
 
 	//---------------------------------------Generate Server CRL
-	updateInterval := time.Duration(viper.GetInt("crl.updateInterval")) * time.Minute
+	SubCAupdateInterval := time.Duration(viper.GetInt("SubCAcrl.updateInterval")) * time.Minute
 	// запускаем генерацию CRL через заданный интервал времени
-	go crl.StartCRLGeneration(updateInterval)
+	go crl.StartSubCACRLGeneration(SubCAupdateInterval)
+
+	// запускаем генерацию Root CA CRL через заданный интервал времени
+	RootCAupdateInterval := time.Duration(viper.GetInt("RootCAcrl.updateInterval")) * time.Minute
+	go crl.StartRootCACRLGeneration(RootCAupdateInterval)
 
 	//---------------------------------------Start OCSP Responder
 	// OCSP-респондер работает отдельно от контроллера, обновляя базу данных

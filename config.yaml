@@ -1,9 +1,9 @@
 app:
   port: 43000
-  # hostname: tlss.lv.local
-  hostname: localhost
+  hostname: tlss.lv.local
+  # hostname: localhost
   # useHTTPS: true
-  protocol: http
+  protocol: https
   certFile: ./https/tlss.lv.local.pem
   keyFile: ./https/tlss.lv.local.key
 
@@ -27,33 +27,17 @@ root_ca_tlss:
 sub_ca_tlss:
   commonName: TLSS Sub CA
 
-# root_ca_tlss:
-#   path: ./root_ca_tlss/root_ca_tlss.pem
-#   key: ./root_ca_tlss/root_ca_tlss.key
-#   ttl: 24855
-#   commonName: TLSS Root CA
-#   countryName: RU
-#   stateProvince: Moscow
-#   localityName: Moscow
-#   organization: TLSS
-#   organizationUnit: TLSS
-#   email: tlss@tlss.ru
-#   key_size: 4096
-  
-# sub_ca_tlss:
-#   ttl: 24855
-#   commonName: TLSS Sub CA
-#   countryName: RU
-#   stateProvince: Moscow
-#   localityName: Moscow
-#   organization: TLSS
-#   organizationUnit: TLSS
-#   email: tlss@tlss.ru
-#   key_size: 4096
+add_server:
+  waitingToConnect: 3 # seconds
 
-crl:
-  crlURL: https://tlss.lv.local:43000/api/v1/crl
-  updateInterval: 1 # minutes 12 hours
+SubCAcrl:
+  crlURL: https://tlss.lv.local:43000/api/v1/crl/subca
+  updateInterval: 24 # minutes 12 hours
+  version: 2
+
+RootCAcrl:
+  crlURL: https://tlss.lv.local:43000/api/v1/crl/rootca
+  updateInterval: 24 # minutes 12 hours
   version: 2
 
 ocsp:

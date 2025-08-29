@@ -165,7 +165,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		IsCA:                  false,
 		DNSNames:              dnsNames,
 		CRLDistributionPoints: []string{
-			viper.GetString("crl.crlURL"),
+			viper.GetString("SubCAcrl.crlURL"),
 		},
 		OCSPServer: []string{
 			viper.GetString("ocsp.ocspURL"),
@@ -355,7 +355,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		IsCA:                  false,
 		DNSNames:              dnsNames,
 		CRLDistributionPoints: []string{
-			viper.GetString("crl.crlURL"),
+			viper.GetString("SubCAcrl.crlURL"),
 		},
 		OCSPServer: []string{
 			viper.GetString("ocsp.ocspURL"),

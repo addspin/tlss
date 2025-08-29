@@ -17,43 +17,78 @@ import (
 	"github.com/spf13/viper"
 )
 
-// GenerateSubCA создаёт промежуточный CA, используя корневой из файлов из ca_tlss.path_cert/path_key
+// GenerateSubCA создаёт промежуточный CA, используя корневой CA из базы данных или файлов (fallback)
 // Параметры берутся из data. Записывает сертификат/приватный ключ в ca_certs (type_ca = 'Sub'),
 func GenerateRSASubCA(data *models.CAData, db *sqlx.DB) error {
 	if data == nil || db == nil {
 		return fmt.Errorf("GenerateRSASubCA: invalid arguments")
 	}
 
-	// Загружаем корневой из файлов
-	rootCertPath := viper.GetString("ca_tlss.path_cert")
-	rootKeyPath := viper.GetString("ca_tlss.path_key")
-	if rootCertPath == "" || rootKeyPath == "" {
-		return fmt.Errorf("GenerateRSASubCA: в конфигурации не заданы ca_tlss.path_cert/ca_tlss.path_key")
-	}
+	var rootCert *x509.Certificate
+	var rootKey *rsa.PrivateKey
+	var err error
 
-	rootCertData, err := os.ReadFile(rootCertPath)
-	if err != nil {
-		return fmt.Errorf("GenerateRSASubCA: failed to read root CA certificate: %w", err)
-	}
-	rootKeyData, err := os.ReadFile(rootKeyPath)
-	if err != nil {
-		return fmt.Errorf("GenerateRSASubCA: failed to read root CA private key: %w", err)
-	}
-	rootCertBlock, _ := pem.Decode(rootCertData)
-	if rootCertBlock == nil {
-		return fmt.Errorf("GenerateRSASubCA: failed to decode root CA certificate PEM")
-	}
-	rootCert, err := x509.ParseCertificate(rootCertBlock.Bytes)
-	if err != nil {
-		return fmt.Errorf("GenerateRSASubCA: failed to parse root CA certificate: %w", err)
-	}
-	rootKeyBlock, _ := pem.Decode(rootKeyData)
-	if rootKeyBlock == nil {
-		return fmt.Errorf("GenerateRSASubCA: failed to decode root CA private key PEM")
-	}
-	rootKey, err := x509.ParsePKCS1PrivateKey(rootKeyBlock.Bytes)
-	if err != nil {
-		return fmt.Errorf("GenerateRSASubCA: failed to parse root CA private key: %w", err)
+	// Сначала пытаемся загрузить Root CA из базы данных
+	var rootCA models.CAData
+	err = db.Get(&rootCA, "SELECT * FROM ca_certs WHERE type_ca = 'Root' AND cert_status = 0")
+	if err == nil && rootCA.CertStatus == 0 {
+		// Загружаем Root CA из базы данных
+		rootCertBlock, _ := pem.Decode([]byte(rootCA.PublicKey))
+		if rootCertBlock == nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to decode root CA certificate PEM from database")
+		}
+		rootCert, err = x509.ParseCertificate(rootCertBlock.Bytes)
+		if err != nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to parse root CA certificate from database: %w", err)
+		}
+
+		// Расшифровываем приватный ключ Root CA
+		aes := Aes{}
+		decryptedKey, err := aes.Decrypt([]byte(rootCA.PrivateKey), AesSecretKey.Key)
+		if err != nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to decrypt root CA private key: %w", err)
+		}
+
+		rootKeyBlock, _ := pem.Decode(decryptedKey)
+		if rootKeyBlock == nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to decode root CA private key PEM from database")
+		}
+		rootKey, err = x509.ParsePKCS1PrivateKey(rootKeyBlock.Bytes)
+		if err != nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to parse root CA private key from database: %w", err)
+		}
+	} else {
+		// Fallback: загружаем Root CA из файлов
+		rootCertPath := viper.GetString("ca_tlss.path_cert")
+		rootKeyPath := viper.GetString("ca_tlss.path_key")
+		if rootCertPath == "" || rootKeyPath == "" {
+			return fmt.Errorf("GenerateRSASubCA: Root CA не найден в базе данных и в конфигурации не заданы ca_tlss.path_cert/ca_tlss.path_key")
+		}
+
+		rootCertData, err := os.ReadFile(rootCertPath)
+		if err != nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to read root CA certificate from file: %w", err)
+		}
+		rootKeyData, err := os.ReadFile(rootKeyPath)
+		if err != nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to read root CA private key from file: %w", err)
+		}
+		rootCertBlock, _ := pem.Decode(rootCertData)
+		if rootCertBlock == nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to decode root CA certificate PEM from file")
+		}
+		rootCert, err = x509.ParseCertificate(rootCertBlock.Bytes)
+		if err != nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to parse root CA certificate from file: %w", err)
+		}
+		rootKeyBlock, _ := pem.Decode(rootKeyData)
+		if rootKeyBlock == nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to decode root CA private key PEM from file")
+		}
+		rootKey, err = x509.ParsePKCS1PrivateKey(rootKeyBlock.Bytes)
+		if err != nil {
+			return fmt.Errorf("GenerateRSASubCA: failed to parse root CA private key from file: %w", err)
+		}
 	}
 
 	keyBits := data.KeyLength
@@ -97,7 +132,7 @@ func GenerateRSASubCA(data *models.CAData, db *sqlx.DB) error {
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 		MaxPathLen:            0,
-		CRLDistributionPoints: []string{viper.GetString("crl.crlURL")},
+		CRLDistributionPoints: []string{viper.GetString("SubCAcrl.crlURL")},
 	}
 
 	subCACertDER, err := x509.CreateCertificate(rand.Reader, template, rootCert, &subCAKey.PublicKey, rootKey)

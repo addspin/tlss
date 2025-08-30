@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/addspin/tlss/controllers/caControllers"
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
 	"github.com/addspin/tlss/utils"
@@ -66,6 +67,25 @@ func checkRecreateCerts() {
 		log.Println("RecreateCerts: Ошибка запроса сертификатов:", err)
 		return
 	}
+
+	caCertificates := []models.CAData{}
+	err = db.Select(&caCertificates, "SELECT * FROM ca_certs WHERE cert_status = 1 AND recreate = 1")
+	if err != nil {
+		log.Println("RecreateCerts: Ошибка запроса CA сертификатов:", err)
+		return
+	}
+
+	// CA сертификаты
+	for _, cert := range caCertificates {
+		log.Printf("RecreateCerts: CA сертификат %s (ID: %d) просрочен и будет перевыпущен", cert.CommonName, cert.Id)
+		certErr := caControllers.RevokeCACertWithData(&cert, db)
+		if certErr != nil {
+			log.Printf("RecreateCerts: Ошибка генерации сертификата: %v", certErr)
+			continue
+		}
+	}
+	log.Println("RecreateCerts: Проверка на пересоздание CA сертификатов завершена")
+
 	// Сереверные сертификаты
 	for _, cert := range certificates {
 		// если сертификат сохраняется на сервере, то проверяем, доступен ли сервер

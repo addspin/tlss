@@ -86,6 +86,12 @@ func main() {
 		log.Println(err.Error())
 	}
 
+	// create SchemaCRL tables in db (хранит данные CRL)
+	_, err = db.Exec(models.SchemaCRL)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
 	// create SchemaCrlInfoUser tables in db (хранит данные CRL user)
 	// _, err = db.Exec(models.SchemaCrlInfoUser)
 	// if err != nil {
@@ -253,7 +259,7 @@ func main() {
 	//---------------------------------------Generate  CRL
 	// запускаем генерацию CRL для Root CA и Sub CA через заданный интервал времени
 	combinedCRLUpdateInterval := time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Minute
-	go crl.StartCombinedCRLGeneration(combinedCRLUpdateInterval)
+	go crl.StartCombinedCRLGeneration(combinedCRLUpdateInterval, db)
 
 	//---------------------------------------Start OCSP Responder
 	// OCSP-респондер работает отдельно от контроллера, обновляя базу данных

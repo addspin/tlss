@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	rootCAFileName = "root_ca_tlss.pem"
-	subCAFileName  = "sub_ca_tlss.pem"
+	rootCAFileName       = "root_ca_tlss.pem"
+	subCAFileName        = "sub_ca_tlss.pem"
+	bundlePEMCRLFileName = "bundle_crl.pem"
+	bundleDERCRLFileName = "bundle_crl.der"
 )
 
 type SaveOnServerInterface interface {
@@ -122,6 +124,13 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 			return fmt.Errorf("не удалось получить корневой сертификат: %w", err)
 		}
 
+		// получаем bundle crl
+		var bundleCRL string
+		err = db.Get(&bundleCRL, "SELECT data_crl FROM crl WHERE type_crl = 'Bundle'")
+		if err != nil {
+			return fmt.Errorf("не удалось получить bundle crl: %w", err)
+		}
+
 		// Объединяем промежуточный сертификат, сертификат сервера и его ключ в один файл
 		// Порядок: сертификат сервера, промежуточный сертификат, ключ
 		combinedContent := fmt.Sprintf("%s\n%s", string(certPEM), string(keyPEM))
@@ -130,6 +139,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		combinedPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
 		subCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, subCAFileName)
 		rootCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, rootCAFileName)
+		bundlePEMCRLPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, bundlePEMCRLFileName)
 
 		// Используем ssh клиент для передачи объединенного файла
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -140,8 +150,8 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 			"-o", "StrictHostKeyChecking=no",
 			"-p", port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
-			fmt.Sprintf("test -d %s || { echo 'Директория %s не существует'; exit 1; } && echo '%s' > %s && echo '%s' > %s && echo '%s' > %s && chmod 600 %s",
-				serverInfo.CertConfigPath, serverInfo.CertConfigPath, combinedContent, combinedPath, subCACert, subCAPath, rootCACert, rootCAPath, combinedPath))
+			fmt.Sprintf("test -d %s || { echo 'Директория %s не существует'; exit 1; } && echo '%s' > %s && echo '%s' > %s && echo '%s' > %s && chmod 600 %s && echo '%s' > %s",
+				serverInfo.CertConfigPath, serverInfo.CertConfigPath, combinedContent, combinedPath, subCACert, subCAPath, rootCACert, rootCAPath, combinedPath, bundlePEMCRLPath, bundleCRL))
 
 		// Выполняем команду и проверяем результат
 		if err = combinedCmd.Run(); err != nil {

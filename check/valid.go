@@ -50,6 +50,13 @@ func checkCerts() {
 		return
 	}
 
+	caCertificates := []models.CAData{}
+	err = db.Select(&caCertificates, "SELECT * FROM ca_certs WHERE cert_status = 0")
+	if err != nil {
+		log.Println("CheckValidCerts: Ошибка запроса CA сертификатов:", err)
+		return
+	}
+
 	log.Printf("CheckValidCerts: Найдено %d действующих сертификатов для проверки", len(certificates))
 
 	// Текущее время для сравнения
@@ -58,7 +65,32 @@ func checkCerts() {
 
 	expiredCount := 0
 
-	// Проверяем каждый сертификат
+	// обновлячем статус у CA сертификатов
+	for _, cert := range caCertificates {
+		// Преобразуем строку времени истечения в объект time.Time
+		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
+		if err != nil {
+			log.Printf("CheckValidCerts: Ошибка парсинга времени истечения для сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+			continue
+		}
+
+		log.Printf("CheckValidCerts: Сертификат %s (ID: %d), срок действия до: %s", cert.CommonName, cert.Id, expireTime.Format(time.RFC3339))
+
+		// Если сертификат истек
+		if currentTime.After(expireTime) {
+			log.Printf("CheckValidCerts: currentTime: %s, expireTime: %s", currentTime.Format(time.RFC3339), expireTime.Format(time.RFC3339))
+			// Обновляем статус на истекший (1)
+			_, err := db.Exec("UPDATE ca_certs SET cert_status = 1 WHERE id = ?", cert.Id)
+			if err != nil {
+				log.Printf("CheckValidCerts: Ошибка обновления статуса сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+			} else {
+				log.Printf("CheckValidCerts: Сертификат для домена %s (ID: %d) истёк и помечен как недействительный", cert.CommonName, cert.Id)
+				expiredCount++
+			}
+		}
+	}
+
+	// Обновляем статус у серверных сертфикатов
 	for _, cert := range certificates {
 		// Преобразуем строку времени истечения в объект time.Time
 		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
@@ -83,6 +115,7 @@ func checkCerts() {
 		}
 	}
 
+	// Обновляем статус у клиентских сертификатов
 	for _, cert := range userCertificates {
 		// Преобразуем строку времени истечения в объект time.Time
 		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)

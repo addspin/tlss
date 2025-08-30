@@ -15,8 +15,8 @@ import (
 const (
 	rootCAFileName       = "root_ca_tlss.pem"
 	subCAFileName        = "sub_ca_tlss.pem"
-	bundlePEMCRLFileName = "bundle_crl.pem"
-	bundleDERCRLFileName = "bundle_crl.der"
+	bundlePEMCRLFileName = "bundle_crl_tlss.pem"
+	bundleDERCRLFileName = "bundle_crl_tlss.der"
 )
 
 type SaveOnServerInterface interface {
@@ -151,7 +151,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 			"-p", port,
 			fmt.Sprintf("%s@%s", serverInfo.Username, serverInfo.Hostname),
 			fmt.Sprintf("test -d %s || { echo 'Директория %s не существует'; exit 1; } && echo '%s' > %s && echo '%s' > %s && echo '%s' > %s && chmod 600 %s && echo '%s' > %s",
-				serverInfo.CertConfigPath, serverInfo.CertConfigPath, combinedContent, combinedPath, subCACert, subCAPath, rootCACert, rootCAPath, combinedPath, bundlePEMCRLPath, bundleCRL))
+				serverInfo.CertConfigPath, serverInfo.CertConfigPath, combinedContent, combinedPath, subCACert, subCAPath, rootCACert, rootCAPath, combinedPath, bundleCRL, bundlePEMCRLPath))
 
 		// Выполняем команду и проверяем результат
 		if err = combinedCmd.Run(); err != nil {

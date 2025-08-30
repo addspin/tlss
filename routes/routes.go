@@ -27,8 +27,11 @@ func Setup(app *fiber.App) {
 	// API routes (no auth required)
 	app.Get("/api/v1/crl/subca/der", controllers.GetSubCACRL)
 	app.Get("/api/v1/crl/rootca/der", controllers.GetRootCACRL)
+	app.Get("/api/v1/crl/bundleca/der", controllers.GetBundleCACRL)
+
 	app.Get("/api/v1/crl/subca/pem", controllers.GetSubCAPemCRL)
 	app.Get("/api/v1/crl/rootca/pem", controllers.GetRootCAPemCRL)
+	app.Get("/api/v1/crl/bundleca/pem", controllers.GetBundleCAPemCRL)
 
 	app.Get("/api/v1/ocsp/*", controllers.HandleOCSP)
 	app.Post("/api/v1/ocsp", controllers.HandleOCSP)
@@ -36,8 +39,7 @@ func Setup(app *fiber.App) {
 	app.Post("/api/v1/ocspUser", usersCertControllers.HandleOCSPUser)
 
 	// Admin API routes (auth required)
-	app.Post("/api/v1/crl/subca/generate", controllers.GenerateSubCACRL)   // Генерация для серверных и клиентских сертификатов подписанных Sub CA через API
-	app.Post("/api/v1/crl/rootca/generate", controllers.GenerateRootCACRL) // Генерация CRL для отозванных сертификатов Sub CA через API
+	app.Post("/api/v1/crl/bundleca/generate", controllers.GenerateCombinedCACRL) // Генерация бандла Root CA и Sub CA через API
 
 	// Protected routes (auth required)
 	app.Get("/add_server", controllers.AddServerControll)                 // Получение списка серверов

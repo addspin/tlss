@@ -30,15 +30,21 @@ sub_ca_tlss:
 add_server:
   waitingToConnect: 3 # seconds
 
-SubCAcrl:
-  crlURL: https://tlss.lv.local:43000/api/v1/crl/subca
-  updateInterval: 24 # minutes 12 hours
-  version: 2
 
-RootCAcrl:
-  crlURL: https://tlss.lv.local:43000/api/v1/crl/rootca
+CAcrl:
+  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/der
   updateInterval: 24 # minutes 12 hours
   version: 2
+  
+# SubCAcrl:
+#   crlURL: https://tlss.lv.local:43000/api/v1/crl/subca
+#   updateInterval: 24 # minutes 12 hours
+#   version: 2
+
+# RootCAcrl:
+#   crlURL: https://tlss.lv.local:43000/api/v1/crl/rootca
+#   updateInterval: 24 # minutes 12 hours
+#   version: 2
 
 ocsp:
   ocspURL: http://tlss.lv.local:43000/api/v1/ocsp

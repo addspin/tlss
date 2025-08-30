@@ -250,14 +250,10 @@ func main() {
 
 	// Генерация CA теперь выполняется через эндпоинт Add CA
 
-	//---------------------------------------Generate Server CRL
-	SubCAupdateInterval := time.Duration(viper.GetInt("SubCAcrl.updateInterval")) * time.Minute
-	// запускаем генерацию CRL через заданный интервал времени
-	go crl.StartSubCACRLGeneration(SubCAupdateInterval)
-
-	// запускаем генерацию Root CA CRL через заданный интервал времени
-	RootCAupdateInterval := time.Duration(viper.GetInt("RootCAcrl.updateInterval")) * time.Minute
-	go crl.StartRootCACRLGeneration(RootCAupdateInterval)
+	//---------------------------------------Generate  CRL
+	// запускаем генерацию CRL для Root CA и Sub CA через заданный интервал времени
+	combinedCRLUpdateInterval := time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Minute
+	go crl.StartCombinedCRLGeneration(combinedCRLUpdateInterval)
 
 	//---------------------------------------Start OCSP Responder
 	// OCSP-респондер работает отдельно от контроллера, обновляя базу данных

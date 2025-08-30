@@ -34,6 +34,8 @@ var publicRoutes = []string{
 	"/api/v1/crl/rootca/der",
 	"/api/v1/crl/subca/pem",
 	"/api/v1/crl/rootca/pem",
+	"/api/v1/crl/bundleca/der",
+	"/api/v1/crl/bundleca/pem",
 	"/api/v1/ocsp",
 }
 

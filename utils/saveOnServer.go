@@ -173,9 +173,3 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 func NewSaveOnServer() SaveOnServerInterface {
 	return &saveOnServer{}
 }
-
-// Если все операции прошли успешно, фиксируем транзакцию
-// if err = tx.Commit(); err != nil {
-// 	return fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
-// }
-// txCommitted = true

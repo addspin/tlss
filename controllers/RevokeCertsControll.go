@@ -75,7 +75,7 @@ func CertListRevokeController(c fiber.Ctx) error {
 		certList := []models.CertsData{}
 		if ServerId != "" {
 			// Если указан ID сервера, фильтруем сертификаты по серверу кроме результатов 2 - revoked
-			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, ttl, domain, wildcard, recreate, common_name, country_name, state_province, locality_name, app_type, organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM certs WHERE server_id = ? AND cert_status IN (2)", ServerId)
+			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, ttl, domain, wildcard, recreate, save_on_server, common_name, country_name, state_province, locality_name, app_type, organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM certs WHERE server_id = ? AND cert_status IN (2)", ServerId)
 			if err != nil {
 				log.Fatal(err)
 			}

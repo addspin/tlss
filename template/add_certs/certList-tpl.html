@@ -11,6 +11,7 @@
                 <th scope="col">Key size</th>
                 <th scope="col">Status</th>
                 <th scope="col" class="th-text-center">Recreate</th>
+                <th scope="col" class="th-text-center">On Server</th>
                 <th scope="col">Revoke</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
@@ -42,6 +43,8 @@
                       </td>
                       <!-- Recreate -->
                       <td class="th-text-center">{{ if eq .Recreate true }}Yes{{ else }}No{{ end }}</td>
+                      <!-- On Server -->
+                      <td class="th-text-center">{{ if eq .SaveOnServer true }}Yes{{ else }}No{{ end }}</td>
                       <!-- Revoke -->
                        <td class="th-text-center">
                         <!-- <label class="select_title">TEST</label> -->

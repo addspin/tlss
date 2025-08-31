@@ -180,7 +180,7 @@ func CertListController(c fiber.Ctx) error {
 
 		if serverId != "" {
 			// Если указан ID сервера, фильтруем сертификаты по серверу кроме результатов 2 - revoked
-			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, domain, wildcard, cert_status, cert_create_time, cert_expire_time, recreate, days_left FROM certs WHERE server_id = ? AND cert_status IN (0, 1)", serverId)
+			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, domain, wildcard, cert_status, cert_create_time, cert_expire_time, recreate, save_on_server, days_left FROM certs WHERE server_id = ? AND cert_status IN (0, 1)", serverId)
 			if err != nil {
 				log.Fatal(err)
 			}

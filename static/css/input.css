@@ -35,6 +35,14 @@
     font-family: Inter;
     font-weight: 100;
 }
+.core-certs-revoke {
+    margin-top: 6px;
+    padding-left: 0%;
+    padding-right: 0%;
+    font-family: Inter;
+    font-weight: 100;
+    width: 120%;
+}
 .core-ca-certs {
     margin-top: 6px;
     padding-left: 3%;

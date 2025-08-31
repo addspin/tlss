@@ -167,13 +167,13 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	if err == sql.ErrNoRows {
 		// Создаем новую информацию о CRL
 		SubCAcrlInfo = models.CRLInfo{
-			Version:            viper.GetInt("SubCAcrl.version"),
+			Version:            viper.GetInt("CAcrl.version"),
 			SignatureAlgorithm: "SHA256-RSA",
 			IssuerName:         subCACert.Subject.String(),
 			LastUpdate:         time.Now().Format(time.RFC3339),
-			NextUpdate:         time.Now().Add(time.Duration(viper.GetInt("SubCAcrl.updateInterval")) * time.Hour).Format(time.RFC3339),
+			NextUpdate:         time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour).Format(time.RFC3339),
 			CrlNumber:          1,
-			CrlURL:             viper.GetString("SubCAcrl.crlURL"),
+			CrlURL:             viper.GetString("CAcrl.crlURL"),
 		}
 		_, err = db.Exec(`
 			INSERT INTO sub_ca_crl_info (
@@ -191,7 +191,7 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	} else {
 		// Обновляем существующую информацию о CRL
 		SubCAcrlInfo.LastUpdate = time.Now().Format(time.RFC3339)
-		SubCAcrlInfo.NextUpdate = time.Now().Add(time.Duration(viper.GetInt("SubCAcrl.updateInterval")) * time.Hour).Format(time.RFC3339)
+		SubCAcrlInfo.NextUpdate = time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour).Format(time.RFC3339)
 		SubCAcrlInfo.CrlNumber++
 		_, err = db.Exec(`
 			UPDATE sub_ca_crl_info SET
@@ -371,13 +371,13 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 	if err == sql.ErrNoRows {
 		// Создаем новую информацию о Root CA CRL
 		rootCACrlInfo = models.CRLInfo{
-			Version:            viper.GetInt("RootCAcrl.version"),
+			Version:            viper.GetInt("CAcrl.version"),
 			SignatureAlgorithm: "SHA256-RSA",
 			IssuerName:         rootCert.Subject.String(),
 			LastUpdate:         time.Now().Format(time.RFC3339),
-			NextUpdate:         time.Now().Add(time.Duration(viper.GetInt("RootCAcrl.updateInterval")) * time.Hour).Format(time.RFC3339),
+			NextUpdate:         time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour).Format(time.RFC3339),
 			CrlNumber:          1,
-			CrlURL:             viper.GetString("RootCAcrl.crlURL"),
+			CrlURL:             viper.GetString("CAcrl.crlURL"),
 		}
 		_, err = db.Exec(`
 			INSERT INTO root_ca_crl_info (
@@ -429,7 +429,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 // CombinedCRL генерирует CRL для Root CA и Sub CA, сохраняет их отдельно и создает бандл rootca.pem и subca.pem
 func CombinedCRL(db *sqlx.DB) error {
 	var err error
-
+	log.Println("combined CRL: Генерируем CRL для Root CA и Sub CA")
 	// Генерируем Sub CA CRL
 	subCABytes, err := GenerateSubCACRL()
 	if err != nil {

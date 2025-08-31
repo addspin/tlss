@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
 	"github.com/addspin/tlss/utils"
@@ -58,15 +59,15 @@ func RollbackCert(c fiber.Ctx) error {
 		}
 
 		// Получаем серийный номер и домен сертификата для удаления из OCSP
-		var serialNumber, domain string
-		err = db.QueryRow("SELECT serial_number, domain FROM certs WHERE id = ? AND server_id = ?", data.Id, data.ServerId).Scan(&serialNumber, &domain)
-		if err != nil {
-			// tx.Rollback()
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Ошибка при получении данных сертификата: " + err.Error(),
-			})
-		}
+		// var serialNumber, domain string
+		// err = db.QueryRow("SELECT serial_number, domain FROM certs WHERE id = ? AND server_id = ?", data.Id, data.ServerId).Scan(&serialNumber, &domain)
+		// if err != nil {
+		// 	// tx.Rollback()
+		// 	return c.Status(500).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Ошибка при получении данных сертификата: " + err.Error(),
+		// 	})
+		// }
 
 		currentTime := ""
 		// Обновляем статус сертификата с учетом ID сервера и ID сертификата
@@ -84,16 +85,16 @@ func RollbackCert(c fiber.Ctx) error {
 		}
 
 		// Удаляем сертификат из таблицы ocsp_revoke
-		_, err = tx.Exec("DELETE FROM ocsp_revoke WHERE serial_number = ?", serialNumber)
-		if err != nil {
-			tx.Rollback()
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Ошибка при удалении сертификата из OCSP: " + err.Error(),
-			})
-		}
+		// _, err = tx.Exec("DELETE FROM ocsp_revoke WHERE serial_number = ?", serialNumber)
+		// if err != nil {
+		// 	tx.Rollback()
+		// 	return c.Status(500).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Ошибка при удалении сертификата из OCSP: " + err.Error(),
+		// 	})
+		// }
 
-		log.Printf("Сертификат для домена %s (серийный номер: %s) успешно восстановлен и удален из OCSP", domain, serialNumber)
+		// log.Printf("Сертификат для домена %s (серийный номер: %s) успешно восстановлен и удален из OCSP", domain, serialNumber)
 
 		if data.SaveOnServer {
 			var serverInfo models.Server
@@ -116,7 +117,7 @@ func RollbackCert(c fiber.Ctx) error {
 			}
 			// Изменим имя сертифмката с wildcard именами с  *.test.ru на test.ru
 			// в POST приходят именя с фронта, но в базе данных они хранятся без wildcard
-			data.Domain = domain
+			// data.Domain = domain
 			// Извлекаем сертификат и ключ из базы данных
 			// var publicKey, privateKey string
 			keyList := []models.CertsData{}
@@ -148,8 +149,9 @@ func RollbackCert(c fiber.Ctx) error {
 				})
 			}
 
-			saveOnServer := utils.NewSaveOnServer()
+			crl.CombinedCRL(db)
 
+			saveOnServer := utils.NewSaveOnServer()
 			err = saveOnServer.SaveOnServer(data, db, []byte(keyList[0].PublicKey), decryptedKey)
 			if err != nil {
 				log.Printf("Ошибка сохранения сертификата на сервер: %v", err)
@@ -168,7 +170,10 @@ func RollbackCert(c fiber.Ctx) error {
 			})
 		}
 
-		return c.Render("revoke_certs/certRevokeList-tpl", fiber.Map{})
+		return c.Status(200).JSON(fiber.Map{
+			"status": "success",
+			"domain": data.Domain,
+		})
 	}
 	return c.Status(405).JSON(fiber.Map{
 		"status":  "error",

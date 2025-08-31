@@ -25,13 +25,13 @@ func Setup(app *fiber.App) {
 	app.Post("/", controllers.LoginControll)
 
 	// API routes (no auth required)
-	app.Get("/api/v1/crl/subca/der", controllers.GetSubCACRL)
-	app.Get("/api/v1/crl/rootca/der", controllers.GetRootCACRL)
-	app.Get("/api/v1/crl/bundleca/der", controllers.GetBundleCACRL)
+	app.Get("/api/v1/crl/subca/der", controllers.GetSubCACRL)       // Получение Sub CA CRL в DER формате
+	app.Get("/api/v1/crl/rootca/der", controllers.GetRootCACRL)     // Получение Root CA CRL в DER формате
+	app.Get("/api/v1/crl/bundleca/der", controllers.GetBundleCACRL) // Получение бандла Root CA и Sub CA CRL в DER формате
 
-	app.Get("/api/v1/crl/subca/pem", controllers.GetSubCAPemCRL)
-	app.Get("/api/v1/crl/rootca/pem", controllers.GetRootCAPemCRL)
-	app.Get("/api/v1/crl/bundleca/pem", controllers.GetBundleCAPemCRL)
+	app.Get("/api/v1/crl/subca/pem", controllers.GetSubCAPemCRL)       // Получение Sub CA CRL в PEM формате
+	app.Get("/api/v1/crl/rootca/pem", controllers.GetRootCAPemCRL)     // Получение Root CA CRL в PEM формате
+	app.Get("/api/v1/crl/bundleca/pem", controllers.GetBundleCAPemCRL) // Получение бандла Root CA и Sub CA CRL в PEM 	формате
 
 	app.Get("/api/v1/ocsp/*", controllers.HandleOCSP)
 	app.Post("/api/v1/ocsp", controllers.HandleOCSP)

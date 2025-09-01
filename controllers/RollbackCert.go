@@ -27,10 +27,10 @@ func RollbackCert(c fiber.Ctx) error {
 	if c.Method() == "POST" {
 		data := new(models.CertsData)
 
-		c.Bind().JSON(data)
-		log.Println("id data:", data.Id)
-		log.Println("server_id data:", data.ServerId)
-		log.Println("save_on_server data:", data.SaveOnServer)
+		// c.Bind().JSON(data)
+		// log.Println("id data:", data.Id)
+		// log.Println("server_id data:", data.ServerId)
+		// log.Println("save_on_server data:", data.SaveOnServer)
 
 		err := c.Bind().JSON(data)
 		if err != nil {

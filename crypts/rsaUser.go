@@ -531,18 +531,18 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
                 organization = ?, organization_unit = ?, email = ?, password = ?,
                 public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
                 serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?, oid = ?, oid_values = ?
-            WHERE common_name = ? AND entity_id = ?`,
+            WHERE id = ?`,
 		data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 		data.Organization, data.OrganizationUnit, data.Email, data.Password,
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
 		data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues,
-		data.CommonName, data.EntityId)
+		data.Id)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("не удалось добавить новый сертификат в базу данных: %w", err)
+		return fmt.Errorf("не удалось обновить сертификат в базе данных: %w", err)
 	}
-	log.Printf("Новый сертификат для common_name %s добавлен в базу данных", data.CommonName)
+	log.Printf("Сертификат для common_name %s обновлен в базе данных (ID: %d)", data.CommonName, data.Id)
 
 	// Если все операции прошли успешно, фиксируем транзакцию
 	if err = tx.Commit(); err != nil {
@@ -550,6 +550,6 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	}
 	txCommitted = true
 
-	log.Printf("Успешно сгенерирован новый RSA сертификат для common_name %s", data.CommonName)
+	log.Printf("Успешно обновлен RSA сертификат для common_name %s (ID: %d)", data.CommonName, data.Id)
 	return nil
 }

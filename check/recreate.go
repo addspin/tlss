@@ -78,7 +78,7 @@ func checkRecreateCerts() {
 	// CA сертификаты
 	for _, cert := range caCertificates {
 		log.Printf("RecreateCerts: CA сертификат %s (ID: %d) просрочен и будет перевыпущен", cert.CommonName, cert.Id)
-		certErr := caControllers.RevokeCACertWithData(&cert, db)
+		certErr := caControllers.CreateCACertRSA(&cert, db)
 		if certErr != nil {
 			log.Printf("RecreateCerts: Ошибка генерации сертификата: %v", certErr)
 			continue

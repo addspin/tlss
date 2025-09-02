@@ -262,7 +262,7 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 
 		// Получаем все валидные клиентские сертификаты для пересоздания
 		userCertList := []models.UserCertsData{}
-		err = db.Select(&userCertList, `SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password 
+		err = db.Select(&userCertList, `SELECT id, entity_id, algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password 
 			FROM user_certs 
 			WHERE cert_status = ?`, validStatus)
 		if err != nil {
@@ -336,7 +336,7 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 
 		// Получаем все валидные клиентские сертификаты для пересоздания
 		userCertList := []models.UserCertsData{}
-		err = db.Select(&userCertList, `SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password 
+		err = db.Select(&userCertList, `SELECT id, entity_id, algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password 
 			FROM user_certs 
 			WHERE cert_status = ?`, validStatus)
 		if err != nil {

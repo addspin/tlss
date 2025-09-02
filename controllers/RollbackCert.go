@@ -117,11 +117,21 @@ func RollbackCert(c fiber.Ctx) error {
 			}
 			// Изменим имя сертифмката с wildcard именами с  *.test.ru на test.ru
 			// в POST приходят именя с фронта, но в базе данных они хранятся без wildcard
-			// data.Domain = domain
+
+			var domain string
+			err = tx.Get(&domain, "SELECT domain FROM certs WHERE id = ? AND server_id = ?", data.Id, data.ServerId)
+			if err != nil {
+				tx.Rollback()
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Ошибка при получении домена из базы данных: " + err.Error(),
+				})
+			}
+			data.Domain = domain
 			// Извлекаем сертификат и ключ из базы данных
 			// var publicKey, privateKey string
 			keyList := []models.CertsData{}
-			err = db.Select(&keyList, "SELECT public_key, private_key FROM certs WHERE id = ? AND server_id = ?", data.Id, data.ServerId)
+			err = tx.Select(&keyList, "SELECT public_key, private_key FROM certs WHERE id = ? AND server_id = ?", data.Id, data.ServerId)
 			if err != nil {
 				tx.Rollback()
 				return c.Status(500).JSON(fiber.Map{

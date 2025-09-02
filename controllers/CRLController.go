@@ -11,6 +11,15 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	rootCADERcrl   = "rootcaDER.crl"
+	subCADERcrl    = "subcaDER.crl"
+	rootCAPEMcrl   = "rootcaPEM.crl"
+	subCAPEMcrl    = "subcaPEM.crl"
+	bundleCADERcrl = "bundlecaDER.crl"
+	bundleCAPEMcrl = "bundlecaPEM.crl"
+)
+
 // принудительно генерирует CRL для Root CA и Sub CA
 func GenerateCombinedCACRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
@@ -34,7 +43,7 @@ func GenerateCombinedCACRL(c fiber.Ctx) error {
 	})
 }
 
-// GetBudleCRL обрабатывает запрос на получение бандла файла CRL
+// GetBudleCRL обрабатывает запрос на получение бандла DER файла CRL
 func GetBundleCACRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
@@ -72,7 +81,7 @@ func GetBundleCACRL(c fiber.Ctx) error {
 	}
 
 	// Устанавливаем заголовки для CRL файла в DER формате
-	c.Set("Content-Disposition", "attachment; filename=bundleca.crl")
+	c.Set("Content-Disposition", "attachment; filename="+bundleCADERcrl)
 	c.Set("Content-Type", "application/pkix-crl")
 
 	return c.Send(bundleDer)
@@ -86,7 +95,6 @@ func GetBundleCAPemCRL(c fiber.Ctx) error {
 	}
 	log.Println("Connected to database: ", database)
 	defer db.Close()
-	// crlPath := "./crlFile/bundleca.pem"
 
 	var crlData models.CRL
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Bundle'")
@@ -98,7 +106,7 @@ func GetBundleCAPemCRL(c fiber.Ctx) error {
 
 	// Данные уже в правильном PEM формате (бандл с двумя отдельными блоками)
 	// Устанавливаем заголовки для CRL файла
-	c.Set("Content-Disposition", "attachment; filename=bundleca.pem")
+	c.Set("Content-Disposition", "attachment; filename="+bundleCAPEMcrl)
 	c.Set("Content-Type", "application/x-pem-file")
 
 	return c.Send([]byte(crlData.DataCRL))
@@ -113,8 +121,7 @@ func GetRootCACRL(c fiber.Ctx) error {
 	}
 	log.Println("Connected to database: ", database)
 	defer db.Close()
-	// Используем только CRL файл для серверных и клиентских сертификатов подписанных Sub CA
-	// crlPath := "./crlFile/rootca.crl"
+	// Используем только DER CRL файл для серверных и клиентских сертификатов подписанных Sub CA
 	var crlData models.CRL
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Root'")
 	if err != nil {
@@ -132,7 +139,7 @@ func GetRootCACRL(c fiber.Ctx) error {
 	}
 
 	// Устанавливаем заголовки для CRL файла
-	c.Set("Content-Disposition", "attachment; filename=rootca.crl")
+	c.Set("Content-Disposition", "attachment; filename="+rootCADERcrl)
 	c.Set("Content-Type", "application/pkix-crl")
 
 	// Отправляем файл
@@ -148,8 +155,7 @@ func GetRootCAPemCRL(c fiber.Ctx) error {
 	}
 	log.Println("Connected to database: ", database)
 	defer db.Close()
-	// Используем только CRL файл для серверных и клиентских сертификатов подписанных Sub CA
-	// crlPath := "./crlFile/rootca.pem"
+	// Используем только PEM CRL файл для серверных и клиентских сертификатов подписанных Sub CA
 	var crlData models.CRL
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Root'")
 	if err != nil {
@@ -165,7 +171,7 @@ func GetRootCAPemCRL(c fiber.Ctx) error {
 	})
 
 	// Устанавливаем заголовки для CRL файла
-	c.Set("Content-Disposition", "attachment; filename=rootca.pem")
+	c.Set("Content-Disposition", "attachment; filename="+rootCAPEMcrl)
 	c.Set("Content-Type", "application/x-pem-file")
 
 	// Отправляем файл
@@ -181,8 +187,7 @@ func GetSubCACRL(c fiber.Ctx) error {
 	}
 	log.Println("Connected to database: ", database)
 	defer db.Close()
-	// Используем только CRL файл для серверных и клиентских сертификатов подписанных Sub CA
-	// crlPath := "./crlFile/subca.crl"
+	// Используем только DER CRL файл для серверных и клиентских сертификатов подписанных Sub CA
 	var crlData models.CRL
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Sub'")
 	if err != nil {
@@ -200,14 +205,14 @@ func GetSubCACRL(c fiber.Ctx) error {
 	}
 
 	// Устанавливаем заголовки для CRL файла
-	c.Set("Content-Disposition", "attachment; filename=subca.crl")
+	c.Set("Content-Disposition", "attachment; filename="+subCADERcrl)
 	c.Set("Content-Type", "application/pkix-crl")
 
 	// Отправляем файл
 	return c.Send(block.Bytes)
 }
 
-// GetCRL обрабатывает запрос на получение CRL файла
+// GetCRL обрабатывает запрос на получение PEM CRL файла
 func GetSubCAPemCRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
@@ -231,7 +236,7 @@ func GetSubCAPemCRL(c fiber.Ctx) error {
 	})
 
 	// Устанавливаем заголовки для CRL файла
-	c.Set("Content-Disposition", "attachment; filename=subca.pem")
+	c.Set("Content-Disposition", "attachment; filename="+subCAPEMcrl)
 	c.Set("Content-Type", "application/x-pem-file")
 
 	// Отправляем файл

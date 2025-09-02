@@ -128,51 +128,6 @@ func RevokeCACert(c fiber.Ctx) error {
 					"message": "RevokeCACertWithData: root ca: Ошибка при сохранении изменений перед пересозданием сертификатов: " + err.Error(),
 				})
 			}
-
-			// Пересоздаем Root CA и Sub CA
-			// crypts.GenerateRSARootCA(data, db)
-
-			// Пересоздаем все сертификаты и сохраняем на сервере если такие имеются
-			// получаем и пересоздаем все серверные сертификаты
-			// certList := []models.CertsData{}
-			// err = db.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
-			// if err != nil {
-			// 	return c.Status(500).JSON(fiber.Map{
-			// 		"status":  "error",
-			// 		"message": "RevokeCACertWithData: root ca: ошибка при получении списка серверных сертификатов: " + err.Error(),
-			// 	})
-			// }
-
-			// // Требуется кэшировать запросы к БД для получения CA
-			// numWorkers := len(certList)
-
-			// // Обрабатываем серверные сертификаты
-			// err = processServerCertificates(certList, db, numWorkers)
-			// if err != nil {
-			// 	return c.Status(500).JSON(fiber.Map{
-			// 		"status":  "error",
-			// 		"message": "RevokeCACertWithData: root ca: ошибка при обработке серверных сертификатов: " + err.Error(),
-			// 	})
-			// }
-
-			// // получаем и пересоздаем все клиентские сертификаты
-			// userCertList := []models.UserCertsData{}
-			// err = db.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
-			// if err != nil {
-			// 	return c.Status(500).JSON(fiber.Map{
-			// 		"status":  "error",
-			// 		"message": "RevokeCACertWithData: root ca: ошибка при получении списка клиентских сертификатов: " + err.Error(),
-			// 	})
-			// }
-
-			// // Обрабатываем пользовательские сертификаты
-			// err = processUserCertificates(userCertList, db, numWorkers)
-			// if err != nil {
-			// 	return c.Status(500).JSON(fiber.Map{
-			// 		"status":  "error",
-			// 		"message": "RevokeCACertWithData: root ca: ошибка при обработке клиентских сертификатов: " + err.Error(),
-			// 	})
-			// }
 		}
 
 		if typeCA == "Sub" {
@@ -246,56 +201,14 @@ func RevokeCACert(c fiber.Ctx) error {
 					"message": "RevokeCACertWithData: sub ca: Ошибка при сохранении изменений перед пересозданием сертификатов: " + err.Error(),
 				})
 			}
-			// Пересоздаем Sub CA
-			// crypts.GenerateRSASubCA(data, db)
-
-			// Пересоздаем все сертификаты и сохраняем на сервере если такие имеются
-			// получаем и пересоздаем все серверные сертификаты
-			// certList := []models.CertsData{}
-			// err = db.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
-			// if err != nil {
-			// 	return c.Status(500).JSON(fiber.Map{
-			// 		"status":  "error",
-			// 		"message": "RevokeCACertWithData: sub ca: ошибка при получении списка серверных сертификатов: " + err.Error(),
-			// 	})
-			// }
-
-			// numWorkers := len(certList)
-
-			// // Обрабатываем серверные сертификаты
-			// err = processServerCertificates(certList, db, numWorkers)
-			// if err != nil {
-			// 	return c.Status(500).JSON(fiber.Map{
-			// 		"status":  "error",
-			// 		"message": "RevokeCACertWithData: sub ca: ошибка при обработке серверных сертификатов: " + err.Error(),
-			// 	})
-			// }
-
-			// // получаем и пересоздаем все клиентские сертификаты
-			// userCertList := []models.UserCertsData{}
-			// err = db.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
-			// if err != nil {
-			// 	return c.Status(500).JSON(fiber.Map{
-			// 		"status":  "error",
-			// 		"message": "RevokeCACertWithData: sub ca: ошибка при получении списка клиентских сертификатов: " + err.Error(),
-			// 	})
-			// }
-
-			// // Обрабатываем пользовательские сертификаты
-			// err = processUserCertificates(userCertList, db, numWorkers)
-			// if err != nil {
-			// 	return c.Status(500).JSON(fiber.Map{
-			// 		"status":  "error",
-			// 		"message": "RevokeCACertWithData: sub ca: ошибка при обработке клиентских сертификатов: " + err.Error(),
-			// 	})
-			// }
 		}
 	}
 
 	return c.Render("ca/certCAList-tpl", fiber.Map{})
 }
 
-func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
+// Функция вызываемая при создании CA RSA сертификатов
+func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 	tx := db.MustBegin()
 	currentTime := time.Now().Format(time.RFC3339)
 	reasonRevoke := data.ReasonRevoke
@@ -315,43 +228,7 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData root ca: Ошибка при обновлении метки об отзыве сертификатов: %w", err)
 		}
 
-		// Отзываем все сертификаты подписанные CA
-		// Удаляем все отозванные клиентские сертификаты
-		_, err = tx.Exec(`DELETE FROM user_certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
-		if err != nil {
-			tx.Rollback() // Откатываем транзакцию при ошибке
-			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при удалении отозванных клиентских сертификатов: %w", err)
-		}
-
-		// Удаляем все отозванные серверные сертификаты
-		_, err = tx.Exec(`DELETE FROM certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
-		if err != nil {
-			tx.Rollback() // Откатываем транзакцию при ошибке
-			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при удалении отозванных серверных сертификатов: %w", err)
-		}
-
-		// Помечаем все серверные сертификаты как отозванные
-		_, err = tx.Exec(`UPDATE certs SET 
-			cert_status = ?, 
-			data_revoke = ?, 
-			reason_revoke = ? 
-			WHERE cert_status IN (?, ?)`, revokeStatus, currentTime, reasonRevoke, expiredStatus, validStatus)
-		if err != nil {
-			tx.Rollback() // Откатываем транзакцию при ошибке
-			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при отзыве серверных сертификатов: %w", err)
-		}
-
-		// Помечаем все клиентские сертификаты как отозванные
-		_, err = tx.Exec(`UPDATE user_certs SET 
-			cert_status = ?, 
-			data_revoke = ?, 
-			reason_revoke = ? 
-			WHERE cert_status IN (?, ?)`, revokeStatus, currentTime, reasonRevoke, expiredStatus, validStatus)
-		if err != nil {
-			tx.Rollback() // Откатываем транзакцию при ошибке
-			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при отзыве клиентских сертификатов: %w", err)
-		}
-
+		// Валидные сертификаты будут пересозданы, отозванные - удалены
 		// Коммитим текущую транзакцию перед пересозданием сертификатов
 		err = tx.Commit()
 		if err != nil {
@@ -364,12 +241,14 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData: root ca: Ошибка при генерации Root CA: %w", err)
 		}
 
-		// Пересоздаем все сертификаты и сохраняем на сервере если такие имеются
-		// получаем и пересоздаем все серверные сертификаты
+		// 2) Пересоздание валидных сертфикатов
+		// Получаем все валидные сертификаты для пересоздания с новыми CA
 		certList := []models.CertsData{}
-		err = db.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+		err = db.Select(&certList, `SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left 
+			FROM certs 
+			WHERE cert_status = ?`, validStatus)
 		if err != nil {
-			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка серверных сертификатов: %w", err)
+			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка серверных сертификатов для пересоздания: %w", err)
 		}
 
 		// Требуется кэшировать запросы к БД для получения CA
@@ -381,11 +260,13 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData: root ca: %w", err)
 		}
 
-		// получаем и пересоздаем все клиентские сертификаты
+		// Получаем все валидные клиентские сертификаты для пересоздания
 		userCertList := []models.UserCertsData{}
-		err = db.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+		err = db.Select(&userCertList, `SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password 
+			FROM user_certs 
+			WHERE cert_status = ?`, validStatus)
 		if err != nil {
-			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка клиентских сертификатов: %w", err)
+			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка клиентских сертификатов для пересоздания: %w", err)
 		}
 
 		// Обрабатываем пользовательские сертификаты
@@ -393,6 +274,20 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 		if err != nil {
 			return fmt.Errorf("RevokeCACertWithData: root ca: %w", err)
 		}
+
+		// 3) Удаление отозванных и просроченных сертификатов подписанных старым CA
+		// Удаляем все отозванные и просроченные клиентские сертификаты
+		_, err = db.Exec(`DELETE FROM user_certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при удалении отозванных клиентских сертификатов: %w", err)
+		}
+
+		// Удаляем все отозванные и просроченные серверные сертификаты
+		_, err = db.Exec(`DELETE FROM certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при удалении отозванных серверных сертификатов: %w", err)
+		}
+
 		return nil
 	}
 
@@ -407,42 +302,7 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData: sub ca: Ошибка при обновлении метки об отзыве сертификатов: %w", err)
 		}
 
-		// Удаляем все отозванные клиентские сертификаты
-		_, err = tx.Exec(`DELETE FROM user_certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
-		if err != nil {
-			tx.Rollback() // Откатываем транзакцию при ошибке
-			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при удалении отозванных клиентских сертификатов: %w", err)
-		}
-
-		// Удаляем все отозванные серверные сертификаты
-		_, err = tx.Exec(`DELETE FROM certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
-		if err != nil {
-			tx.Rollback() // Откатываем транзакцию при ошибке
-			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при удалении отозванных серверных сертификатов: %w", err)
-		}
-
-		// Отзываем все сертификаты подписанные CA
-		// Помечаем все серверные сертификаты как отозванные
-		_, err = tx.Exec(`UPDATE certs SET 
-			cert_status = ?, 
-			data_revoke = ?, 
-			reason_revoke = ? 
-			WHERE cert_status IN (?, ?)`, revokeStatus, currentTime, reasonRevoke, expiredStatus, validStatus)
-		if err != nil {
-			tx.Rollback() // Откатываем транзакцию при ошибке
-			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при отзыве серверных сертификатов: %w", err)
-		}
-
-		// Помечаем все клиентские сертификаты как отозванные
-		_, err = tx.Exec(`UPDATE user_certs SET 
-			cert_status = ?, 
-			data_revoke = ?, 
-			reason_revoke = ? 
-			WHERE cert_status IN (?, ?)`, revokeStatus, currentTime, reasonRevoke, expiredStatus, validStatus)
-		if err != nil {
-			tx.Rollback() // Откатываем транзакцию при ошибке
-			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при отзыве клиентских сертификатов: %w", err)
-		}
+		// Валидные сертификаты будут пересозданы, отозванные - удалены
 
 		// Коммитим текущую транзакцию перед пересозданием сертификатов
 		err = tx.Commit()
@@ -456,12 +316,14 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData: sub ca: Ошибка при генерации Sub CA: %w", err)
 		}
 
-		// Пересоздаем все сертификаты и сохраняем на сервере если такие имеются
-		// получаем и пересоздаем все серверные сертификаты
+		// 2) Пересоздание валидных сертфикатов
+		// Получаем все валидные сертификаты для пересоздания с новыми CA
 		certList := []models.CertsData{}
-		err = db.Select(&certList, "SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left FROM certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+		err = db.Select(&certList, `SELECT algorithm, key_length, domain, common_name, country_name, san, state_province, locality_name, organization, organization_unit, email, save_on_server, cert_status, app_type, ttl, server_id, wildcard, reason_revoke, recreate, days_left 
+			FROM certs 
+			WHERE cert_status = ?`, validStatus)
 		if err != nil {
-			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при получении списка серверных сертификатов: %w", err)
+			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при получении списка серверных сертификатов для пересоздания: %w", err)
 		}
 
 		numWorkers := len(certList)
@@ -472,17 +334,32 @@ func RevokeCACertWithData(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData: sub ca: %w", err)
 		}
 
-		// получаем и пересоздаем все клиентские сертификаты
+		// Получаем все валидные клиентские сертификаты для пересоздания
 		userCertList := []models.UserCertsData{}
-		err = db.Select(&userCertList, "SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password FROM user_certs WHERE cert_status IN (?, ?)", expiredStatus, revokeStatus)
+		err = db.Select(&userCertList, `SELECT algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password 
+			FROM user_certs 
+			WHERE cert_status = ?`, validStatus)
 		if err != nil {
-			return fmt.Errorf("RevokeCACertWithData: root ca: ошибка при получении списка клиентских сертификатов: %w", err)
+			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при получении списка клиентских сертификатов для пересоздания: %w", err)
 		}
 
 		// Обрабатываем пользовательские сертификаты
 		err = processUserCertificates(userCertList, db, numWorkers)
 		if err != nil {
 			return fmt.Errorf("RevokeCACertWithData: sub ca: %w", err)
+		}
+
+		// 3) Удаление отозванных и просроченных сертификатов подписанных старым CA
+		// Удаляем все отозванные и просроченные клиентские сертификаты
+		_, err = db.Exec(`DELETE FROM user_certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при удалении отозванных клиентских сертификатов: %w", err)
+		}
+
+		// Удаляем все отозванные и просроченные серверные сертификаты
+		_, err = db.Exec(`DELETE FROM certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: sub ca: ошибка при удалении отозванных серверных сертификатов: %w", err)
 		}
 		return nil
 	}
@@ -519,7 +396,7 @@ func processServerCertificates(certList []models.CertsData, db *sqlx.DB, numWork
 				switch cert.Algorithm {
 				case "RSA":
 					// dbMutex.Lock()
-					certPEM, keyPEM, certErr = crypts.GenerateRSACertificate(&cert, db)
+					certPEM, keyPEM, certErr = crypts.RecreateRSACertificate(&cert, db)
 					// dbMutex.Unlock()
 
 					if certErr != nil {
@@ -594,7 +471,7 @@ func processUserCertificates(userCertList []models.UserCertsData, db *sqlx.DB, n
 				switch userCert.Algorithm {
 				case "RSA":
 					dbMutex.Lock()
-					_, _, certErr = crypts.GenerateUserRSACertificate(&userCert, db)
+					certErr = crypts.RecreateUserRSACertificate(&userCert, db)
 					dbMutex.Unlock()
 					userResultsErrors <- certErr
 				default:

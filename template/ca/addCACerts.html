@@ -39,9 +39,15 @@
             hx-swap="none"
             hx-ext="json-enc-custom" 
             parse-types="true"
+            hx-trigger="confirmed"
             hx-on::before-request="
-                    document.getElementById('create-cert-btn').style.display = 'none';"
+              document.getElementById('create-cert-btn').style.display = 'none';
+              document.getElementById('btn-spinner').style.display = 'inline-block';"
             hx-on::after-request="
+              // Скрываем спиннер и показываем кнопку
+              document.getElementById('btn-spinner').style.display = 'none';
+              document.getElementById('create-cert-btn').style.display = 'inline-block';
+              
               if (event.detail.xhr.responseText) {
                 try {
                   const response = JSON.parse(event.detail.xhr.responseText);
@@ -54,8 +60,6 @@
                       title: 'Ошибка',
                       text: response.message,
                       confirmButtonColor: '#3085d6'
-                    }).then(() => {
-                      document.getElementById('create-cert-btn').style.display = 'inline-block';
                     });
                   } else if (response.status === 'success') {
                     Swal.fire({
@@ -67,8 +71,6 @@
                       text: `Сертификаты были успешно пересозданы`,
                       confirmButtonColor: '#3085d6'
                     }).then(() => {
-                      document.getElementById('create-cert-btn').style.display = 'inline-block';
-                      
                       htmx.ajax('GET', '/ca_list', {
                         target: '#response', 
                         swap: 'innerHTML'
@@ -77,10 +79,7 @@
                   }
                 } catch (e) {
                   console.error('Ошибка при обработке ответа:', e);
-                  document.getElementById('create-cert-btn').style.display = 'inline-block';
                 }
-              } else {
-                document.getElementById('create-cert-btn').style.display = 'inline-block';
               }
             ">
             <label id= "" class="form_lable" >Create CA\Sub CA certificate</label>
@@ -159,12 +158,55 @@
                 </div>
 
                 <div class="btn-container btn-container-right">
-                  <button type="submit" class="btn-custom btn-custom-certs" id="create-cert-btn"
-                    hx-indicator="#time-svg">
-                    Create
+                  <button type="button" class="btn-custom btn-custom-certs" id="create-cert-btn"
+                    hx-indicator="#time-svg"
+                    onClick="
+                      // Генерируем случайный идентификатор
+                      function generateRandomId() {
+                        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+                        let result = '';
+                        for (let i = 0; i < 16; i++) {
+                          result += chars.charAt(Math.floor(Math.random() * chars.length));
+                        }
+                        return result;
+                      }
+                      
+                      const randomId = generateRandomId();
+                      const typeCA = document.getElementById('select-type-ca').value;
+                      const titleText = typeCA === 'Root' ? 
+                        'Вы создаете Root CA, все сертификаты подписанные этим CA будут пересозданы!' : 
+                        'Вы создаете Sub CA, все сертификаты подписанные этим Sub CA будут пересозданы!';
+                      
+                      Swal.fire({
+                        showClass: {
+                            popup: 'animate__animated animate__fadeInUp animate__fast'
+                        },
+                        hideClass: {
+                            popup: 'animate__animated animate__fadeOutDown animate__fast'
+                        },
+                        customClass: 'custom-alert',
+                        input: 'text',
+                        title: titleText,
+                        text: `Для подтверждения введите: ${randomId}`, 
+                        showCancelButton: true,
+                        confirmButtonColor: '#983636',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Yes, approve',
+                        inputValidator: (value) => {
+                            if (value !== randomId) {
+                                return `Вы ввели не верный идентификатор, введите: ${randomId}`;
+                            }
+                        }
+                      }).then((result) => {
+                          if (result.isConfirmed) {
+                              // Отправляем форму через HTMX
+                              htmx.trigger(document.querySelector('form'), 'confirmed');
+                          }
+                      });"
+                  >Create
                     <!-- <img src="svg/time.svg" class="time-svg"> -->
                   </button>
-                  <button  class="btn-custom btn-custom-certs btn-spinner" id="btn-spinner">
+                  <button  class="btn-custom btn-custom-certs btn-spinner" id="btn-spinner" style="display: none;">
                     <img src="svg/time.svg" class="time-svg">
                   </button>
                 </div>

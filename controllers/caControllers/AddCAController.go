@@ -52,7 +52,7 @@ func AddCAController(c fiber.Ctx) error {
 
 		// Генерируем сертификат в зависимости от алгоритма
 		data.ReasonRevoke = "superseded"
-		certErr := RevokeCACertWithData(data, db)
+		certErr := CreateCACertRSA(data, db)
 		if certErr != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",

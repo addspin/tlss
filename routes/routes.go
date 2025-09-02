@@ -75,12 +75,12 @@ func Setup(app *fiber.App) {
 	app.Post("/user_cert_list", usersCertControllers.UserCertListController)
 	app.Post("/rollback_users_cert", usersCertControllers.RollbackUserCert)
 
-	app.Get("/add_ca", caControllers.AddCAController)
-	app.Post("/add_ca", caControllers.AddCAController)
-	app.Get("/ca_list", caControllers.CACertListController)
-	app.Post("/revoke_ca_certs", caControllers.RevokeCACert)
-	app.Post("/remove_ca_cert", caControllers.RemoveCACert)
-	app.Get("/revoke_ca_certs", caControllers.RevokeCACertsController)
+	app.Get("/add_ca", caControllers.AddCAController)                  // Получение списка CA
+	app.Post("/add_ca", caControllers.AddCAController)                 // Добавление CA
+	app.Get("/ca_list", caControllers.CACertListController)            // Получение списка CA
+	app.Post("/revoke_ca_certs", caControllers.RevokeCACert)           // Отзыв CA
+	app.Post("/remove_ca_cert", caControllers.RemoveCACert)            // Удаление CA
+	app.Get("/revoke_ca_certs", caControllers.RevokeCACertsController) // Получение списка CA для отзыва
 
 	app.Get("/logout", controllers.LogoutController)
 }

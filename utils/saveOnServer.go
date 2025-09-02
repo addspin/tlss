@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	rootCAFileName       = "root_ca_tlss.pem"
-	subCAFileName        = "sub_ca_tlss.pem"
-	bundlePEMCRLFileName = "bundle_crl_tlss.pem"
-	bundleDERCRLFileName = "bundle_crl_tlss.der"
+	rootCAPEM      = "root_ca_tlss.pem"
+	subCAPEM       = "sub_ca_tlss.pem"
+	bundleCAPEMcrl = "bundlecaPEM.crl"
+	bundleCADERcrl = "bundlecaDER.crl"
 )
 
 type SaveOnServerInterface interface {
@@ -66,8 +66,8 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		// Создаем пути для файлов сертификата и ключа на удаленном сервере
 		certPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
 		keyPath := fmt.Sprintf("%s/%s.key", serverInfo.CertConfigPath, data.Domain)
-		subCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, subCAFileName)
-		rootCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, rootCAFileName)
+		subCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, subCAPEM)
+		rootCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, rootCAPEM)
 
 		// Используем ssh клиент для передачи сертификата и ключа
 		// Создаём контекст с таймаутом для SSH-команд
@@ -137,9 +137,9 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 
 		// Путь для сохранения объединенного файла на удаленном сервере
 		combinedPath := fmt.Sprintf("%s/%s.pem", serverInfo.CertConfigPath, data.Domain)
-		subCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, subCAFileName)
-		rootCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, rootCAFileName)
-		bundlePEMCRLPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, bundlePEMCRLFileName)
+		subCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, subCAPEM)
+		rootCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, rootCAPEM)
+		bundlePEMCRLPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, bundleCAPEMcrl)
 
 		// Используем ssh клиент для передачи объединенного файла
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

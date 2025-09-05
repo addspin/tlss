@@ -1,4 +1,4 @@
-package utils
+package crypts
 
 import (
 	"crypto/rsa"
@@ -6,7 +6,6 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
 	"github.com/jmoiron/sqlx"
 )
@@ -25,39 +24,40 @@ func (e *ca) ExtractSubCA(db *sqlx.DB) error {
 	var subCA models.CAData
 	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
-		return fmt.Errorf("не удалось получить промежуточный CA: %w", err)
+		return fmt.Errorf("ExtractCA: не удалось получить промежуточный CA: %v", err)
 	}
 	if subCA.CertStatus != 0 {
-		return fmt.Errorf("промежуточный CA сертификат недоступен")
+		return fmt.Errorf("ExtractCA: промежуточный CA сертификат недоступен")
 	}
 
 	// Декодируем промежуточный CA сертификат
 	subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
 	if subCACertBlock == nil {
-		return fmt.Errorf("не удалось декодировать PEM промежуточного CA сертификата")
+		return fmt.Errorf("ExtractCA: не удалось декодировать PEM промежуточного CA сертификата")
 	}
 	subCAcert, err := x509.ParseCertificate(subCACertBlock.Bytes)
 	if err != nil {
-		return fmt.Errorf("не удалось разобрать промежуточный CA сертификат: %w", err)
+		return fmt.Errorf("ExtractCA: не удалось разобрать промежуточный CA сертификат: %w", err)
 	}
 
 	// Расшифровываем приватный ключ промежуточного CA
-	aes := crypts.Aes{}
-	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), crypts.AesSecretKey.Key)
+	aes := Aes{}
+	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), AesSecretKey.Key)
 	if err != nil {
-		return fmt.Errorf("не удалось расшифровать приватный ключ промежуточного CA: %w", err)
+		return fmt.Errorf("ExtractCA: не удалось расшифровать приватный ключ промежуточного CA: %w", err)
 	}
 
 	// Декодируем приватный ключ промежуточного CA
 	subCAKeyBlock, _ := pem.Decode(decryptedKey)
 	if subCAKeyBlock == nil {
-		return fmt.Errorf("не удалось декодировать PEM приватного ключа промежуточного CA")
+		return fmt.Errorf("ExtractCA: не удалось декодировать PEM приватного ключа промежуточного CA")
 	}
 	subCAKey, err := x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
 	if err != nil {
-		return fmt.Errorf("не удалось разобрать приватный ключ промежуточного CA: %w", err)
+		return fmt.Errorf("ExtractCA: не удалось разобрать приватный ключ промежуточного CA: %w", err)
 	}
 	e.SubCAcert = subCAcert
 	e.SubCAKey = subCAKey
+
 	return nil
 }

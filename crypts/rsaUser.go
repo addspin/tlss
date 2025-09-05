@@ -65,44 +65,6 @@ func UserStandardizeSerialNumber(serialNumber *big.Int) string {
 // и сохраняет его в базу данных
 func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPem, keyPem []byte, err error) {
 
-	// Получаем промежуточный CA сертификат из базы данных
-	var subCA models.CAData
-	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить промежуточный CA: %w", err)
-	}
-
-	if subCA.CertStatus != 0 {
-		return nil, nil, fmt.Errorf("промежуточный CA сертификат недоступен")
-	}
-
-	// Декодируем промежуточный CA сертификат
-	subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
-	if subCACertBlock == nil {
-		return nil, nil, fmt.Errorf("не удалось декодировать PEM промежуточного CA сертификата")
-	}
-	subCACert, err := x509.ParseCertificate(subCACertBlock.Bytes)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось разобрать промежуточный CA сертификат: %w", err)
-	}
-
-	// Расшифровываем приватный ключ промежуточного CA
-	aes := Aes{}
-	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), AesSecretKey.Key)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось расшифровать приватный ключ промежуточного CA: %w", err)
-	}
-
-	// Декодируем приватный ключ промежуточного CA
-	subCAKeyBlock, _ := pem.Decode(decryptedKey)
-	if subCAKeyBlock == nil {
-		return nil, nil, fmt.Errorf("не удалось декодировать PEM приватного ключа промежуточного CA")
-	}
-	subCAKey, err := x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось разобрать приватный ключ промежуточного CA: %w", err)
-	}
-
 	// Генерируем новую RSA ключевую пару для сертификата
 	privateKey, err := rsa.GenerateKey(rand.Reader, data.KeyLength)
 	if err != nil {
@@ -211,6 +173,10 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPe
 			viper.GetString("ocspUser.ocspURL"),
 		},
 	}
+	// Получаем промежуточный CA сертификат и ключ
+	subCACert := ExtractCA.SubCAcert
+	subCAKey := ExtractCA.SubCAKey
+	aes := Aes{}
 
 	// Создаем сертификат
 	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, &privateKey.PublicKey, subCAKey)
@@ -328,45 +294,6 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPe
 }
 
 func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
-
-	// Получаем промежуточный CA сертификат из базы данных
-	var subCA models.CAData
-	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
-	if err != nil {
-		return fmt.Errorf("не удалось получить промежуточный CA: %w", err)
-	}
-
-	if subCA.CertStatus != 0 {
-		return fmt.Errorf("промежуточный CA сертификат недоступен")
-	}
-
-	// Декодируем промежуточный CA сертификат
-	subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
-	if subCACertBlock == nil {
-		return fmt.Errorf("не удалось декодировать PEM промежуточного CA сертификата")
-	}
-	subCACert, err := x509.ParseCertificate(subCACertBlock.Bytes)
-	if err != nil {
-		return fmt.Errorf("не удалось разобрать промежуточный CA сертификат: %w", err)
-	}
-
-	// Расшифровываем приватный ключ промежуточного CA
-	aes := Aes{}
-	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), AesSecretKey.Key)
-	if err != nil {
-		return fmt.Errorf("не удалось расшифровать приватный ключ промежуточного CA: %w", err)
-	}
-
-	// Декодируем приватный ключ промежуточного CA
-	subCAKeyBlock, _ := pem.Decode(decryptedKey)
-	if subCAKeyBlock == nil {
-		return fmt.Errorf("не удалось декодировать PEM приватного ключа промежуточного CA")
-	}
-	subCAKey, err := x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
-	if err != nil {
-		return fmt.Errorf("не удалось разобрать приватный ключ промежуточного CA: %w", err)
-	}
-
 	// Генерируем новую RSA ключевую пару для сертификата
 	privateKey, err := rsa.GenerateKey(rand.Reader, data.KeyLength)
 	if err != nil {
@@ -472,6 +399,10 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 			viper.GetString("ocspUser.ocspURL"),
 		},
 	}
+	// Получаем промежуточный CA сертификат и ключ
+	subCACert := ExtractCA.SubCAcert
+	subCAKey := ExtractCA.SubCAKey
+	aes := Aes{}
 
 	// Создаем сертификат
 	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, &privateKey.PublicKey, subCAKey)

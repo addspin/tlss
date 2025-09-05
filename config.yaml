@@ -41,21 +41,6 @@ CApath:
   db: true
   server: false
 
-ocsp:
-  ocspURL: http://tlss.lv.local:43000/api/v1/ocsp
-  updateInterval: 720 # minutes 12 hours
-  version: 2
-
-# crlUser:
-#   crlURL: http://tlss.lv.local:43000/api/v1/crlclient
-#   updateInterval: 1 # minutes 12 hours
-#   version: 2
-
-ocspUser:
-  ocspURL: http://tlss.lv.local:43000/api/v1/ocspUser
-  updateInterval: 1 # minutes 12 hours
-  version: 2
-
 certsValidation:
   time: 30 # minutes
 

@@ -33,11 +33,6 @@ func Setup(app *fiber.App) {
 	app.Get("/api/v1/crl/rootca/pem", controllers.GetRootCAPemCRL)     // Получение Root CA CRL в PEM формате
 	app.Get("/api/v1/crl/bundleca/pem", controllers.GetBundleCAPemCRL) // Получение бандла Root CA и Sub CA CRL в PEM 	формате
 
-	app.Get("/api/v1/ocsp/*", controllers.HandleOCSP)
-	app.Post("/api/v1/ocsp", controllers.HandleOCSP)
-	app.Get("/api/v1/ocspUser/*", usersCertControllers.HandleOCSPUser)
-	app.Post("/api/v1/ocspUser", usersCertControllers.HandleOCSPUser)
-
 	// Admin API routes (auth required)
 	app.Post("/api/v1/crl/bundleca/generate", controllers.GenerateCombinedCACRL) // Генерация бандла Root CA и Sub CA через API
 

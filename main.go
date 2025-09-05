@@ -122,24 +122,6 @@ func main() {
 		log.Println(err.Error())
 	}
 
-	// create SchemaOCSPCertificate tables in db (хранит данные OCSP) отключено подписываем OCSP ответы subCA
-	// _, err = db.Exec(models.SchemaOCSPCertificate)
-	// if err != nil {
-	// 	log.Println(err.Error())
-	// }
-
-	// create SchemaOCSPRevoke tables in db (хранит данные об отозванных сертификатах для OCSP)
-	_, err = db.Exec(models.SchemaOCSPRevoke)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	// create SchemaUserOCSPRevoke tables in db (хранит данные об пользовательских отозванных сертификатах для OCSP)
-	_, err = db.Exec(models.SchemaUserOCSPRevoke)
-	if err != nil {
-		log.Println(err.Error())
-	}
-
 	// запрос ввода пароля Временно отключен, добавлен в config.yaml
 	// var pwd []byte
 	// fmt.Print("Enter password: ")
@@ -267,15 +249,6 @@ func main() {
 	// запускаем генерацию CRL для Root CA и Sub CA через заданный интервал времени
 	combinedCRLUpdateInterval := time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Minute
 	go crl.StartCombinedCRLGeneration(combinedCRLUpdateInterval, db)
-
-	//---------------------------------------Start OCSP Responder
-	// OCSP-респондер работает отдельно от контроллера, обновляя базу данных
-	// ocspUpdateInterval := time.Duration(viper.GetInt("ocsp.updateInterval")) * time.Minute
-	// go ocsp.StartOCSPResponder(ocspUpdateInterval)
-
-	//---------------------------------------Start User OCSP Responder
-	// userOcspUpdateInterval := time.Duration(viper.GetInt("ocspUser.updateInterval")) * time.Minute
-	// go ocsp.StartUserOCSPResponder(userOcspUpdateInterval)
 
 	// --------------------------------------Start check server
 	checkServerTime := time.Duration(viper.GetInt("checkServer.time")) * time.Second

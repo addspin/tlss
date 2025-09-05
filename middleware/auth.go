@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/addspin/tlss/crypts"
@@ -36,7 +35,6 @@ var publicRoutes = []string{
 	"/api/v1/crl/rootca/pem",
 	"/api/v1/crl/bundleca/der",
 	"/api/v1/crl/bundleca/pem",
-	"/api/v1/ocsp",
 }
 
 // Расширения статических файлов, которые должны быть доступны всем
@@ -69,7 +67,7 @@ func AuthMiddleware() fiber.Handler {
 
 		// Check if the path is in the public routes list
 		for _, route := range publicRoutes {
-			if path == route || (route == "/api/v1/ocsp" && strings.HasPrefix(path, "/api/v1/ocsp")) {
+			if path == route {
 				return c.Next()
 			}
 		}

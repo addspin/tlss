@@ -56,17 +56,6 @@ func RollbackUserCert(c fiber.Ctx) error {
 			certStatus = 0
 		}
 
-		// Получаем серийный номер и домен сертификата для удаления из user OCSP
-		var serialNumber, commonName string
-		err = db.QueryRow("SELECT serial_number, common_name FROM user_certs WHERE id = ? AND entity_id = ?", data.Id, data.EntityId).Scan(&serialNumber, &commonName)
-		if err != nil {
-			tx.Rollback()
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Ошибка при получении данных сертификата: " + err.Error(),
-			})
-		}
-
 		// Обновляем статус сертификата с учетом ID сервера и ID сертификата
 		_, err = tx.Exec(`UPDATE user_certs SET 
 			cert_status = ?, 
@@ -80,18 +69,6 @@ func RollbackUserCert(c fiber.Ctx) error {
 				"message": "Ошибка при восстановлении сертификата: " + err.Error(),
 			})
 		}
-
-		// Удаляем сертификат из таблицы ocsp_revoke
-		_, err = tx.Exec("DELETE FROM ocsp_revoke WHERE serial_number = ?", serialNumber)
-		if err != nil {
-			tx.Rollback()
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Ошибка при удалении сертификата из user OCSP: " + err.Error(),
-			})
-		}
-
-		log.Printf("Сертификат для домена %s (серийный номер: %s) успешно восстановлен и удален из user OCSP", commonName, serialNumber)
 
 		err = tx.Commit() // Проверяем ошибку при коммите
 		if err != nil {

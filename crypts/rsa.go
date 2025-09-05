@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/addspin/tlss/models"
+	"github.com/addspin/tlss/utils"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
@@ -66,42 +67,42 @@ func standardizeSerialNumber(serialNumber *big.Int) string {
 func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPem []byte, err error) {
 
 	// Получаем промежуточный CA сертификат из базы данных
-	var subCA models.CAData
-	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось получить промежуточный CA: %w", err)
-	}
+	// var subCA models.CAData
+	// err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf("не удалось получить промежуточный CA: %w", err)
+	// }
 
-	if subCA.CertStatus != 0 {
-		return nil, nil, fmt.Errorf("промежуточный CA сертификат недоступен")
-	}
+	// if subCA.CertStatus != 0 {
+	// 	return nil, nil, fmt.Errorf("промежуточный CA сертификат недоступен")
+	// }
 
-	// Декодируем промежуточный CA сертификат
-	subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
-	if subCACertBlock == nil {
-		return nil, nil, fmt.Errorf("не удалось декодировать PEM промежуточного CA сертификата")
-	}
-	subCACert, err := x509.ParseCertificate(subCACertBlock.Bytes)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось разобрать промежуточный CA сертификат: %w", err)
-	}
+	// // Декодируем промежуточный CA сертификат
+	// subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
+	// if subCACertBlock == nil {
+	// 	return nil, nil, fmt.Errorf("не удалось декодировать PEM промежуточного CA сертификата")
+	// }
+	// subCACert, err := x509.ParseCertificate(subCACertBlock.Bytes)
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf("не удалось разобрать промежуточный CA сертификат: %w", err)
+	// }
 
-	// Расшифровываем приватный ключ промежуточного CA
-	aes := Aes{}
-	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), AesSecretKey.Key)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось расшифровать приватный ключ промежуточного CA: %w", err)
-	}
+	// // Расшифровываем приватный ключ промежуточного CA
+	// aes := Aes{}
+	// decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), AesSecretKey.Key)
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf("не удалось расшифровать приватный ключ промежуточного CA: %w", err)
+	// }
 
-	// Декодируем приватный ключ промежуточного CA
-	subCAKeyBlock, _ := pem.Decode(decryptedKey)
-	if subCAKeyBlock == nil {
-		return nil, nil, fmt.Errorf("не удалось декодировать PEM приватного ключа промежуточного CA")
-	}
-	subCAKey, err := x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
-	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось разобрать приватный ключ промежуточного CA: %w", err)
-	}
+	// // Декодируем приватный ключ промежуточного CA
+	// subCAKeyBlock, _ := pem.Decode(decryptedKey)
+	// if subCAKeyBlock == nil {
+	// 	return nil, nil, fmt.Errorf("не удалось декодировать PEM приватного ключа промежуточного CA")
+	// }
+	// subCAKey, err := x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
+	// if err != nil {
+	// 	return nil, nil, fmt.Errorf("не удалось разобрать приватный ключ промежуточного CA: %w", err)
+	// }
 
 	// Генерируем новую RSA ключевую пару для сертификата
 	privateKey, err := rsa.GenerateKey(rand.Reader, data.KeyLength)
@@ -165,13 +166,15 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		IsCA:                  false,
 		DNSNames:              dnsNames,
 		CRLDistributionPoints: []string{
-			viper.GetString("SubCAcrl.crlURL"),
+			viper.GetString("CAcrl.crlURL"),
 		},
 		OCSPServer: []string{
 			viper.GetString("ocsp.ocspURL"),
 		},
 	}
 
+	subCACert := utils.ExtractCA.SubCAcert
+	subCAKey := utils.ExtractCA.SubCAKey
 	// Создаем сертификат
 	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, &privateKey.PublicKey, subCAKey)
 	if err != nil {
@@ -187,7 +190,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	})
-
+	aes := Aes{}
 	// Шифруем приватный ключ с использованием AesSecretKey.Key
 	var encryptedKey []byte
 	if len(AesSecretKey.Key) > 0 {

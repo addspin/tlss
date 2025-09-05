@@ -10,6 +10,7 @@ import (
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
 	"github.com/addspin/tlss/routes"
+	"github.com/addspin/tlss/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/template/html/v2"
@@ -253,6 +254,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	// Извекаем CA из базы данных для использования в разных пакетах
+	utils.ExtractCA.ExtractSubCA(db)
 
 	// Генерация CA теперь выполняется через эндпоинт Add CA
 

@@ -130,6 +130,14 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 			viper.GetString("CAcrl.crlURL"),
 		},
 	}
+
+	// Проверяем промежуточный CA сертификат и ключ
+	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
+		err = ExtractCA.ExtractSubCA(db)
+		if err != nil {
+			return nil, nil, fmt.Errorf("GenerateRSACertificate: не удалось извлечь промежуточный CA сертификат и ключ: %w", err)
+		}
+	}
 	// Получаем промежуточный CA сертификат и ключ
 	subCACert := ExtractCA.SubCAcert
 	subCAKey := ExtractCA.SubCAKey
@@ -281,6 +289,13 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		CRLDistributionPoints: []string{
 			viper.GetString("SubCAcrl.crlURL"),
 		},
+	}
+	// Проверяем промежуточный CA сертификат и ключ
+	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
+		err = ExtractCA.ExtractSubCA(db)
+		if err != nil {
+			return nil, nil, fmt.Errorf("RecreateRSACertificate: не удалось извлечь промежуточный CA сертификат и ключ: %w", err)
+		}
 	}
 	// Получаем промежуточный CA сертификат и ключ
 	subCACert := ExtractCA.SubCAcert

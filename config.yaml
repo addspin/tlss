@@ -11,6 +11,7 @@ app:
 login:
   username: admin
   password: 1gd5hfg5jdgsyrtf
+  salt: mysecuresalt123
 
 database:
   path: ./db/database.db

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"log"
 	"time"
@@ -126,12 +127,26 @@ func main() {
 	// var pwd []byte
 	// fmt.Print("Enter password: ")
 	// fmt.Scanln(&pwd)
+	// var salt []byte
+	// fmt.Print("Enter salt: ")
+	// fmt.Scanln(&salt)
 	// //если пароль меньше 16 байт то дополняем его нулями
 	// var maxPwd = make([]byte, 16)
 	// for len(pwd) < len(maxPwd) {
 	// 	pwd = append(pwd, 0)
 	// }
-	pwd := []byte(viper.GetString("login.password"))
+
+	// Получаем пароль и соль из конфигурации временно
+	password := []byte(viper.GetString("login.password"))
+	salt := []byte(viper.GetString("login.salt"))
+	// Проверяем, что пароль и соль не пустые
+	if len(password) == 0 || len(salt) == 0 {
+		log.Fatal("Пароль и соль не могут быть пустыми")
+	}
+
+	// Генерируем итоговый пароль через PBKDF2
+	p := crypts.PWD{}
+	pwd := p.CreatePWDKeyFromUserInput(password, salt)
 
 	//проверяем, есть ли в таблице хотя  бы одно значение key
 	var exists bool
@@ -148,22 +163,29 @@ func main() {
 		fmt.Scanln(&login)
 
 		// запрос ввода пароля
-		var pwd []byte
+		var password []byte
 		fmt.Print("Enter password: ")
-		fmt.Scanln(&pwd)
-		//если пароль меньше 16 байт то дополняем его нулями
-		var maxPwd = make([]byte, 16)
-		for len(pwd) < len(maxPwd) {
-			pwd = append(pwd, 0)
+		fmt.Scanln(&password)
+
+		// запрос ввода соли
+		var salt []byte
+		fmt.Print("Enter salt: ")
+		fmt.Scanln(&salt)
+
+		// Проверяем, что пароль и соль не пустые
+		if len(password) == 0 || len(salt) == 0 {
+			log.Fatal("Пароль и соль не могут быть пустыми")
 		}
 
-		var key []byte
-		fmt.Print("Enter key: ")
-		fmt.Scanln(&key)
-		//если ключ меньше 32 байт то дополняем его нулями
-		var maxKey = make([]byte, 32)
-		for len(key) < len(maxKey) {
-			key = append(key, 0)
+		// Генерируем итоговый пароль через PBKDF2
+		p := crypts.PWD{}
+		pwd := p.CreatePWDKeyFromUserInput(password, salt)
+
+		// генерируем случайный ключ
+		key := make([]byte, 32)
+		_, err := rand.Read(key)
+		if err != nil {
+			log.Fatal(err.Error())
 		}
 		// шифруем ключ паролем
 		cryptoKey, err := aes.Encrypt(key, pwd) // cryptoKey - зашифрованный ключ
@@ -239,9 +261,10 @@ func main() {
 	// Извекаем CA из базы данных для использования в разных пакетах
 	err = crypts.ExtractCA.ExtractSubCA(db)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Println(err.Error())
+	} else {
+		log.Printf("ExtractCA: промежуточный CA сертификат и ключ успешно извлечены")
 	}
-	log.Printf("ExtractCA: промежуточный CA сертификат и ключ успешно извлечены")
 
 	// Генерация CA теперь выполняется через эндпоинт Add CA
 

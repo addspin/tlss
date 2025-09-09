@@ -74,7 +74,11 @@ func LoginControll(c fiber.Ctx) error {
 		//проверяем пароль, расшифрует ключ или нет
 		aes := crypts.Aes{}
 		var keyData []models.Key
-		pwd := []byte(data.Password)
+		// pwd := []byte(data.Password)
+		p := crypts.PWD{}
+		password := []byte(data.Password)
+		salt := crypts.PWDKey.GlobalSalt
+		pwd := p.CreatePWDKeyFromUserInput(password, salt)
 		db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
 		for _, keyData := range keyData {
 			decryptKey, err := aes.Decrypt([]byte(keyData.Key), pwd)

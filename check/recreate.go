@@ -138,4 +138,5 @@ func checkRecreateCerts() {
 		}
 	}
 	log.Println("RecreateCerts: Проверка на пересоздание пользовательских сертификатов завершена")
+	Monitors.RecreateCerts = time.Now()
 }

@@ -16,7 +16,15 @@ database:
   path: ./db/database.db
 checkServer:
   unit: seconds # minutes, seconds, hours
-  time: 30
+  checkServerInterval: 10
+
+monitor:
+  unitTCP: seconds # minutes, seconds, hours
+  TCPInterval: 5
+  unitRecreateCerts: seconds # minutes, seconds, hours
+  RecreateCertsInterval: 3
+  unitCheckValidCerts: seconds # minutes, seconds, hours
+  CheckValidCertsInterval: 10
 
 ca_tlss:
   path_cert: ./root_ca_tlss/root_ca_tlss.pem
@@ -44,9 +52,9 @@ CApath:
   server: false
 
 certsValidation:
-  unit: minutes # minutes, seconds, hours
-  time: 30 
+  unit: seconds # minutes, seconds, hours
+  certsValidationInterval: 30 
 
 recreateCerts:
-  unit: minutes # minutes, seconds, hours
-  time: 1 
+  unit: seconds # minutes, seconds, hours
+  recreateCertsInterval: 5

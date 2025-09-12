@@ -91,5 +91,6 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 				conn.Close()
 			}
 		}
+		Monitors.CheckTCP = time.Now()
 	}
 }

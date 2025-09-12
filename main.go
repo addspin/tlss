@@ -223,7 +223,6 @@ func main() {
 			//записываем расшифрованный ключ в переменную
 			crypts.AesSecretKey.Key = decryptKey
 		}
-		// Генерация CA теперь выполняется через эндпоинт Add CA
 	}
 	// если в базе есть ключ то расшифровываем и передаем в переменную
 	var keyData []models.Key
@@ -266,27 +265,28 @@ func main() {
 		log.Printf("ExtractCA: промежуточный CA сертификат и ключ успешно извлечены")
 	}
 
-	// Генерация CA теперь выполняется через эндпоинт Add CA
+	//---------------------------------------Start Monitor
+	TCPInterval := utils.SelectTime(viper.GetString("monitor.unitTCP"), viper.GetInt("monitor.TCPInterval"))
+	RecreateCertsInterval := utils.SelectTime(viper.GetString("monitor.unitRecreateCerts"), viper.GetInt("monitor.RecreateCertsInterval"))
+	CheckValidCertsInterval := utils.SelectTime(viper.GetString("monitor.unitCheckValidCerts"), viper.GetInt("monitor.CheckValidCertsInterval"))
+	go check.Monitore(TCPInterval, RecreateCertsInterval, CheckValidCertsInterval)
 
-	//---------------------------------------Generate  CRL
-	// запускаем генерацию CRL для Root CA и Sub CA через заданный интервал времени
+	//---------------------------------------Start Generate  Root and Sub CRL
 	combinedCRLUpdateInterval := utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))
 	go crl.StartCombinedCRLGeneration(combinedCRLUpdateInterval, db)
 
 	// --------------------------------------Start check server
-
-	checkServerTime := utils.SelectTime(viper.GetString("checkServer.unit"), viper.GetInt("checkServer.time"))
-	// запускаем проверку доступности серверов
+	serverInterval := utils.SelectTime(viper.GetString("checkServer.unit"), viper.GetInt("checkServer.checkServerInterval"))
 	checkTCP := check.StatusCodeTcp{}
-	go checkTCP.TCPPortAvailable(checkServerTime)
+	go checkTCP.TCPPortAvailable(serverInterval)
 
-	//---------------------------------------Check valid certs
-	checkValidationTime := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.time"))
-	go check.CheckValidCerts(checkValidationTime)
+	//---------------------------------------Start Check valid certs
+	validationInterval := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.certsValidationInterval"))
+	go check.CheckValidCerts(validationInterval)
 
-	//---------------------------------------Recreate certs
-	recreateCertsTime := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.time"))
-	go check.RecreateCerts(recreateCertsTime)
+	//---------------------------------------Start Recreate certs
+	recreateCertsInterval := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.recreateCertsInterval"))
+	go check.RecreateCerts(recreateCertsInterval)
 
 	//---------------------------------------Create a new engine Template
 	engine := html.New("./template", ".html")

@@ -141,4 +141,5 @@ func checkCerts() {
 	}
 
 	log.Printf("CheckValidCerts: Проверка валидности сертификатов завершена. Обновлено статусов: %d", expiredCount)
+	Monitors.CheckValidCerts = time.Now()
 }

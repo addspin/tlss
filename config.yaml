@@ -2,7 +2,6 @@ app:
   port: 43000
   hostname: tlss.lv.local
   # hostname: localhost
-  # useHTTPS: true
   protocol: https
   certFile: ./https/tlss.lv.local.pem
   keyFile: ./https/tlss.lv.local.key
@@ -16,7 +15,8 @@ login:
 database:
   path: ./db/database.db
 checkServer:
-  time: 30 # seconds
+  unit: seconds # minutes, seconds, hours
+  time: 30
 
 ca_tlss:
   path_cert: ./root_ca_tlss/root_ca_tlss.pem
@@ -29,7 +29,8 @@ sub_ca_tlss:
   commonName: TLSS Sub CA
 
 add_server:
-  waitingToConnect: 3 # seconds
+  unit: seconds # minutes, seconds, hours
+  waitingToConnect: 3 
 
 
 CAcrl:
@@ -43,7 +44,9 @@ CApath:
   server: false
 
 certsValidation:
-  time: 30 # minutes
+  unit: minutes # minutes, seconds, hours
+  time: 30 
 
 recreateCerts:
-  time: 1 # minutes 12 hours
+  unit: minutes # minutes, seconds, hours
+  time: 1 

@@ -12,8 +12,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
+	"github.com/addspin/tlss/utils"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh"
 )
@@ -189,6 +189,7 @@ func AddAuthorizedKeys(hostname, tlssSSHport, username, password, path string) e
 	// if err != nil {
 	// 	return err
 	// }
+
 	config := &ssh.ClientConfig{
 		User: username,
 		Auth: []ssh.AuthMethod{
@@ -196,7 +197,7 @@ func AddAuthorizedKeys(hostname, tlssSSHport, username, password, path string) e
 		},
 		// HostKeyCallback: ssh.FixedHostKey(parsedPubKey),
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         time.Duration(viper.GetInt("add_server.waitingToConnect")) * time.Second,
+		Timeout:         utils.SelectTime(viper.GetString("add_server.unit"), viper.GetInt("add_server.waitingToConnect")),
 	}
 	client, err := ssh.Dial("tcp", hostname+":"+tlssSSHport, config)
 	if err != nil {

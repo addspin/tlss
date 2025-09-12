@@ -17,7 +17,7 @@ type Monitor struct {
 
 func (m *Monitor) CheckMonitor() {
 
-	recreateCertsInterval := viper.GetInt("recreateCerts.time")
+	recreateCertsInterval := time.Duration(viper.GetInt("recreateCerts.time")) * time.Second
 	recreateCertsTimeNow := time.Now()
 	recreateDuration := recreateCertsTimeNow.Sub(m.RecreateCerts)
 	if recreateDuration > recreateCertsInterval {

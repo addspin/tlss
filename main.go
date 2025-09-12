@@ -4,13 +4,13 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/addspin/tlss/check"
 	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
 	"github.com/addspin/tlss/routes"
+	"github.com/addspin/tlss/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/compress"
 	"github.com/gofiber/template/html/v2"
@@ -270,21 +270,22 @@ func main() {
 
 	//---------------------------------------Generate  CRL
 	// запускаем генерацию CRL для Root CA и Sub CA через заданный интервал времени
-	combinedCRLUpdateInterval := time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Minute
+	combinedCRLUpdateInterval := utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))
 	go crl.StartCombinedCRLGeneration(combinedCRLUpdateInterval, db)
 
 	// --------------------------------------Start check server
-	checkServerTime := time.Duration(viper.GetInt("checkServer.time")) * time.Second
+
+	checkServerTime := utils.SelectTime(viper.GetString("checkServer.unit"), viper.GetInt("checkServer.time"))
 	// запускаем проверку доступности серверов
 	checkTCP := check.StatusCodeTcp{}
 	go checkTCP.TCPPortAvailable(checkServerTime)
 
 	//---------------------------------------Check valid certs
-	checkValidationTime := time.Duration(viper.GetInt("certsValidation.time")) * time.Minute
+	checkValidationTime := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.time"))
 	go check.CheckValidCerts(checkValidationTime)
 
 	//---------------------------------------Recreate certs
-	recreateCertsTime := time.Duration(viper.GetInt("recreateCerts.time")) * time.Minute
+	recreateCertsTime := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.time"))
 	go check.RecreateCerts(recreateCertsTime)
 
 	//---------------------------------------Create a new engine Template

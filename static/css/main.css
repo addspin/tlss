@@ -62,7 +62,7 @@
 }
 
 .table td, .table th {
-    border-bottom: 1px solid #757575;
+    /* border-bottom: 1px solid #757575; */
     color: #ffffff;
 }
 
@@ -360,4 +360,23 @@
     font-size: 0.7rem;
     text-align: left;
     display: inline-block;
+}
+
+.menu-item {
+font-family: Inter;
+font-weight: 100;
+font-size: 2.8rem;
+color: #ffffff;
+}
+
+.menu-revoked-cert {
+    color: #983636;
+}
+
+.menu-expired-cert {
+    color: #efa70c;
+}
+
+.menu-valid-cert {
+    color: #2ba03d;
 }

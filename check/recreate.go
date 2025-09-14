@@ -15,10 +15,10 @@ import (
 func RecreateCerts(checkRecreateTime time.Duration) {
 
 	switch {
-	case viper.GetInt("recreateCerts.time") == 0:
+	case viper.GetInt("recreateCerts.recreateCertsInterval") == 0:
 		log.Println("RecreateCerts: Ошибка в конфигурации: Время пересоздания сертификатов не установлено")
 		return
-	case viper.GetInt("recreateCerts.time") < 0:
+	case viper.GetInt("recreateCerts.recreateCertsInterval") < 0:
 		log.Println("RecreateCerts: Ошибка в конфигурации: Время пересоздания сертификатов отрицательное")
 		return
 	case viper.GetString("app.hostname") == "":

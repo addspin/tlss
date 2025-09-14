@@ -24,6 +24,12 @@ var Monitors = Mon{}
 func Monitore(TCPInterval, RecreateCertsInterval, CheckValidCertsInterval time.Duration) {
 	log.Println("CheckMonitor: Запуск модуля мониторинга")
 
+	// Инициализируем время при запуске мониторинга
+	now := time.Now()
+	Monitors.CheckTCP = now
+	Monitors.RecreateCerts = now
+	Monitors.CheckValidCerts = now
+
 	// Выполняем проверки сразу при запуске
 	checkMonitorTCP()
 	checkMonitorRecreateCerts()
@@ -54,8 +60,9 @@ func Monitore(TCPInterval, RecreateCertsInterval, CheckValidCertsInterval time.D
 
 func checkMonitorTCP() {
 	Monitors.MutexMonitor.Lock()
+	defer Monitors.MutexMonitor.Unlock()
 	// интервал заданный в конфиге
-	checkTCPInterval := utils.SelectTime(viper.GetString("checkServer.unit"), viper.GetInt("checkServer.time"))
+	checkTCPInterval := utils.SelectTime(viper.GetString("checkServer.unit"), viper.GetInt("checkServer.checkServerInterval"))
 	// время сейчас
 	checkTCPTimeNow := time.Now()
 	// время разницу между временем сейчас и временем последнего пересоздания сертификатов
@@ -70,15 +77,15 @@ func checkMonitorTCP() {
 		log.Println("CheckMonitor TCP: Чекер работает")
 	}
 	log.Println("CheckMonitor: Мониторинг выполняется")
-	Monitors.MutexMonitor.Unlock()
 }
 
 func checkMonitorRecreateCerts() {
 	Monitors.MutexMonitor.Lock()
-	recreateCertsInterval := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.time"))
+	defer Monitors.MutexMonitor.Unlock()
+	recreateCertsInterval := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.recreateCertsInterval"))
 	recreateCertsTimeNow := time.Now()
 	recreateDuration := recreateCertsTimeNow.Sub(Monitors.RecreateCerts)
-	// log.Println("CheckMonitor: Время разницы:", recreateDuration)
+	log.Println("CheckMonitor RecreateCerts: Время разницы:", recreateDuration)
 	if recreateDuration > recreateCertsInterval {
 		Monitors.RecreateCertStatus = false // чекер не работает
 		log.Println("CheckMonitor RecreateCerts: Чекер не работает")
@@ -86,15 +93,15 @@ func checkMonitorRecreateCerts() {
 		Monitors.RecreateCertStatus = true // чекер работает
 		log.Println("CheckMonitor RecreateCerts: Чекер работает")
 	}
-	Monitors.MutexMonitor.Unlock()
 }
 
 func checkMonitorCheckValidCerts() {
 	Monitors.MutexMonitor.Lock()
-	CheckValidCertsInterval := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.time"))
+	defer Monitors.MutexMonitor.Unlock()
+	CheckValidCertsInterval := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.certsValidationInterval"))
 	CheckValidCertsTimeNow := time.Now()
 	CheckValidCertsDuration := CheckValidCertsTimeNow.Sub(Monitors.CheckValidCerts)
-	// log.Println("CheckMonitor: Время разницы:", CheckValidCertsDuration)
+	log.Println("CheckMonitor CheckValidCerts: Время разницы:", CheckValidCertsDuration)
 	if CheckValidCertsDuration > CheckValidCertsInterval {
 		Monitors.CheckValidCertsStatus = false // чекер не работает
 		log.Println("CheckMonitor CheckValidCerts: Чекер не работает")
@@ -102,5 +109,4 @@ func checkMonitorCheckValidCerts() {
 		Monitors.CheckValidCertsStatus = true // чекер работает
 		log.Println("CheckMonitor CheckValidCerts: Чекер работает")
 	}
-	Monitors.MutexMonitor.Unlock()
 }

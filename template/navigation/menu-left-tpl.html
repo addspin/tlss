@@ -1,7 +1,11 @@
 {{define "menu-left-tpl"}}
     <ul class="nav flex-column left-menu">
         <li class="title-menu-left">Home</li>
-        <li><a class="link-menu-left" href="#" disabled>Overview</a></li>
+        <li><a class="link-menu-left {{if eq .Title "Overview"}}active{{else}}{{end}}" 
+            hx-get="/overview" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Overview</a></li>
         <hr>
         <li class="title-menu-left">Servers certs</li>
         <li><a class="link-menu-left {{if eq .Title "Add server entity"}}active{{else}}{{end}}" 

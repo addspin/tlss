@@ -18,7 +18,7 @@ func Setup(app *fiber.App) {
 	app.Get("/*", static.New("./static"))
 
 	// Public routes (no auth required)
-	app.Get("/index", controllers.Index)
+	app.Get("/overview", controllers.Overview)
 	app.Get("/login", controllers.LoginControll)
 	app.Post("/login", controllers.LoginControll)
 	app.Get("/", controllers.LoginControll)

@@ -42,11 +42,13 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 		err = db.Get(&checkServerList, "SELECT EXISTS(SELECT 1 FROM server)")
 		if err != nil {
 			log.Printf("TCP checker: Ошибка проверки списка серверов: %v", err)
+			Monitors.CheckTCP = time.Now()
 			continue
 		}
 		// если нет, пишем что в базе нет серверов
 		if !checkServerList {
 			log.Println("TCP checker: В базе данных нет ни одного сервера")
+			Monitors.CheckTCP = time.Now()
 			continue
 		}
 		// извлекаем список северов из базы данных
@@ -54,11 +56,13 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 		err = db.Select(&serverList, "SELECT hostname, port FROM server WHERE port IS NOT NULL")
 		if err != nil {
 			log.Printf("TCP checker: Ошибка извлечения серверов из базы данных: %v", err)
+			Monitors.CheckTCP = time.Now()
 			continue
 		}
 		// Проверка на наличие сервера в базе данных
 		if len(serverList) == 0 {
 			log.Println("TCP checker: В базе данных нет серверов для проверки")
+			Monitors.CheckTCP = time.Now()
 			continue
 		}
 		// проходимся по списку серверов и проверяем доступность
@@ -66,6 +70,7 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 		port, err := testData.TestString(serverList[0].Port)
 		if err != nil {
 			log.Printf("TCP checker: Ошибка преобразования порта: %v", err)
+			Monitors.CheckTCP = time.Now()
 			continue
 		}
 		for _, server := range serverList {

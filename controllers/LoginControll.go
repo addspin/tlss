@@ -92,7 +92,7 @@ func LoginControll(c fiber.Ctx) error {
 			crypts.AesSecretKey.Key = decryptKey
 		}
 
-		// Create session to authenticate user
+		// Создание сессии для авторизации пользователя
 		sess, err := middleware.Store.Get(c)
 		if err != nil {
 			log.Println("Session error:", err)
@@ -111,12 +111,35 @@ func LoginControll(c fiber.Ctx) error {
 			})
 		}
 
-		// Redirect to the add_server route
-		c.Set("HX-Redirect", "/add_server")
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"status":   "success",
-			"redirect": "/add_server",
-		})
+		testCa := models.CAData{}
+		err = db.Get(&testCa, "SELECT * FROM ca_certs WHERE type_ca = 'Root' AND cert_status = 0")
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Database error",
+			})
+		}
+		if testCa.TypeCA == "" {
+			c.Set("HX-Redirect", "/add_ca")
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"status":   "success",
+				"redirect": "/add_ca",
+			})
+		} else {
+			// Если есть CA перенаправляем на страницу Overview
+			c.Set("HX-Redirect", "/overview")
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"status":   "success",
+				"redirect": "/overview",
+			})
+		}
+
+		// Перенаправление после авторизации
+		// c.Set("HX-Redirect", "/add_server")
+		// return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		// 	"status":   "success",
+		// 	"redirect": "/add_server",
+		// })
 	}
 	return nil
 }

@@ -1,0 +1,26 @@
+{{define "taskList-tpl"}}
+
+            <table class="table">
+              <thead>
+              <tr>
+                <th scope="col">Task name</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{ if .taskList }}
+                {{ range $key, $value := .taskList }}
+                  <tr class="task_id_{{ $key }}" name="{{ $key }}">
+                    <!-- task name -->
+                      <td>{{ $key }}</td>
+                      <!-- Status -->
+                      <td>
+                        <div class="state-{{ if $value }}online{{ else }}offline{{ end }}" >{{ if $value }}online{{ else }}offline{{ end }}</div>
+                      </td>
+                  </tr>
+                {{ end }}
+              {{ end }}
+            </tbody>
+            </table>
+          
+{{end}}

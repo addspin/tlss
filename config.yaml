@@ -43,6 +43,7 @@ add_server:
 
 CAcrl:
   crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/der
+  unit: hours # minutes, seconds, hours
   updateInterval: 24 # minutes 12 hours
   version: 2
 

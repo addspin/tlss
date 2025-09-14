@@ -1,0 +1,168 @@
+{{template "header-tpl" .}}
+<!-- {{template "menu-tpl" .}} -->
+{{template "body-tpl" .}}
+
+<div class="container-fluid">
+  <div class="row">
+    <!-- Левое меню -->
+    <div class="left-menu-core">
+      {{template "menu-left-tpl" .}}
+    </div>
+    <!-- Правая часть -->
+    <div class="col-10 p-1">
+      <div class="row">
+        <div class="core-overview">
+          <form class="" 
+            hx-post="/add_certs" 
+            hx-swap="none"
+            hx-ext="json-enc-custom" 
+            parse-types="true"
+            hx-on::before-request="
+                    document.getElementById('create-cert-btn').style.display = 'none';"
+            hx-on::after-request="
+              if (event.detail.xhr.responseText) {
+                try {
+                  const response = JSON.parse(event.detail.xhr.responseText);
+                  if (response.status === 'error') {
+                    Swal.fire({
+                      showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                      hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                      customClass: 'custom-alert',
+                      icon: 'error',
+                      title: 'Ошибка',
+                      text: response.message,
+                      confirmButtonColor: '#3085d6'
+                    }).then(() => {
+                      document.getElementById('create-cert-btn').style.display = 'inline-block';
+                    });
+                  } else if (response.status === 'success') {
+                    Swal.fire({
+                      showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                      hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                      customClass: 'custom-alert',
+                      icon: 'success',
+                      title: 'Успешно',
+                      text: `Сертификат для домена ${response.domain} был успешно создан`,
+                      confirmButtonColor: '#3085d6'
+                    }).then(() => {
+                      document.getElementById('create-cert-btn').style.display = 'inline-block';
+                      
+                      htmx.ajax('GET', '/cert_list', {
+                        target: '#response', 
+                        swap: 'innerHTML',  
+                        values: {
+                          serverId: document.getElementById('serverId').value
+                        } 
+                      });
+                    });
+                  }
+                } catch (e) {
+                  console.error('Ошибка при обработке ответа:', e);
+                  document.getElementById('create-cert-btn').style.display = 'inline-block';
+                }
+              } else {
+                document.getElementById('create-cert-btn').style.display = 'inline-block';
+              }
+            ">
+            <label id= "" class="form_lable" >Certs Overview</label>
+            <div class="input_border color-form-certs">
+              <div class="row g-3 form_center">
+                <div class="col-md-3 th-text-center">
+                  <label class="select_title">Root CA expire in</label>
+                  <div class="th-text-center menu-item">
+                    {{range .caCertList}}
+                      {{if eq .TypeCA "Root"}}
+                        {{ .DaysLeft }}
+                      {{end}}
+                    {{end}}
+                  </div>
+                </div>
+                <div class="col-md-3 th-text-center">
+                    <label class="select_title">Servers certs valid</label>
+                  <div class="th-text-center menu-item menu-valid-cert">
+                    {{ .serverCertCount }}
+                  </div>
+                </div>
+                <div class="col-md-3 th-text-center">
+                  <label class="select_title">Servers certs expired</label>
+                  <div class="th-text-center menu-item menu-expired-cert">
+                    {{ .serverCertExpired }}
+                  </div>
+                </div>
+                <div class="col-md-3 th-text-center">
+                  <label class="select_title">Servers certs revoked</label>
+                  <div class="th-text-center menu-item menu-revoked-cert">
+                    {{ .serverCertRevoked }}
+                  </div>
+                </div>
+              </div>
+              
+              <div class="indent-5"></div>
+
+              <div class="row g-3 form_center">
+                <div class="col-md-3 th-text-center">
+                  <label class="select_title">Sub CA expire in</label>
+                  <div class="th-text-center menu-item">
+                    {{range .caCertList}}
+                      {{if eq .TypeCA "Sub"}}
+                          {{ .DaysLeft }}
+                      {{end}}
+                    {{end}}
+                  </div>
+                </div>
+                <div class="col-md-3 th-text-center">
+                  <label class="select_title">Clients certs valid</label>
+                  <div class="th-text-center menu-item menu-valid-cert">
+                    {{ .userCertCount }}
+                  </div>
+                </div>
+                <div class="col-md-3 th-text-center">
+                  <label class="select_title">Clients certs expired</label>
+                  <div class="th-text-center menu-item menu-expired-cert">
+                    {{ .userCertExpired }}
+                  </div>
+                </div>
+                <div class="col-md-3 th-text-center">
+                  <label class="select_title">Clients certs revoked</label>
+                  <div class="th-text-center menu-item menu-revoked-cert">
+                    {{ .userCertRevoked }}
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+          </form>
+        <div class="core-overview">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label id= "" class="form_lable" >Tasks check</label>
+                    <div class="input_border color-form-certs">
+                        {{template "taskList-tpl" .}}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label id= "" class="form_lable" >Servers online</label>
+                    <div class="input_border color-form-certs">
+                        {{template "serversOnlineList-tpl" .}}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label id= "" class="form_lable" >Servers object active</label>
+                    <div class="input_border color-form-certs">
+                        {{template "serversObjectActiveList-tpl" .}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+      </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- index end template -->
+{{template "footer-tpl" .}}
+

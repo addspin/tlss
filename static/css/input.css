@@ -50,6 +50,15 @@
     font-family: Inter;
     font-weight: 100;
 }
+
+.core-overview {
+    margin-top: 6px;
+    padding-left: 3%;
+    padding-right: 10%;
+    font-family: Inter;
+    font-weight: 100;
+}
+
 .left-core {
     margin-top: 40px;
     padding-left: 20%;
@@ -396,6 +405,11 @@ select:focus {
     font-size: 0.8rem;
 }
 [class^="cert_id_"] {
+    font-family: Inter;
+    font-weight: 100;
+    font-size: 0.8rem;
+}
+[class^="task_id_"] {
     font-family: Inter;
     font-weight: 100;
     font-size: 0.8rem;

@@ -1,0 +1,26 @@
+{{define "serversOnlineList-tpl"}}
+
+            <table class="table">
+              <thead>
+              <tr>
+                <th scope="col">Hostname</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{ if .serverList }}
+                {{ range .serverList }}
+                  <tr class="task_id_{{ .Id }}" name="{{ .Id }}">
+                    <!-- Hostname -->
+                      <td>{{ .Hostname }}</td>
+                      <!-- Status -->
+                      <td>{{ .Status }}</td>
+                      <div class="state-{{ if eq .ServerStatus "online" }}online{{ else }}offline{{ end }}" >{{ .ServerStatus }}</div>
+                        </div>
+                      </td>
+                  </tr>
+                {{ end }}
+              {{ end }}
+            </tbody>
+            </table>
+{{end}}

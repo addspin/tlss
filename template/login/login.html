@@ -70,10 +70,11 @@
       </div>
     </form>
     <form class="" 
-      hx-get="/index" 
+      hx-get="/overview" 
       hx-target="#body" 
       hx-ext="json-enc-custom" 
       parse-types="true"
+      hx-push-url="true"
       hx-on::after-request="
         if (event.detail.xhr.responseText) {
           try {

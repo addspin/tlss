@@ -21,7 +21,7 @@ var Store = session.New(session.Config{
 	CookiePath:        "/",              // Доступность куки на всех путях
 	CookieDomain:      "",               // Пустой домен для локальной разработки
 	KeyLookup:         "cookie:session_id",
-	CookieSessionOnly: true, // Если true, куки будет удалена при закрытии браузера
+	CookieSessionOnly: false, // Если true, куки будет удалена при закрытии браузера
 })
 
 // Public routes that don't require authentication

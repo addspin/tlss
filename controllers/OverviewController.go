@@ -12,6 +12,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	certStatusValid   = 0
+	certStatusExpired = 1
+	certStatusRevoked = 2
+)
+
 func Overview(c fiber.Ctx) error {
 
 	//---------------------------------------Database inicialization for add server
@@ -26,13 +32,26 @@ func Overview(c fiber.Ctx) error {
 
 	if c.Method() == "GET" {
 		serverList := []models.Server{}
+
 		err := db.Select(&serverList, "SELECT id, hostname, COALESCE(cert_config_path, '') as cert_config_path, server_status FROM server WHERE cert_config_path NOT NULL")
 		if err != nil {
 			log.Fatal(err)
 		}
 
+		// serverCertId := []models.CertsData{}
+		// err = db.Select(&serverCertId, "SELECT * FROM certs where cert_status = ?", certStatusValid)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+
+		// serverHostname := []models.Server{}
+		// err = db.Select(&serverHostname, "SELECT hostname FROM server" )
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+
 		caCertList := []models.CAData{}
-		err = db.Select(&caCertList, "SELECT type_ca, days_left, data_revoke  FROM ca_certs WHERE cert_status = 0")
+		err = db.Select(&caCertList, "SELECT type_ca, days_left, data_revoke  FROM ca_certs WHERE cert_status = ?", certStatusValid)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -47,17 +66,17 @@ func Overview(c fiber.Ctx) error {
 		serverCertRevoked := 0
 
 		for cert := range serverCertList {
-			if serverCertList[cert].CertStatus == 0 {
+			if serverCertList[cert].CertStatus == certStatusValid {
 				serverCertCount++
 			}
 		}
 		for cert := range serverCertList {
-			if serverCertList[cert].CertStatus == 1 {
+			if serverCertList[cert].CertStatus == certStatusExpired {
 				serverCertExpired++
 			}
 		}
 		for cert := range serverCertList {
-			if serverCertList[cert].CertStatus == 2 {
+			if serverCertList[cert].CertStatus == certStatusRevoked {
 				serverCertRevoked++
 			}
 		}
@@ -73,13 +92,13 @@ func Overview(c fiber.Ctx) error {
 		userCertRevoked := 0
 
 		for cert := range userCertList {
-			if userCertList[cert].CertStatus == 0 {
+			if userCertList[cert].CertStatus == certStatusValid {
 				userCertCount++
 			}
-			if userCertList[cert].CertStatus == 1 {
+			if userCertList[cert].CertStatus == certStatusExpired {
 				userCertExpired++
 			}
-			if userCertList[cert].CertStatus == 2 {
+			if userCertList[cert].CertStatus == certStatusRevoked {
 				userCertRevoked++
 			}
 		}
@@ -102,6 +121,7 @@ func Overview(c fiber.Ctx) error {
 			"serverCertCount":   serverCertCount,
 			"serverCertExpired": serverCertExpired,
 			"serverCertRevoked": serverCertRevoked,
+			// "serverHostname":    serverHostname,
 		})
 	}
 

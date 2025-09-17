@@ -5,11 +5,11 @@
 <div class="container-fluid">
   <div class="row">
     <!-- Левое меню -->
-    <div class="left-menu-core">
+    <div class="col-auto left-menu-core">
       {{template "menu-left-tpl" .}}
     </div>
     <!-- Правая часть -->
-    <div class="col-10 p-1">
+    <div class="col p-1">
       <div class="row">
         <div class="core-overview">
           <form class="" 
@@ -67,7 +67,7 @@
             <label id= "" class="form_lable" >Certs Overview</label>
             <div class="input_border color-form-certs">
               <div class="row g-3 form_center">
-                <div class="col-md-3 th-text-center">
+                <div class="col-6 col-md-3 th-text-center">
                   <label class="select_title">Root CA expire in</label>
                   <div class="th-text-center menu-item">
                     {{range .caCertList}}
@@ -77,19 +77,19 @@
                     {{end}}
                   </div>
                 </div>
-                <div class="col-md-3 th-text-center">
+                <div class="col-6 col-md-3 th-text-center">
                     <label class="select_title">Servers certs valid</label>
                   <div class="th-text-center menu-item menu-valid-cert">
                     {{ .serverCertCount }}
                   </div>
                 </div>
-                <div class="col-md-3 th-text-center">
+                <div class="col-6 col-md-3 th-text-center">
                   <label class="select_title">Servers certs expired</label>
                   <div class="th-text-center menu-item menu-expired-cert">
                     {{ .serverCertExpired }}
                   </div>
                 </div>
-                <div class="col-md-3 th-text-center">
+                <div class="col-6 col-md-3 th-text-center">
                   <label class="select_title">Servers certs revoked</label>
                   <div class="th-text-center menu-item menu-revoked-cert">
                     {{ .serverCertRevoked }}
@@ -100,7 +100,7 @@
               <div class="indent-5"></div>
 
               <div class="row g-3 form_center">
-                <div class="col-md-3 th-text-center">
+                <div class="col-6 col-md-3 th-text-center">
                   <label class="select_title">Sub CA expire in</label>
                   <div class="th-text-center menu-item">
                     {{range .caCertList}}
@@ -110,19 +110,19 @@
                     {{end}}
                   </div>
                 </div>
-                <div class="col-md-3 th-text-center">
+                <div class="col-6 col-md-3 th-text-center">
                   <label class="select_title">Clients certs valid</label>
                   <div class="th-text-center menu-item menu-valid-cert">
                     {{ .userCertCount }}
                   </div>
                 </div>
-                <div class="col-md-3 th-text-center">
+                <div class="col-6 col-md-3 th-text-center">
                   <label class="select_title">Clients certs expired</label>
                   <div class="th-text-center menu-item menu-expired-cert">
                     {{ .userCertExpired }}
                   </div>
                 </div>
-                <div class="col-md-3 th-text-center">
+                <div class="col-6 col-md-3 th-text-center">
                   <label class="select_title">Clients certs revoked</label>
                   <div class="th-text-center menu-item menu-revoked-cert">
                     {{ .userCertRevoked }}
@@ -134,20 +134,20 @@
           </form>
         <div class="core-overview">
             <div class="row g-3">
-                <div class="col-md-3">
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
                     <label id= "" class="form_lable" >Tasks check</label>
                     <div class="input_border color-form-certs">
                         {{template "taskList-tpl" .}}
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <label id= "" class="form_lable" >Servers online</label>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <label id= "" class="form_lable" >Servers status</label>
                     <div class="input_border color-form-certs">
                         {{template "serversOnlineList-tpl" .}}
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <label id= "" class="form_lable" >Servers object active</label>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <label id= "" class="form_lable" >Domains status</label>
                     <div class="input_border color-form-certs">
                         {{template "serversObjectActiveList-tpl" .}}
                     </div>

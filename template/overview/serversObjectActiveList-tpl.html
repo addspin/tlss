@@ -8,15 +8,17 @@
               </tr>
             </thead>
             <tbody>
-              {{ if .serverObjectActiveList }}
-                {{ range .serverObjectActiveList }}
+              {{ if .serverCertList }}
+                {{ range .serverCertList }}
                   <tr class="task_id_{{ .Id }}" name="{{ .Id }}">
                     <!-- Hostname -->
-                      <td>{{ .Hostname }}</td>
+                      <td>{{ .Domain }}</td>
                       <!-- Status -->
-                      <td>{{ .Status }}</td>
-                      <div class="state-{{ if eq .ServerStatus "online" }}valid{{ else }}offline{{ end }}" >{{ .ServerStatus }}</div>
+                      <td>
+                        <div class="state-{{ if eq .CertStatus 0 }}valid-certs{{ else if eq .CertStatus 1 }}expired-certs{{ else if eq .CertStatus 2 }}revoked-certs{{ end }}" >
+                          {{ if eq .CertStatus 0 }}valid{{ else if eq .CertStatus 1 }}expired{{ else if eq .CertStatus 2 }}revoked{{ end }}
                         </div>
+                      </div>
                       </td>
                   </tr>
                 {{ end }}

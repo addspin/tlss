@@ -14,7 +14,7 @@
                     <!-- Hostname -->
                       <td>{{ .Hostname }}</td>
                       <!-- Status -->
-                      <td>{{ .Status }}</td>
+                      <td>
                       <div class="state-{{ if eq .ServerStatus "online" }}online{{ else }}offline{{ end }}" >{{ .ServerStatus }}</div>
                         </div>
                       </td>

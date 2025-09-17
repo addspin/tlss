@@ -54,9 +54,43 @@
 .core-overview {
     margin-top: 6px;
     padding-left: 3%;
-    padding-right: 10%;
+    padding-right: 3%;
     font-family: Inter;
     font-weight: 100;
+}
+
+
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+
+.container-fluid {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+
+@media (min-width: 1200px) {
+    .core-overview {
+        padding-left: 2%;
+        padding-right: 2%;
+    }
+}
+
+@media (min-width: 1600px) {
+    .core-overview {
+        padding-left: 1%;
+        padding-right: 1%;
+    }
 }
 
 .left-core {
@@ -75,7 +109,7 @@
 .left-menu-core {       
     padding-left: 0%;
     padding-top: 10px;
-    min-height: 100vh;
+    min-height: calc(100vh - 60px); /* Учитываем высоту footer */
     width: 250px;
     font-family: Inter;
     font-weight: 100;
@@ -117,7 +151,7 @@
 .b-example-vr {
     flex-shrink: 0;
     width: 1.5rem;
-    height: 100vh;
+    height: calc(100vh - 60px); /* Учитываем высоту footer */
 }
 .b-example-divider {
     width: 100%;

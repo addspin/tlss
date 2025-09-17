@@ -121,6 +121,7 @@ func Overview(c fiber.Ctx) error {
 			"serverCertCount":   serverCertCount,
 			"serverCertExpired": serverCertExpired,
 			"serverCertRevoked": serverCertRevoked,
+			"serverCertList":    &serverCertList,
 			// "serverHostname":    serverHostname,
 		})
 	}

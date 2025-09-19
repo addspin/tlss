@@ -109,12 +109,12 @@ html, body {
 .left-menu-core {       
     padding-left: 0%;
     padding-top: 10px;
-    min-height: calc(100vh - 60px); /* Учитываем высоту footer */
+    min-height: calc(100vh); /* Учитываем высоту footer */
     width: 250px;
     font-family: Inter;
     font-weight: 100;
     background-color: #212529;
-    border-left: 8px solid #1a1e21;
+    /* border-left: 8px solid #1a1e21; */
     border-right: 8px solid #1a1e21;
     text-decoration: none;
 }

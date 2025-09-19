@@ -37,6 +37,21 @@
     font-weight: 100;
 }
 
+@media (min-width: 1200px) {
+    .servers_table {
+        padding-left: 2%;
+        padding-right: 2%;
+    }
+}
+
+@media (min-width: 1600px) {
+    .servers_table {
+        padding-left: 1%;
+        padding-right: 1%;
+    }
+}
+
+
 .server-cert-tables {
     padding-left: 3%;
     padding-right: 10%;
@@ -46,6 +61,21 @@
     font-family: Inter;
     font-weight: 100;
 }
+
+@media (min-width: 1200px) {
+    .server-cert-tables {
+        padding-left: 2%;
+        padding-right: 2%;
+    }
+}
+
+@media (min-width: 1600px) {
+    .server-cert-tables {
+        padding-left: 1%;
+        padding-right: 1%;
+    }
+}
+
 
 .certs_revoke_table {
     align-content: center;

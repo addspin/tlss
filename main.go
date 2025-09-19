@@ -122,28 +122,43 @@ func main() {
 	if err != nil {
 		log.Println(err.Error())
 	}
-
-	// запрос ввода пароля Временно отключен, добавлен в config.yaml
-	// var pwd []byte
-	// fmt.Print("Enter password: ")
-	// fmt.Scanln(&pwd)
-	// var salt []byte
-	// fmt.Print("Enter salt: ")
-	// fmt.Scanln(&salt)
-	// //если пароль меньше 16 байт то дополняем его нулями
-	// var maxPwd = make([]byte, 16)
-	// for len(pwd) < len(maxPwd) {
-	// 	pwd = append(pwd, 0)
-	// }
-
-	// Получаем пароль и соль из конфигурации временно
-	password := []byte(viper.GetString("login.password"))
-	salt := []byte(viper.GetString("login.salt"))
-	// Проверяем, что пароль и соль не пустые
-	if len(password) == 0 || len(salt) == 0 {
-		log.Fatal("Пароль и соль не могут быть пустыми")
+	var password, salt []byte
+	// Получаем логин, пароль и соль из конфигурации
+	if viper.GetBool("login.authConfig") {
+		login := viper.GetString("login.username")
+		if login == "" {
+			log.Fatal("Логин не может быть пустым")
+		}
+		password = []byte(viper.GetString("login.password"))
+		if len(password) == 0 {
+			log.Fatal("Пароль не может быть пустым")
+		}
+		salt = []byte(viper.GetString("login.salt"))
+		if len(salt) == 0 {
+			log.Fatal("Соль не может быть пустой")
+		}
 	}
+	// Если не используем конфигурацию, то запрашиваем логин, пароль и соль вручную
+	if !viper.GetBool("login.authConfig") {
+		var login, user string
+		fmt.Print("Enter login: ")
+		fmt.Scanln(&login)
+		db.Get(&user, "SELECT username FROM users WHERE username = ?", login)
+		if user == "" {
+			log.Fatal("Логин не найден")
+		}
+		fmt.Print("Enter password: ")
+		fmt.Scanln(&password)
+		if len(password) == 0 {
+			log.Fatal("Пароль не может быть пустым")
+		}
+		fmt.Print("Enter salt: ")
+		fmt.Scanln(&salt)
+		if len(salt) == 0 {
+			log.Fatal("Соль не может быть пустой")
+		}
 
+	}
 	// Генерируем итоговый пароль через PBKDF2
 	p := crypts.PWD{}
 	pwd := p.CreatePWDKeyFromUserInput(password, salt)

@@ -1,13 +1,14 @@
 app:
   port: 43000
-  hostname: tlss.lv.local
-  # hostname: localhost
-  protocol: https
+  # hostname: tlss.lv.local
+  hostname: localhost
+  protocol: http
   certFile: ./https/tlss.lv.local.pem
   keyFile: ./https/tlss.lv.local.key
 
 # Временно для отладки
 login:
+  authConfig: false # true - использовать конфигурацию из config.yaml, false - использовать ручной ввод
   username: admin
   password: 1gd5hfg5jdgsyrtf
   salt: mysecuresalt123

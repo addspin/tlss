@@ -60,7 +60,7 @@ func LoginControll(c fiber.Ctx) error {
 			log.Println(err)
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Database error",
+				"message": "Login controller: Check user in Database, error",
 			})
 		}
 
@@ -112,13 +112,13 @@ func LoginControll(c fiber.Ctx) error {
 		}
 
 		testCa := models.CAData{}
-		err = db.Get(&testCa, "SELECT * FROM ca_certs WHERE type_ca = 'Root' AND cert_status = 0")
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Database error",
-			})
-		}
+		db.Get(&testCa, "SELECT * FROM ca_certs WHERE type_ca = 'Root' AND cert_status = 0")
+		// if err != nil {
+		// 	return c.Status(500).JSON(fiber.Map{
+		// 		"status":  "error",
+		// 		"message": "Login controller: Check CA in Database, error",
+		// 	})
+		// }
 		if testCa.TypeCA == "" {
 			c.Set("HX-Redirect", "/add_ca")
 			return c.Status(fiber.StatusOK).JSON(fiber.Map{

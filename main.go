@@ -125,9 +125,14 @@ func main() {
 	var password, salt []byte
 	// Получаем логин, пароль и соль из конфигурации
 	if viper.GetBool("login.authConfig") {
+		var user string
 		login := viper.GetString("login.username")
 		if login == "" {
 			log.Fatal("Логин не может быть пустым")
+		}
+		db.Get(&user, "SELECT username FROM users WHERE username = ?", login)
+		if user == "" {
+			log.Fatal("Логин не найден")
 		}
 		password = []byte(viper.GetString("login.password"))
 		if len(password) == 0 {

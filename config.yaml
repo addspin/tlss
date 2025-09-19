@@ -8,7 +8,7 @@ app:
 
 # Временно для отладки
 login:
-  authConfig: false # true - использовать конфигурацию из config.yaml, false - использовать ручной ввод
+  authConfig: true # true - использовать конфигурацию из config.yaml, false - использовать ручной ввод
   username: admin
   password: 1gd5hfg5jdgsyrtf
   salt: mysecuresalt123

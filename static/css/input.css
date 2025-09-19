@@ -79,7 +79,7 @@ html, body {
 }
 
 
-@media (min-width: 1200px) {
+/* @media (min-width: 1200px) {
     .core-overview {
         padding-left: 2%;
         padding-right: 2%;
@@ -91,7 +91,7 @@ html, body {
         padding-left: 1%;
         padding-right: 1%;
     }
-}
+} */
 
 
 

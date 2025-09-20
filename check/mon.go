@@ -62,7 +62,7 @@ func checkMonitorTCP() {
 	Monitors.MutexMonitor.Lock()
 	defer Monitors.MutexMonitor.Unlock()
 	// интервал заданный в конфиге
-	checkTCPInterval := utils.SelectTime(viper.GetString("checkServer.unit"), viper.GetInt("checkServer.checkServerInterval"))
+	checkTCPInterval := utils.SelectTime(viper.GetString("monitor.unitTCP"), viper.GetInt("monitor.TCPInterval"))
 	// время сейчас
 	checkTCPTimeNow := time.Now()
 	// время разницу между временем сейчас и временем последнего пересоздания сертификатов

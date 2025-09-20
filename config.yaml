@@ -1,24 +1,69 @@
+################################## Настройки приложения
 app:
   port: 43000
   # hostname: tlss.lv.local
   hostname: localhost
-  protocol: http
+  protocol: http # http или https
   certFile: ./https/tlss.lv.local.pem
   keyFile: ./https/tlss.lv.local.key
 
-# Временно для отладки
+################################## Настройки авторизации
 login:
   authConfig: true # true - использовать конфигурацию из config.yaml, false - использовать ручной ввод
   username: admin
   password: 1gd5hfg5jdgsyrtf
   salt: mysecuresalt123
 
+################################## Настройки базы данных
 database:
   path: ./db/database.db
+
+################################## Место хранения корневого CA
+ca_tlss:
+  path_cert: ./root_ca_tlss/root_ca_tlss.pem
+  path_key: ./root_ca_tlss/root_ca_tlss.key
+
+################################## Первичные имена для корневого CA и подчиненного CA
+root_ca_tlss:
+  commonName: TLSS Root CA
+
+sub_ca_tlss:
+  commonName: TLSS Sub CA
+
+################################## Настройки CRL
+CAcrl:
+  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/der
+  unit: hours # minutes, seconds, hours
+  updateInterval: 24 # minutes 12 hours
+  version: 2
+
+################################## Выбираем где сохранять корневой сертификат и закрытый ключ
+CApath:
+  db: true # true - сохранять в базе данных
+  server: false # false - сохранять на сервере
+
+################################## Настройки SSH при добавлении сервера
+add_server:
+  unit: seconds # minutes, seconds, hours
+  waitingToConnect: 3 
+
+################################## Настройки чекеров
+# Проверка доступности TCP портов
 checkServer:
   unit: seconds # minutes, seconds, hours
   checkServerInterval: 10
 
+# Проверка валидности сертификатов
+certsValidation:
+  unit: seconds # minutes, seconds, hours
+  certsValidationInterval: 30 
+
+# Пересоздание сертификатов
+recreateCerts:
+  unit: seconds # minutes, seconds, hours
+  recreateCertsInterval: 5
+
+################################## Настройки мониторинга работы чекеров
 monitor:
   unitTCP: seconds # minutes, seconds, hours
   TCPInterval: 5
@@ -26,37 +71,3 @@ monitor:
   RecreateCertsInterval: 3
   unitCheckValidCerts: seconds # minutes, seconds, hours
   CheckValidCertsInterval: 10
-
-ca_tlss:
-  path_cert: ./root_ca_tlss/root_ca_tlss.pem
-  path_key: ./root_ca_tlss/root_ca_tlss.key
-
-root_ca_tlss:
-  commonName: TLSS Root CA
-
-sub_ca_tlss:
-  commonName: TLSS Sub CA
-
-add_server:
-  unit: seconds # minutes, seconds, hours
-  waitingToConnect: 3 
-
-
-CAcrl:
-  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/der
-  unit: hours # minutes, seconds, hours
-  updateInterval: 24 # minutes 12 hours
-  version: 2
-
-# выбираем где сохранять корневой сертификат и закрытый ключ
-CApath:
-  db: true
-  server: false
-
-certsValidation:
-  unit: seconds # minutes, seconds, hours
-  certsValidationInterval: 30 
-
-recreateCerts:
-  unit: seconds # minutes, seconds, hours
-  recreateCertsInterval: 5

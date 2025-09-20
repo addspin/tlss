@@ -12,9 +12,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Глобальная переменная для отслеживания статуса инициализации
-// var SystemInitialized bool = false
-
 func LoginControll(c fiber.Ctx) error {
 	// ---------------------------------------Database inicialization for add server
 	database := viper.GetString("database.path")
@@ -133,13 +130,6 @@ func LoginControll(c fiber.Ctx) error {
 				"redirect": "/overview",
 			})
 		}
-
-		// Перенаправление после авторизации
-		// c.Set("HX-Redirect", "/add_server")
-		// return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		// 	"status":   "success",
-		// 	"redirect": "/add_server",
-		// })
 	}
 	return nil
 }

@@ -286,7 +286,7 @@ func main() {
 	}
 
 	//---------------------------------------Start Monitor
-	TCPInterval := utils.SelectTime(viper.GetString("checkServer.unit"), viper.GetInt("checkServer.checkServerInterval"))
+	TCPInterval := utils.SelectTime(viper.GetString("monitor.unitTCP"), viper.GetInt("monitor.TCPInterval"))
 	RecreateCertsInterval := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.recreateCertsInterval"))
 	CheckValidCertsInterval := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.certsValidationInterval"))
 	go check.Monitore(TCPInterval, RecreateCertsInterval, CheckValidCertsInterval)

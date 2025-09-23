@@ -41,3 +41,5 @@ vendor
 ca_tlss/*
 /root_ca_tlss/*
 !/root_ca_tlss/.gitkeep
+/logs/*
+!/logs/.gitkeep

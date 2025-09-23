@@ -1,11 +1,21 @@
 ################################## Настройки приложения
 app:
   port: 43000
-  # hostname: tlss.lv.local
-  hostname: localhost
-  protocol: http # http или https
+  hostname: tlss.lv.local
+  # hostname: localhost
+  protocol: https # http или https
   certFile: ./https/tlss.lv.local.pem
   keyFile: ./https/tlss.lv.local.key
+
+################################## Настройки логирования
+logging:
+  level: info # debug, info, warn, error
+  format: text # json, text
+  output: file # file, stdout, both
+  file: logs/tlss.log
+  maxSize: 100 # MB
+  maxBackups: 3
+  maxAge: 28 # days
 
 ################################## Настройки авторизации
 login:

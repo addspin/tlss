@@ -1,6 +1,9 @@
 package routes
 
 import (
+	"embed"
+	"io/fs"
+
 	"github.com/addspin/tlss/controllers"
 	caControllers "github.com/addspin/tlss/controllers/caControllers"
 	usersCertControllers "github.com/addspin/tlss/controllers/usersCertControllers"
@@ -10,12 +13,34 @@ import (
 )
 
 // Setup настраивает маршруты для приложения
-func Setup(app *fiber.App) {
+func Setup(app *fiber.App, staticFS embed.FS) {
 	// Apply middleware to all routes
 	app.Use(middleware.AuthMiddleware())
 
 	// Public static files
-	app.Get("/*", static.New("./static"))
+	staticSub, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		panic(err)
+	}
+
+	// Основной маршрут для статических файлов
+	app.Use("/static", static.New("", static.Config{
+		FS: staticSub,
+	}))
+
+	// Дополнительные маршруты для обратной совместимости
+	// app.Use("/css", static.New("css", static.Config{
+	// 	FS: staticSub,
+	// }))
+	// app.Use("/js", static.New("js", static.Config{
+	// 	FS: staticSub,
+	// }))
+	// app.Use("/fonts", static.New("fonts", static.Config{
+	// 	FS: staticSub,
+	// }))
+	// app.Use("/svg", static.New("svg", static.Config{
+	// 	FS: staticSub,
+	// }))
 
 	// Public routes (no auth required)
 	app.Get("/overview", controllers.Overview)

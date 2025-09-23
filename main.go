@@ -2,8 +2,13 @@ package main
 
 import (
 	"crypto/rand"
+	"embed"
 	"fmt"
+	"io/fs"
 	"log"
+	"log/slog"
+	"net/http"
+	"os"
 
 	"github.com/addspin/tlss/check"
 	"github.com/addspin/tlss/crl"
@@ -18,6 +23,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 )
+
+//go:embed template/*
+var templateFS embed.FS
+
+//go:embed static
+var staticFS embed.FS
 
 const savePrivateFileTo string = "id_rsa_tlss"
 const savePublicFileTo string = "id_rsa_tlss.pub"
@@ -34,14 +45,37 @@ func main() {
 		log.Fatalf("Error reading config file: %s", err)
 	}
 
+	// Настраиваем структурированное логирование
+	logFile, err := utils.SetupSlogLogger()
+	if err != nil {
+		slog.Error("Ошибка настройки логирования", "error", err)
+		// Продолжаем с стандартным логированием
+	}
+	if logFile != nil {
+		defer logFile.Close()
+	}
+
 	database := viper.GetString("database.path")
 	//---------------------------------------Database inicialization
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Ошибка подключения к базе данных", "error", err)
+		os.Exit(1)
 	}
-	log.Println("Connected to database: ", database)
+	slog.Info("Подключение к базе данных успешно", "database", database)
 	defer db.Close()
+
+	// init
+	// Создание необходимых директорий если они не существуют
+	dirs := []string{"db", "root_ca_tlss", "https", "crlFile", "logs"}
+	for _, dir := range dirs {
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			slog.Error("Ошибка создания директории", "directory", dir, "error", err)
+		} else {
+			slog.Debug("Директория создана или уже существует", "directory", dir)
+		}
+	}
 
 	// create add_server tables in db (хранит данные серверов)
 	_, err = db.Exec(models.SchemaServer)
@@ -123,16 +157,11 @@ func main() {
 		log.Println(err.Error())
 	}
 	var password, salt []byte
-	// Получаем логин, пароль и соль из конфигурации
+	// Получаем логин, пароль и соль из конфигурации для отладки
 	if viper.GetBool("login.authConfig") {
-		var user string
 		login := viper.GetString("login.username")
 		if login == "" {
 			log.Fatal("Логин не может быть пустым")
-		}
-		db.Get(&user, "SELECT username FROM users WHERE username = ?", login)
-		if user == "" {
-			log.Fatal("Логин не найден")
 		}
 		password = []byte(viper.GetString("login.password"))
 		if len(password) == 0 {
@@ -309,7 +338,14 @@ func main() {
 	go check.RecreateCerts(recreateCertsInterval)
 
 	//---------------------------------------Create a new engine Template
-	engine := html.New("./template", ".html")
+	// Создаем поддиректорию для шаблонов
+	templateFiles, err := fs.Sub(templateFS, "template")
+	if err != nil {
+		log.Fatal("Ошибка при создании файловой системы для шаблонов:", err)
+	}
+
+	// Инициализируем движок шаблонов с встроенными файлами
+	engine := html.NewFileSystem(http.FS(templateFiles), ".html")
 
 	//---------------------------------------Pass the engine to the Views
 	app := fiber.New(fiber.Config{
@@ -321,20 +357,36 @@ func main() {
 	}))
 
 	// Настраиваем маршруты
-	routes.Setup(app)
+	routes.Setup(app, staticFS)
 
 	// Определяем, использовать ли HTTPS
 	if viper.GetString("app.protocol") == "https" {
 		// Запуск с TLS (HTTPS)
 		certFile := viper.GetString("app.certFile")
 		keyFile := viper.GetString("app.keyFile")
+		address := viper.GetString("app.hostname") + ":" + viper.GetString("app.port")
 
-		log.Fatal(app.Listen(viper.GetString("app.hostname")+":"+viper.GetString("app.port"), fiber.ListenConfig{
+		slog.Info("Запуск TLSS сервера с HTTPS",
+			"address", address,
+			"cert_file", certFile,
+			"key_file", keyFile)
+
+		if err := app.Listen(address, fiber.ListenConfig{
 			CertFile:    certFile,
 			CertKeyFile: keyFile,
-		}))
+		}); err != nil {
+			slog.Error("Ошибка запуска HTTPS сервера", "error", err)
+			os.Exit(1)
+		}
 	} else {
 		// Запуск без TLS (HTTP)
-		log.Fatal(app.Listen(viper.GetString("app.hostname") + ":" + viper.GetString("app.port")))
+		address := viper.GetString("app.hostname") + ":" + viper.GetString("app.port")
+
+		slog.Info("Запуск TLSS сервера с HTTP", "address", address)
+
+		if err := app.Listen(address); err != nil {
+			slog.Error("Ошибка запуска HTTP сервера", "error", err)
+			os.Exit(1)
+		}
 	}
 }

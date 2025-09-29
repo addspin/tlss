@@ -27,7 +27,7 @@ func GenerateCombinedCACRL(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	err = crl.CombinedCRL(db)
@@ -50,7 +50,7 @@ func GetBundleCACRL(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Connected to database: ", database)
+
 	defer db.Close()
 	var crlData models.CRL
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Bundle'")
@@ -93,7 +93,7 @@ func GetBundleCAPemCRL(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	var crlData models.CRL
@@ -119,7 +119,7 @@ func GetRootCACRL(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Connected to database: ", database)
+
 	defer db.Close()
 	// Используем только DER CRL файл для серверных и клиентских сертификатов подписанных Sub CA
 	var crlData models.CRL
@@ -153,7 +153,7 @@ func GetRootCAPemCRL(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Connected to database: ", database)
+
 	defer db.Close()
 	// Используем только PEM CRL файл для серверных и клиентских сертификатов подписанных Sub CA
 	var crlData models.CRL
@@ -185,7 +185,7 @@ func GetSubCACRL(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Connected to database: ", database)
+
 	defer db.Close()
 	// Используем только DER CRL файл для серверных и клиентских сертификатов подписанных Sub CA
 	var crlData models.CRL
@@ -219,7 +219,7 @@ func GetSubCAPemCRL(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	var crlData models.CRL

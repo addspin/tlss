@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/addspin/tlss/models"
@@ -18,7 +17,6 @@ func AddServerEntityController(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
 	defer db.Close()
 
 	if c.Method() == "POST" {
@@ -98,7 +96,7 @@ func AddServerEntityController(c fiber.Ctx) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("serverEntityList", serverEntityList)
+
 		return c.Render("add_server/addServerEntity", fiber.Map{
 			"Title":            "Add server entity",
 			"serverEntityList": &serverEntityList,

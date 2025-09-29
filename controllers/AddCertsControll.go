@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -22,7 +21,6 @@ func AddCertsControll(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
 	defer db.Close()
 
 	if c.Method() == "POST" {
@@ -123,7 +121,6 @@ func AddCertsControll(c fiber.Ctx) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("serverList-certs", serverList)
 
 		return c.Render("add_certs/addCerts", fiber.Map{
 			"Title":      "Add certs",

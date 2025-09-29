@@ -85,7 +85,7 @@ func checkMonitorRecreateCerts() {
 	recreateCertsInterval := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.recreateCertsInterval"))
 	recreateCertsTimeNow := time.Now()
 	recreateDuration := recreateCertsTimeNow.Sub(Monitors.RecreateCerts)
-	log.Println("CheckMonitor RecreateCerts: Время разницы:", recreateDuration)
+	// log.Println("CheckMonitor RecreateCerts: Время разницы:", recreateDuration)
 	if recreateDuration > recreateCertsInterval {
 		Monitors.RecreateCertStatus = false // чекер не работает
 		log.Println("CheckMonitor RecreateCerts: Чекер не работает")
@@ -101,7 +101,7 @@ func checkMonitorCheckValidCerts() {
 	CheckValidCertsInterval := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.certsValidationInterval"))
 	CheckValidCertsTimeNow := time.Now()
 	CheckValidCertsDuration := CheckValidCertsTimeNow.Sub(Monitors.CheckValidCerts)
-	log.Println("CheckMonitor CheckValidCerts: Время разницы:", CheckValidCertsDuration)
+	// log.Println("CheckMonitor CheckValidCerts: Время разницы:", CheckValidCertsDuration)
 	if CheckValidCertsDuration > CheckValidCertsInterval {
 		Monitors.CheckValidCertsStatus = false // чекер не работает
 		log.Println("CheckMonitor CheckValidCerts: Чекер не работает")

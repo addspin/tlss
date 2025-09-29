@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -19,15 +18,12 @@ func RevokeCert(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	if c.Method() == "POST" {
 		data := new(models.CertsData)
-
 		c.Bind().JSON(data)
-		log.Println("id data:", data.Id)
-		log.Println("server_id data:", data.ServerId)
 
 		err := c.Bind().JSON(data)
 		if err != nil {

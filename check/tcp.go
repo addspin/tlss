@@ -1,7 +1,6 @@
 package check
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -32,7 +31,6 @@ func (s *StatusCodeTcp) TCPPortAvailable(timeTicker time.Duration) {
 		log.Printf("TCP checker: Ошибка открытия базы данных: %v", err)
 		return
 	}
-	fmt.Println("TCP checker: Подключено к базе данных: ", database)
 	defer db.Close()
 
 	var checkServerList bool

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/addspin/tlss/models"
@@ -18,15 +17,10 @@ func RollbackUserCert(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
 	defer db.Close()
 
 	if c.Method() == "POST" {
 		data := new(models.UserCertsData)
-
-		c.Bind().JSON(data)
-		log.Println("id data:", data.Id)
-		log.Println("entity_id data:", data.EntityId)
 
 		err := c.Bind().JSON(data)
 		if err != nil {

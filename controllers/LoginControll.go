@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/addspin/tlss/crypts"
@@ -20,7 +19,7 @@ func LoginControll(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	if c.Method() == "GET" {
@@ -34,7 +33,6 @@ func LoginControll(c fiber.Ctx) error {
 		data := new(models.Users)
 
 		c.Bind().JSON(data)
-		log.Println(data.Username, data.Password)
 
 		err := c.Bind().JSON(data)
 		if err != nil {

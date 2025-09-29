@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/addspin/tlss/models"
@@ -20,14 +19,11 @@ func AddEntityController(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	if c.Method() == "POST" {
 		data := new(models.EntityData)
-
-		c.Bind().JSON(data)
-		log.Println(data.EntityName, data.EntityDescription)
 
 		err := c.Bind().JSON(data)
 		if err != nil {
@@ -109,14 +105,4 @@ func AddEntityController(c fiber.Ctx) error {
 		"status":  "error",
 		"message": "Method not allowed",
 	})
-	// entityList := []models.EntityData{}
-	// error := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
-	// if error != nil {
-	// 	log.Fatal(err)
-	// }
-	// log.Println("entityList", entityList)
-	// return c.Render("add_entity/addEntity", fiber.Map{
-	// 	"Title":      "Add entity",
-	// 	"entityList": &entityList,
-	// })
 }

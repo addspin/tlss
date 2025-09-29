@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 
@@ -22,13 +21,11 @@ func AddServerControll(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
 	defer db.Close()
 
 	if c.Method() == "POST" {
 		data := new(models.ServerData)
 		c.Bind().JSON(data)
-		log.Println(data.Hostname, data.Username, data.Password, data.TlssSSHport, data.Path)
 
 		err := c.Bind().JSON(data)
 		if err != nil {
@@ -97,7 +94,6 @@ func AddServerControll(c fiber.Ctx) error {
 				if err != nil {
 					log.Fatal(err)
 				}
-				log.Println("serverList", serverList)
 				return c.Render("add_server/addServer", fiber.Map{
 					"Title":      "Add server",
 					"serverList": &serverList,
@@ -111,7 +107,6 @@ func AddServerControll(c fiber.Ctx) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("serverList", serverList)
 		return c.Render("add_server/addServer", fiber.Map{
 			"Title":      "Add server",
 			"serverList": &serverList,

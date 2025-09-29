@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -21,7 +20,7 @@ func AddUserCertsController(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	if c.Method() == "POST" {
@@ -33,7 +32,7 @@ func AddUserCertsController(c fiber.Ctx) error {
 		// log.Println(data.Algorithm, data.KeyLength, data.TTL, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email, data.SAN)
 		if err != nil {
 			log.Printf("AddUserCertsController: %v", err)
-			// log.Printf("request: %s", string(c.Body()))
+
 			return c.Status(400).JSON(
 				fiber.Map{"status": "error",
 					"message": "Cannot parse JSON!",
@@ -107,7 +106,7 @@ func AddUserCertsController(c fiber.Ctx) error {
 		if err != nil {
 			log.Printf("AddUserCertsController: %v", err)
 		}
-		log.Println("entityList", entityList)
+
 		return c.Render("add_user_certs/addUserCerts", fiber.Map{
 			"Title":      "Add clients certs",
 			"entityList": entityList,
@@ -129,23 +128,7 @@ func UserCertListController(c fiber.Ctx) error {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	// if c.Method() == "POST" {
-	// 	// Получаем ID сущности из запроса
-	// 	entityId := c.Query("entityId")
-	// 	// Получаем список сертификатов
-	// 	certList := []models.UserCerts{}
-	// 	if entityId != "" {
-	// 		// Если указан ID сущности, фильтруем сертификаты по сущности
-	// 		err = db.Select(&certList, "SELECT id, entity_id, algorithm, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, password, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM user_certs WHERE entity_id = ?", entityId)
-	// 		if err != nil {
-	// 			log.Fatal(err)
-	// 		}
-	// 	}
-	// 	// Рендерим шаблон списка сертификатов
-	// 	return c.Render("add_user_certs/userCertList", fiber.Map{
-	// 		"certList": certList,
-	// 	})
-	// }
+
 	if c.Method() == "GET" {
 		// Получаем ID сущности из запроса
 		EntityId := c.Query("EntityId")
@@ -158,7 +141,7 @@ func UserCertListController(c fiber.Ctx) error {
 				log.Fatal(err)
 			}
 		}
-		// log.Println("certList", certList)
+
 		// Преобразуем формат времени из RFC3339 в 02.01.2006 15:04:05
 		for i := range certList {
 			// Парсим время создания сертификата

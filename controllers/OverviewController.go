@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/addspin/tlss/check"
@@ -27,7 +26,6 @@ func Overview(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
 	defer db.Close()
 
 	if c.Method() == "GET" {
@@ -108,7 +106,6 @@ func Overview(c fiber.Ctx) error {
 		tcpCheck := check.Monitors.CheckTCPStatus
 		taskList := map[string]bool{"Recreate certs": recreateCertCheck, "Valid certs": validCertsCheck, "Server check": tcpCheck}
 
-		// log.Println("serverList", serverList)
 		return c.Render("overview/overview", fiber.Map{
 			"Title":             "Overview",
 			"serverList":        &serverList,

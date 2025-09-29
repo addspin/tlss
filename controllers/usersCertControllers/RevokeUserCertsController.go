@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 	"time"
 
@@ -20,32 +19,14 @@ func RevokeUserCertsController(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
 	defer db.Close()
 
-	// if c.Method() == "POST" {
-	// 	data := new(models.Certs)
-
-	// 	c.Bind().JSON(data)
-	// 	// log.Println(data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email)
-
-	// 	err := c.Bind().JSON(data)
-	// 	if err != nil {
-	// 		return c.Status(400).JSON(
-	// 			fiber.Map{"status": "error",
-	// 				"message": "Cannot parse JSON!",
-	// 				"data":    err},
-	// 		)
-	// 	}
-
-	// }
 	if c.Method() == "GET" {
 		entityList := []models.EntityData{}
 		err := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("entityList-certs", entityList)
 
 		return c.Render("user_revoke_certs/revokeUserCerts", fiber.Map{
 			"Title":      "Revoke clients certs",

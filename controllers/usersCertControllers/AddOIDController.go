@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/addspin/tlss/models"
@@ -20,14 +19,11 @@ func AddOIDController(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	if c.Method() == "POST" {
 		data := new(models.OIDData)
-
-		c.Bind().JSON(data)
-		log.Println(data.OIDName, data.OIDDescription)
 
 		err := c.Bind().JSON(data)
 		if err != nil {
@@ -86,7 +82,7 @@ func AddOIDController(c fiber.Ctx) error {
 			if error != nil {
 				log.Fatal(err)
 			}
-			log.Println("oidList", oidList)
+
 			return c.Render("add_oid/addOID", fiber.Map{
 				"Title":   "Add OID",
 				"oidList": &oidList,
@@ -99,7 +95,7 @@ func AddOIDController(c fiber.Ctx) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Println("oidList", oidList)
+
 		return c.Render("add_oid/addOID", fiber.Map{
 			"Title":   "Add OID",
 			"oidList": &oidList,

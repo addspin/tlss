@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/addspin/tlss/models"
@@ -18,17 +17,13 @@ func RemoveCert(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	if c.Method() == "POST" {
 		data := new(models.CertsData)
-
-		// c.Bind().JSON(data)
-		// log.Println("id data:", data.Id)
-
 		err := c.Bind().JSON(data)
-		log.Println("id data:", data.Id)
+
 		if err != nil {
 			return c.Status(400).JSON(
 				fiber.Map{"status": "error",

@@ -11,7 +11,7 @@ app:
 logging:
   level: info # debug, info, warn, error
   format: text # json, text
-  output: file # file, stdout, both
+  output: stdout # file, stdout, both
   file: logs/tlss.log
   maxSize: 100 # MB
   maxBackups: 3

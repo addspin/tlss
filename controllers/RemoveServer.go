@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/addspin/tlss/models"
@@ -18,14 +17,11 @@ func RemoveServer(c fiber.Ctx) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Connected to database: ", database)
+
 	defer db.Close()
 
 	if c.Method() == "POST" {
 		data := new(models.ServerData)
-
-		// c.Bind().JSON(data)
-		// log.Println("id data:", data.Id)
 
 		err := c.Bind().JSON(data)
 		if err != nil {

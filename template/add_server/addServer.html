@@ -32,9 +32,9 @@
         </ol></div>
         
       <div class="core-servers">
-      <form class="" 
+      <form class="" id="add-server-form"
         hx-post="/add_server" 
-        hx-target="#body" 
+        hx-swap="none"
         hx-ext="json-enc-custom" 
         parse-types="true"
         hx-on::after-request="
@@ -51,6 +51,31 @@
                   text: response.message,
                   confirmButtonColor: '#3085d6'
                 });
+              } else if (response.status === 'success') {
+                Swal.fire({
+                  showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                  hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                  customClass: 'custom-alert',
+                  icon: 'success',
+                  title: 'Успешно',
+                  text: response.message,
+                  confirmButtonColor: '#3085d6'
+                }).then(() => {
+                  // Обновляем список серверов
+                  htmx.ajax('GET', '/server_list', {
+                    target: '#response', 
+                    swap: 'innerHTML'
+                  });
+                  
+                  // Сбрасываем форму
+                  document.getElementById('add-server-form').reset();
+                  // Сбрасываем select в серое состояние
+                  const selectEl = document.getElementById('select-ssh-key');
+                  if (selectEl) {
+                    selectEl.value = '';
+                    selectEl.setAttribute('data-placeholder', 'true');
+                  }
+                });
               }
             } catch (e) {}
           }
@@ -65,13 +90,21 @@
               <input type="text" class="c_input " id="hostname" name="hostname" placeholder="Hostname or ip" required>
             </div>
             <div class="col-md-4">
-              <input type="password" class="c_input" id="password" name="password" placeholder="Password" data-string="true" required>
+              <input type="password" class="c_input" id="password" name="password" placeholder="Password" data-string="true">
             </div>
             <div class="col-md-4">
               <input type="text" class="c_input " id="tlssSSHport" name="tlssSSHport" placeholder="SSH port" required>
             </div>
             <div class="col-md-4">
               <input type="text" class="c_input" id="path" name="path" placeholder="Path certs" required>
+            </div>
+            <div class="col-md-4">
+                    <select data-placeholder="true" id="select-ssh-key" name="sshKey" class="select">  
+                      <option value="" disabled selected hidden>Select SSH key</option>
+                      {{ range .sshKeyList }}
+                      <option value="{{ .ServerName }}">{{ .ServerName }}</option>
+                      {{ end }}
+                    </select>
             </div>
             <!-- <div>Создайте пользователя на сервере и используйте его логин и пароль для подключения</div> -->
             <div class="col-12">

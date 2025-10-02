@@ -1,19 +1,17 @@
 package crypts
 
 import (
-	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io"
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/addspin/tlss/models"
 	"github.com/addspin/tlss/utils"
+	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh"
 )
@@ -66,146 +64,77 @@ func GeneratePublicKey(privatekey *rsa.PublicKey) ([]byte, error) {
 	return pubKeyBytes, nil
 }
 
-func TestFileCertsSSHTLSS(privCert, pubCert string) (bool, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return false, err
-	}
-	sshDir := filepath.Join(home, ".ssh")
+// - error: an error if there was a problem adding the public key or connecting to the remote server.
+func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, path, sshKeyName string) error {
 
-	files, err := os.ReadDir(sshDir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var privFiles int
-	var pubFiles int
-	for _, file := range files {
-		if file.Name() == privCert {
-			privFiles++
-		}
-		if file.Name() == pubCert {
-			pubFiles++
-		}
-	}
-	if privFiles == 0 && pubFiles > 0 {
-		err := os.Remove(filepath.Join(sshDir, pubCert))
+	var key models.SSHKey
+	if sshKeyName != "" {
+		err := db.Get(&key, "SELECT * FROM ssh_key WHERE server_name = ?", sshKeyName)
 		if err != nil {
-			return false, err
+			return fmt.Errorf("не удалось извлечь сертфиикаты: %w", err)
 		}
-		pubFiles = 0
-	}
-	if privFiles > 0 && pubFiles == 0 {
-		err := os.Remove(filepath.Join(sshDir, privCert))
+		aes := Aes{}
+		decryptPrivKey, err := aes.Decrypt(([]byte(key.PrivateKey)), AesSecretKey.Key)
 		if err != nil {
-			return false, err
+			log.Fatalf("rsaSSH: ошибка расшифровки приватного ключа %v", err)
 		}
-		privFiles = 0
-	}
-	if privFiles == 0 && pubFiles == 0 {
-		log.Println("All TLSS certificates for SSH - created")
-		return true, err
-	}
-	log.Println("All TLSS certificates for SSH - already exist")
-	return false, err
-
-}
-
-// writePemToFile writes keys to a file
-func WriteKeyToFile(keyBytesPriv, keyBytesPub []byte, saveFileToPriv, saveFileToPub string) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-
-	sshDir := filepath.Join(home, ".ssh")
-	err = os.MkdirAll(sshDir, 0700)
-	if err != nil {
-		return err
-	}
-
-	ok, err := TestFileCertsSSHTLSS(saveFileToPriv, saveFileToPub)
-	if err != nil {
-		return err
-	}
-	if ok {
-		// Create private certificate
-		filePriv, err := os.OpenFile(filepath.Join(sshDir, saveFileToPriv), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		log.Println("decryptPrivKey: ", string(decryptPrivKey))
+		signer, err := ssh.ParsePrivateKey(decryptPrivKey)
 		if err != nil {
-			return err
+			log.Fatalf("rsaSSH: ошибка, невозможно получить приватный ключ %v", err)
 		}
-		defer filePriv.Close()
-
-		_, err = io.Copy(filePriv, bytes.NewReader(keyBytesPriv))
+		log.Println("signer: ", signer)
+		keyConfig := &ssh.ClientConfig{
+			User: username,
+			Auth: []ssh.AuthMethod{
+				ssh.PublicKeys(signer),
+			},
+			// HostKeyCallback: ssh.FixedHostKey(parsedPubKey),
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			Timeout:         utils.SelectTime(viper.GetString("add_server.unit"), viper.GetInt("add_server.waitingToConnect")),
+		}
+		client, err := ssh.Dial("tcp", hostname+":"+tlssSSHport, keyConfig)
 		if err != nil {
-			return err
+			log.Println("addServer: ошибка подключения к серверу:", err)
+			return fmt.Errorf("ошибка подключения к серверу: %w", err)
 		}
+		defer client.Close()
 
-		// Create public certificate
-		filePub, err := os.OpenFile(filepath.Join(sshDir, saveFileToPub), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		err = testEndCopy(client, hostname, path, key)
 		if err != nil {
-			return err
+			return fmt.Errorf("addServer: key:ошибка тестирования пути и копирования ключа: %w", err)
 		}
-		defer filePub.Close()
-
-		_, err = io.Copy(filePub, bytes.NewReader(keyBytesPub))
+	}
+	if password != "" {
+		err := db.Get(&key, "SELECT * FROM ssh_key WHERE server_name = ?", "Default")
 		if err != nil {
-			return err
+			return fmt.Errorf("не удалось извлечь сертфиикаты: %w", err)
 		}
+		keyConfig := &ssh.ClientConfig{
+			User: username,
+			Auth: []ssh.AuthMethod{
+				ssh.Password(password),
+			},
+			// HostKeyCallback: ssh.FixedHostKey(parsedPubKey),
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			Timeout:         utils.SelectTime(viper.GetString("add_server.unit"), viper.GetInt("add_server.waitingToConnect")),
+		}
+		client, err := ssh.Dial("tcp", hostname+":"+tlssSSHport, keyConfig)
+		if err != nil {
+			log.Println("addServer: ошибка подключения к серверу:", err)
+			return fmt.Errorf("ошибка подключения к серверу: %w", err)
+		}
+		defer client.Close()
 
+		err = testEndCopy(client, hostname, path, key)
+		if err != nil {
+			return fmt.Errorf("addServer: password: ошибка тестирования пути и копирования ключа: %w", err)
+		}
 	}
 	return nil
 }
 
-// AddAuthorizedKeys adds a public key to the authorized_keys file on a remote server.
-//
-// Parameters:
-//
-// - Hostname: the hostname or IP address of the remote server.
-//
-// - tlssSSHport: the SSH port number on the remote server.
-//
-// - username: the username to authenticate with on the remote server.
-//
-// - password: the password to authenticate with on the remote server.
-//
-// Returns:
-//
-// - error: an error if there was a problem adding the public key or connecting to the remote server.
-func AddAuthorizedKeys(hostname, tlssSSHport, username, password, path string) error {
-	// var hostKey ssh.PublicKey
-
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-
-	sshDir := filepath.Join(home, ".ssh")
-
-	pubKey, err := os.ReadFile(filepath.Join(sshDir, "id_rsa_tlss.pub"))
-	if err != nil {
-		return err
-	}
-	// parsedPubKey, _, _, _, err := ssh.ParseAuthorizedKey(pubKey)
-	// if err != nil {
-	// 	return err
-	// }
-
-	config := &ssh.ClientConfig{
-		User: username,
-		Auth: []ssh.AuthMethod{
-			ssh.Password(password),
-		},
-		// HostKeyCallback: ssh.FixedHostKey(parsedPubKey),
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         utils.SelectTime(viper.GetString("add_server.unit"), viper.GetInt("add_server.waitingToConnect")),
-	}
-	client, err := ssh.Dial("tcp", hostname+":"+tlssSSHport, config)
-	if err != nil {
-		log.Println("addServer: ошибка подключения к серверу:", err)
-		return fmt.Errorf("ошибка подключения к серверу: %w", err)
-	}
-	defer client.Close()
-
+func testEndCopy(client *ssh.Client, hostname, path string, key models.SSHKey) error {
 	TestPathCert, err := client.NewSession()
 	if err != nil {
 		return fmt.Errorf("addServer: ошибка создания сессии: %w", err)
@@ -226,32 +155,37 @@ func AddAuthorizedKeys(hostname, tlssSSHport, username, password, path string) e
 	defer sessionTestCert.Close()
 
 	// add cert to authorized_keys
-	cmdAddCert := "echo '" + string(pubKey) + "' >> ~/.ssh/authorized_keys"
+	cmdAddCert := "echo '" + string(key.PublicKey) + "' >> ~/.ssh/authorized_keys"
 	// test folder and certs
-	cmdTestCert := "mkdir -p ~/.ssh && chmod 0700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 0700 ~/.ssh/authorized_keys && awk -v var='" + string(pubKey) + "' 'NF>0 && /.*'${var}'.*/ {print $0}'  ~/.ssh/authorized_keys | wc -l"
-
-	output, err := sessionTestCert.CombinedOutput(cmdTestCert)
-	if err != nil {
-		return fmt.Errorf("addServer: ошибка выполнения команды sessionTestCert: %w", err)
+	pubKey := strings.TrimSpace(string(key.PublicKey))
+	// Извлекаем основную часть ключа (тип и ключ без комментария) - первые два поля
+	keyParts := strings.Fields(pubKey)
+	if len(keyParts) < 2 {
+		return fmt.Errorf("addServer: некорректный формат публичного ключа")
 	}
+	keyCore := keyParts[0] + " " + keyParts[1] // ssh-rsa + base64_key
+	// Ищем по основной части ключа, игнорируя комментарий
+	cmdTestCert := "mkdir -p ~/.ssh && chmod 0700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 0600 ~/.ssh/authorized_keys && grep -qF '" + keyCore + "' ~/.ssh/authorized_keys 2>/dev/null"
+
+	err = sessionTestCert.Run(cmdTestCert)
+	keyExists := (err == nil) // Если команда успешна - ключ найден
 	sessionTestCert.Close()
 
-	// log.Println(string(output))
-	outputString := string(output)
-	outputString = strings.TrimSpace(outputString)
 	sessionAddCert, err := client.NewSession()
 	if err != nil {
 		return fmt.Errorf("addServer: ошибка создания сессии: %w", err)
 	}
 	defer sessionAddCert.Close()
 
-	if outputString == "0" {
+	if !keyExists {
 		err := sessionAddCert.Run(cmdAddCert)
 		if err != nil {
 			return fmt.Errorf("addServer: ошибка выполнения команды sessionAddCert: %w", err)
 		}
+		log.Println("rsaSSH: ключ успешно добавлен на сервер ", hostname)
 		sessionAddCert.Close()
+	} else {
+		log.Println("rsaSSH: ключ уже существует, пропускаем добавление на сервер ", hostname)
 	}
-
 	return nil
 }

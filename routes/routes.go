@@ -64,6 +64,7 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	// Protected routes (auth required)
 	app.Get("/add_server", controllers.AddServerControll)                 // Получение списка серверов
 	app.Post("/add_server", controllers.AddServerControll)                // Добавление сервера
+	app.Get("/server_list", controllers.ServerListController)             // Получение списка серверов
 	app.Get("/add_server_entity", controllers.AddServerEntityController)  // Получение списка сущностей для серверных сертификатов
 	app.Post("/add_server_entity", controllers.AddServerEntityController) // Добавление сущности для серверных сертификатов
 	app.Post("/remove_server", controllers.RemoveServer)

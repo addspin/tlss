@@ -19,6 +19,7 @@ type ServerData struct {
 	TlssSSHport int    `json:"tlssSSHport"`
 	Path        string `json:"path"`
 	Description string `json:"description"`
+	SSHKey      string `json:"sshKey"`
 }
 
 var SchemaServer = `

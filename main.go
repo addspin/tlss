@@ -2,7 +2,9 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/x509"
 	"embed"
+	"encoding/pem"
 	"fmt"
 	"io/fs"
 	"log"
@@ -123,6 +125,12 @@ func main() {
 
 	// create SchemaCRL tables in db (хранит данные CRL)
 	_, err = db.Exec(models.SchemaCRL)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	// create SchemaSSHKey tables in db (хранит данные ssh ключей)
+	_, err = db.Exec(models.SchemaSSHKey)
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -289,22 +297,42 @@ func main() {
 	}
 
 	//---------------------------------------Generate ssh key pair
-	privateKey, err := crypts.GeneratePrivateKey(bitSize)
+	var testKey models.SSHKey
+	err = db.Get(&testKey, "SELECT * FROM ssh_key WHERE server_name = ?", "Default")
 	if err != nil {
-		log.Fatal(err.Error())
+		privateKey, err := crypts.GeneratePrivateKey(bitSize)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		keyPEM := pem.EncodeToMemory(&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+		})
+		// privateKeyBytes := crypts.EncodePrivateKeyToPEM(privateKey)
+
+		publicKeyBytes, err := crypts.GeneratePublicKey(&privateKey.PublicKey)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		// privateKeyBytes := crypts.EncodePrivateKeyToPEM(privateKey)
+		encryptedKey, err := aes.Encrypt(keyPEM, crypts.AesSecretKey.Key)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		var sshKey models.SSHKey
+		err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE server_name = ?", "Default")
+		if err != nil {
+			// Если записи нет, вставляем новую
+			db.Exec("INSERT INTO ssh_key (server_name, public_key, private_key) VALUES (?, ?, ?)", "Default", string(publicKeyBytes), string(encryptedKey))
+		}
 	}
 
-	publicKeyBytes, err := crypts.GeneratePublicKey(&privateKey.PublicKey)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	privateKeyBytes := crypts.EncodePrivateKeyToPEM(privateKey)
-
-	err = crypts.WriteKeyToFile(privateKeyBytes, []byte(publicKeyBytes), savePrivateFileTo, savePublicFileTo)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	// err = crypts.WriteKeyToFile(privateKeyBytes, []byte(publicKeyBytes), savePrivateFileTo, savePublicFileTo)
+	// if err != nil {
+	// 	log.Fatal(err.Error())
+	// }
 
 	// Извекаем CA из базы данных для использования в разных пакетах
 	err = crypts.ExtractCA.ExtractSubCA(db)

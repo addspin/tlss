@@ -35,17 +35,24 @@ func AddServerControll(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		if data.Hostname == "" || data.Username == "" || data.Password == "" || data.TlssSSHport == 0 || data.Path == "" {
+		if data.Hostname == "" || data.Username == "" || data.TlssSSHport == 0 || data.Path == "" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Missing required fields",
 			})
 		}
+		if data.SSHKey != "" && data.Password != "" {
+			return c.Status(400).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Выберите что то одно - Пароль или Ключ, если выбран пароль ключ Default будет скопирован на сервер",
+			})
+		}
+
 		// Добавление сервера
-		if data.Hostname != "" && data.Username != "" && data.Password != "" && data.TlssSSHport != 0 && data.Path != "" {
+		if data.Hostname != "" && data.Username != "" && data.TlssSSHport != 0 && data.Path != "" || data.SSHKey != "" || data.Password != "" {
 			// Добавить ключ доступа на удленный сервер
 			tlsPort := strconv.Itoa(data.TlssSSHport)
-			err = crypts.AddAuthorizedKeys(data.Hostname, tlsPort, data.Username, data.Password, data.Path)
+			err = crypts.AddAuthorizedKeys(db, data.Hostname, tlsPort, data.Username, data.Password, data.Path, data.SSHKey)
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
@@ -89,14 +96,9 @@ func AddServerControll(c fiber.Ctx) error {
 						"message": "Ошибка при сохранении данных: " + err.Error(),
 					})
 				}
-				serverList := []models.Server{}
-				err := db.Select(&serverList, "SELECT id, hostname, COALESCE(cert_config_path, '') as cert_config_path, server_status FROM server WHERE cert_config_path NOT NULL")
-				if err != nil {
-					log.Fatal(err)
-				}
-				return c.Render("add_server/addServer", fiber.Map{
-					"Title":      "Add server",
-					"serverList": &serverList,
+				return c.Status(200).JSON(fiber.Map{
+					"status":  "success",
+					"message": "Сервер успешно добавлен",
 				})
 			}
 		}
@@ -107,8 +109,43 @@ func AddServerControll(c fiber.Ctx) error {
 		if err != nil {
 			log.Fatal(err)
 		}
+		sshKeyList := []models.SSHKey{}
+		err = db.Select(&sshKeyList, "SELECT server_name FROM ssh_key")
+		if err != nil {
+			log.Fatal(err)
+		}
 		return c.Render("add_server/addServer", fiber.Map{
 			"Title":      "Add server",
+			"serverList": &serverList,
+			"sshKeyList": &sshKeyList,
+		})
+	}
+
+	return c.Status(400).JSON(fiber.Map{
+		"status":  "error",
+		"message": "Method not allowed",
+	})
+}
+
+// ServerListController обрабатывает запросы на получение списка серверов
+func ServerListController(c fiber.Ctx) error {
+	// ---------------------------------------Database inicialization
+	database := viper.GetString("database.path")
+	db, err := sqlx.Open("sqlite3", database)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	if c.Method() == "GET" {
+		serverList := []models.Server{}
+		err = db.Select(&serverList, "SELECT id, hostname, COALESCE(cert_config_path, '') as cert_config_path, server_status FROM server WHERE cert_config_path NOT NULL")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Рендерим только шаблон списка серверов
+		return c.Render("add_server/serverList", fiber.Map{
 			"serverList": &serverList,
 		})
 	}

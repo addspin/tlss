@@ -44,7 +44,7 @@
                     confirmButtonText: 'Yes, delete it!',
                     
                     inputValidator: (value) => {
-                    if (value != {{ .Hostname }}) {
+                    if (value != '{{ .Hostname }}') {
                       return 'Вы ввели не верное имя сервера, введите {{ .Hostname }}';
                     }
                   }
@@ -64,11 +64,4 @@
               {{ end }}
             </tbody>
             </table>
-
-          </div>
-        </div>
-      </div>
-    
-
-
 {{end}}

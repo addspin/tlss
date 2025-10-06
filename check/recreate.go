@@ -7,7 +7,6 @@ import (
 	"github.com/addspin/tlss/controllers/caControllers"
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
-	"github.com/addspin/tlss/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 )
@@ -110,7 +109,7 @@ func checkRecreateCerts() {
 				log.Printf("RecreateCerts: Ошибка генерации сертификата: %v", certErr)
 				continue
 			}
-			saveOnServerUtil := utils.NewSaveOnServer()
+			saveOnServerUtil := crypts.NewSaveOnServer()
 			err = saveOnServerUtil.SaveOnServer(&cert, db, certPEM, keyPEM)
 			if err != nil {
 				log.Printf("RecreateCerts: Ошибка сохранения сертификата на сервер: %v", err)

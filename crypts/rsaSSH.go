@@ -78,12 +78,12 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 		if err != nil {
 			log.Fatalf("rsaSSH: ошибка расшифровки приватного ключа %v", err)
 		}
-		log.Println("decryptPrivKey: ", string(decryptPrivKey))
+		// log.Println("decryptPrivKey: ", string(decryptPrivKey))
 		signer, err := ssh.ParsePrivateKey(decryptPrivKey)
 		if err != nil {
 			log.Fatalf("rsaSSH: ошибка, невозможно получить приватный ключ %v", err)
 		}
-		log.Println("signer: ", signer)
+		// log.Println("signer: ", signer)
 		keyConfig := &ssh.ClientConfig{
 			User: username,
 			Auth: []ssh.AuthMethod{

@@ -9,7 +9,6 @@ import (
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
-	"github.com/addspin/tlss/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
@@ -404,7 +403,7 @@ func processServerCertificates(certList []models.CertsData, db *sqlx.DB, numWork
 						continue
 					}
 					if cert.SaveOnServer {
-						saveOnServer := utils.NewSaveOnServer()
+						saveOnServer := crypts.NewSaveOnServer()
 						// dbMutex.Lock()
 						err := saveOnServer.SaveOnServer(&cert, db, certPEM, keyPEM)
 						// dbMutex.Unlock()

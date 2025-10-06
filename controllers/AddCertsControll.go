@@ -6,7 +6,6 @@ import (
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
-	"github.com/addspin/tlss/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -93,7 +92,7 @@ func AddCertsControll(c fiber.Ctx) error {
 				})
 			}
 			if data.SaveOnServer {
-				saveOnServer := utils.NewSaveOnServer()
+				saveOnServer := crypts.NewSaveOnServer()
 				err = saveOnServer.SaveOnServer(data, db, certPEM, keyPEM)
 				if err != nil {
 					return c.Status(400).JSON(fiber.Map{

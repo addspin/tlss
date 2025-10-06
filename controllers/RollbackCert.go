@@ -6,7 +6,6 @@ import (
 	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
-	"github.com/addspin/tlss/utils"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
@@ -132,7 +131,7 @@ func RollbackCert(c fiber.Ctx) error {
 
 			crl.CombinedCRL(db)
 
-			saveOnServer := utils.NewSaveOnServer()
+			saveOnServer := crypts.NewSaveOnServer()
 			err = saveOnServer.SaveOnServer(data, db, []byte(keyList[0].PublicKey), decryptedKey)
 			if err != nil {
 				log.Printf("Ошибка сохранения сертификата на сервер: %v", err)

@@ -296,7 +296,7 @@ func main() {
 		crypts.AesSecretKey.Key = decryptKey
 	}
 
-	//---------------------------------------Generate ssh key pair
+	//---------------------------------------Генерируем Default ssh key для подключения к серверам
 	var testKey models.SSHKey
 	err = db.Get(&testKey, "SELECT * FROM ssh_key WHERE server_name = ?", "Default")
 	if err != nil {
@@ -321,18 +321,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-		var sshKey models.SSHKey
-		err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE server_name = ?", "Default")
-		if err != nil {
-			// Если записи нет, вставляем новую
-			db.Exec("INSERT INTO ssh_key (server_name, public_key, private_key) VALUES (?, ?, ?)", "Default", string(publicKeyBytes), string(encryptedKey))
-		}
-	}
+		// Если записи нет, вставляем новую
+		db.Exec("INSERT INTO ssh_key (server_name, public_key, private_key) VALUES (?, ?, ?)", "Default", string(publicKeyBytes), string(encryptedKey))
 
-	// err = crypts.WriteKeyToFile(privateKeyBytes, []byte(publicKeyBytes), savePrivateFileTo, savePublicFileTo)
-	// if err != nil {
-	// 	log.Fatal(err.Error())
-	// }
+	}
 
 	// Извекаем CA из базы данных для использования в разных пакетах
 	err = crypts.ExtractCA.ExtractSubCA(db)

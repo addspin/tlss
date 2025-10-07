@@ -61,15 +61,16 @@ func Monitore(TCPInterval, RecreateCertsInterval, CheckValidCertsInterval time.D
 func checkMonitorTCP() {
 	Monitors.MutexMonitor.Lock()
 	defer Monitors.MutexMonitor.Unlock()
-	// интервал заданный в конфиге
-	checkTCPInterval := utils.SelectTime(viper.GetString("monitor.unitTCP"), viper.GetInt("monitor.TCPInterval"))
+	// интервал TCP чекера (не монитора!)
+	checkTCPInterval := utils.SelectTime(viper.GetString("checkServer.unit"), viper.GetInt("checkServer.checkServerInterval"))
 	// время сейчас
 	checkTCPTimeNow := time.Now()
 	// время разницу между временем сейчас и временем последнего пересоздания сертификатов
 	checkTCPDuration := checkTCPTimeNow.Sub(Monitors.CheckTCP)
 	// log.Println("CheckMonitor: Время разницы:", checkTCPDuration)
-	// если время разницы больше интервала, то устанавливаем статус false
-	if checkTCPDuration > checkTCPInterval {
+	// если время разницы больше интервала чекера + небольшой запас, то устанавливаем статус false
+	// добавляем 50% запаса времени для учета задержек выполнения
+	if checkTCPDuration > checkTCPInterval+(checkTCPInterval/2) {
 		Monitors.CheckTCPStatus = false // чекер не работает
 		log.Println("CheckMonitor TCP: Чекер не работает")
 	} else {
@@ -86,7 +87,8 @@ func checkMonitorRecreateCerts() {
 	recreateCertsTimeNow := time.Now()
 	recreateDuration := recreateCertsTimeNow.Sub(Monitors.RecreateCerts)
 	// log.Println("CheckMonitor RecreateCerts: Время разницы:", recreateDuration)
-	if recreateDuration > recreateCertsInterval {
+	// добавляем 50% запаса времени для учета задержек выполнения
+	if recreateDuration > recreateCertsInterval+(recreateCertsInterval/2) {
 		Monitors.RecreateCertStatus = false // чекер не работает
 		log.Println("CheckMonitor RecreateCerts: Чекер не работает")
 	} else {
@@ -102,7 +104,8 @@ func checkMonitorCheckValidCerts() {
 	CheckValidCertsTimeNow := time.Now()
 	CheckValidCertsDuration := CheckValidCertsTimeNow.Sub(Monitors.CheckValidCerts)
 	// log.Println("CheckMonitor CheckValidCerts: Время разницы:", CheckValidCertsDuration)
-	if CheckValidCertsDuration > CheckValidCertsInterval {
+	// добавляем 50% запаса времени для учета задержек выполнения
+	if CheckValidCertsDuration > CheckValidCertsInterval+(CheckValidCertsInterval/2) {
 		Monitors.CheckValidCertsStatus = false // чекер не работает
 		log.Println("CheckMonitor CheckValidCerts: Чекер не работает")
 	} else {

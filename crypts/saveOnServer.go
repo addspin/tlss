@@ -81,10 +81,10 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 	}
 	// получаем ssh ключ для подключения к серверу по имени сервера
 	var sshKey models.SSHKey
-	err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE server_name = ?", serverInfo.Hostname)
+	err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", serverInfo.Hostname)
 	if err != nil {
 		// Если не найден ключ для конкретного сервера, пробуем получить ключ по умолчанию
-		err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE server_name = ?", "Default")
+		err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", "Default")
 		if err != nil {
 			return fmt.Errorf("не удалось получить ssh ключ: %w", err)
 		}

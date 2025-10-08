@@ -35,6 +35,13 @@
     font-family: Inter;
     font-weight: 100;
 }
+.core-ssh-keys {
+    margin-top: 6px;
+    padding-left: 0%;
+    padding-right: 0%;
+    font-family: Inter;
+    font-weight: 100;
+}
 .core-certs-revoke {
     margin-top: 6px;
     padding-left: 0%;

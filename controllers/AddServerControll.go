@@ -110,7 +110,7 @@ func AddServerControll(c fiber.Ctx) error {
 			log.Fatal(err)
 		}
 		sshKeyList := []models.SSHKey{}
-		err = db.Select(&sshKeyList, "SELECT server_name FROM ssh_key")
+		err = db.Select(&sshKeyList, "SELECT name_ssh_key FROM ssh_key")
 		if err != nil {
 			log.Fatal(err)
 		}

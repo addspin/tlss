@@ -30,7 +30,6 @@ func TakeCert(c fiber.Ctx) error {
 	}
 	defer db.Close()
 
-	// Только GET запрос для прямого скачивания файла
 	if c.Method() != "GET" {
 		return c.Status(405).JSON(fiber.Map{
 			"status":  "error",
@@ -44,13 +43,81 @@ func TakeCert(c fiber.Ctx) error {
 	id := c.Query("id")
 	format := c.Query("format")
 	typeCA := c.Query("typeCA")
+	nameSSHKey := c.Query("NameSSHKey")
 
-	// if serverId == "" || id == "" || entityId == "" {
-	// 	return c.Status(400).JSON(fiber.Map{
-	// 		"status":  "error",
-	// 		"message": "Отсутствуют параметры serverId, entityId или id",
-	// 	})
-	// }
+	// Обработка SSH ключей
+	if nameSSHKey != "" && format == "zip" {
+		var sshKey models.SSHKey
+		err = db.Get(&sshKey, "SELECT name_ssh_key, public_key, private_key FROM ssh_key WHERE name_ssh_key = ?", nameSSHKey)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": fmt.Sprintf("Не удалось получить SSH ключ: %v", err),
+			})
+		}
+
+		// Расшифровываем приватный ключ SSH
+		aes := crypts.Aes{}
+		decryptedPrivateKey, err := aes.Decrypt([]byte(sshKey.PrivateKey), crypts.AesSecretKey.Key)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": fmt.Sprintf("Ошибка расшифровки приватного SSH ключа: %v", err),
+			})
+		}
+
+		// Создаем ZIP архив
+		var buf bytes.Buffer
+		zipWriter := zip.NewWriter(&buf)
+
+		// Добавляем публичный ключ
+		publicKeyFile, err := zipWriter.Create(sshKey.NameSSHKey + ".pub")
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка создания файла публичного ключа в архиве",
+			})
+		}
+		_, err = publicKeyFile.Write([]byte(sshKey.PublicKey))
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка записи публичного ключа в архив",
+			})
+		}
+
+		// Добавляем приватный ключ
+		privateKeyFile, err := zipWriter.Create(sshKey.NameSSHKey)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка создания файла приватного ключа в архиве",
+			})
+		}
+		_, err = privateKeyFile.Write(decryptedPrivateKey)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка записи приватного ключа в архив",
+			})
+		}
+
+		// Закрываем ZIP writer
+		if err = zipWriter.Close(); err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка закрытия архива",
+			})
+		}
+
+		// Устанавливаем заголовки для скачивания файла
+		c.Set("Content-Type", "application/zip")
+		c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=ssh_key_%s.zip", sshKey.NameSSHKey))
+		c.Set("Content-Length", fmt.Sprintf("%d", buf.Len()))
+
+		// Отправляем ZIP архив пользователю
+		return c.Send(buf.Bytes())
+	}
 
 	// Извлекаем Sub CA из базы данных
 	var subCACert string

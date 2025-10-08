@@ -32,8 +32,8 @@ var templateFS embed.FS
 //go:embed static
 var staticFS embed.FS
 
-const savePrivateFileTo string = "id_rsa_tlss"
-const savePublicFileTo string = "id_rsa_tlss.pub"
+// const savePrivateFileTo string = "id_rsa_tlss"
+// const savePublicFileTo string = "id_rsa_tlss.pub"
 const bitSize int = 4096
 
 func main() {
@@ -298,7 +298,7 @@ func main() {
 
 	//---------------------------------------Генерируем Default ssh key для подключения к серверам
 	var testKey models.SSHKey
-	err = db.Get(&testKey, "SELECT * FROM ssh_key WHERE server_name = ?", "Default")
+	err = db.Get(&testKey, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", "Default")
 	if err != nil {
 		privateKey, err := crypts.GeneratePrivateKey(bitSize)
 		if err != nil {
@@ -322,7 +322,7 @@ func main() {
 			log.Fatal(err.Error())
 		}
 		// Если записи нет, вставляем новую
-		db.Exec("INSERT INTO ssh_key (server_name, public_key, private_key) VALUES (?, ?, ?)", "Default", string(publicKeyBytes), string(encryptedKey))
+		db.Exec("INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm) VALUES (?, ?, ?, ?, ?)", "Default", string(publicKeyBytes), string(encryptedKey), bitSize, "RSA")
 
 	}
 

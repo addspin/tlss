@@ -6,6 +6,7 @@ import (
 
 	"github.com/addspin/tlss/controllers"
 	caControllers "github.com/addspin/tlss/controllers/caControllers"
+	sshControllers "github.com/addspin/tlss/controllers/sshControllers"
 	usersCertControllers "github.com/addspin/tlss/controllers/usersCertControllers"
 	"github.com/addspin/tlss/middleware"
 	"github.com/gofiber/fiber/v3"
@@ -102,6 +103,11 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Post("/revoke_ca_certs", caControllers.RevokeCACert)           // Отзыв CA
 	app.Post("/remove_ca_cert", caControllers.RemoveCACert)            // Удаление CA
 	app.Get("/revoke_ca_certs", caControllers.RevokeCACertsController) // Получение списка CA для отзыва
+
+	app.Get("/add_ssh_key", sshControllers.AddSSHControll)         // Получение списка ssh ключей
+	app.Post("/add_ssh_key", sshControllers.AddSSHControll)        // Добавление ssh ключа
+	app.Get("/ssh_key_list", sshControllers.SSHCertListController) // Получение списка ssh ключей
+	app.Post("/remove_ssh_key", sshControllers.RemoveSSHKey)       // Удаление ssh ключа
 
 	app.Get("/logout", controllers.LogoutController)
 }

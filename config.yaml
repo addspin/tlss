@@ -1,9 +1,9 @@
 ################################## Настройки приложения
 app:
   port: 43000
-  hostname: tlss.lv.local
-  # hostname: localhost
-  protocol: https # http или https
+  # hostname: tlss.lv.local
+  hostname: localhost
+  protocol: http # http или https
   certFile: ./https/tlss.lv.local.pem
   keyFile: ./https/tlss.lv.local.key
 
@@ -42,7 +42,7 @@ sub_ca_tlss:
 
 ################################## Настройки CRL
 CAcrl:
-  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/der
+  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/der # der или pem большинство прокси работают с pem
   unit: hours # minutes, seconds, hours
   updateInterval: 24 # minutes 12 hours
   version: 2

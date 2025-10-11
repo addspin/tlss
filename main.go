@@ -32,8 +32,6 @@ var templateFS embed.FS
 //go:embed static
 var staticFS embed.FS
 
-// const savePrivateFileTo string = "id_rsa_tlss"
-// const savePublicFileTo string = "id_rsa_tlss.pub"
 const bitSize int = 4096
 
 func main() {
@@ -94,16 +92,6 @@ func main() {
 	if err != nil {
 		log.Println(err.Error())
 	}
-	// create SchemaRootCAtlss tables in db (хранит данные корневого CA)
-	// _, err = db.Exec(models.SchemaRootCAtlss)
-	// if err != nil {
-	// 	log.Println(err.Error())
-	// }
-	// // create SchemaSubCAtlss tables in db (хранит данные подчиненного CA используемый для подписания конечных сертификатов)
-	// _, err = db.Exec(models.SchemaSubCAtlss)
-	// if err != nil {
-	// 	log.Println(err.Error())
-	// }
 
 	// create SchemaCA tables in db (хранит данные CA)
 	_, err = db.Exec(models.SchemaCA)
@@ -134,12 +122,6 @@ func main() {
 	if err != nil {
 		log.Println(err.Error())
 	}
-
-	// create SchemaCrlInfoUser tables in db (хранит данные CRL user)
-	// _, err = db.Exec(models.SchemaCrlInfoUser)
-	// if err != nil {
-	// 	log.Println(err.Error())
-	// }
 
 	// create Users tables in db (хранит данные Users)
 	_, err = db.Exec(models.UsersData)
@@ -322,7 +304,10 @@ func main() {
 			log.Fatal(err.Error())
 		}
 		// Если записи нет, вставляем новую
-		db.Exec("INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm) VALUES (?, ?, ?, ?, ?)", "Default", string(publicKeyBytes), string(encryptedKey), bitSize, "RSA")
+		_, err = db.Exec("INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm) VALUES (?, ?, ?, ?, ?)", "Default", string(publicKeyBytes), string(encryptedKey), bitSize, "RSA")
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 
 	}
 

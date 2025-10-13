@@ -39,11 +39,6 @@
                         <div class="btn-container">
                           <button class="select_cert_revoke"  type="number" hx-trigger='rollback' hx-post="/rollback_cert" hx-swap="none" hx-ext="json-enc-custom" parse-types="true" 
                           id="rollback-btn-{{ .Id }}"
-                          hx-on::before-request="
-                              document.getElementById('rollback-btn-{{ .Id }}').style.display = 'none';
-                              document.querySelector('.rollback-spinner-{{ .Id }}').style.display = 'inline-block';
-                            "                          
-
                         hx-vals='js:{
                           "id": {{ .Id }}, 
                           "ServerId": {{ .ServerId }},
@@ -86,8 +81,6 @@
                               console.error('Ошибка при обработке ответа:', e);
                             }
                           }
-                          document.getElementById('rollback-btn-{{ .Id }}').style.display = 'block';
-                          document.querySelector('.rollback-spinner-{{ .Id }}').style.display = 'none';
                         "
                         onClick="const { value: domainRollback } = Swal.fire({
                         showClass: {
@@ -123,10 +116,10 @@
                           htmx.trigger(this, 'rollback'); 
                         }
                       });"
-                        >Rollback</button>
-                          <button class="select_cert_revoke btn-spinner rollback-spinner-{{ .Id }}" style="display: none;">
-                            <img src="/static/svg/time.svg">
-                          </button>
+                        >
+                          <span class="btn-text">Rollback</span>
+                          <img src="/static/svg/time.svg" class="time-svg htmx-indicator">
+                        </button>
                         </div>
                       </td>
                       <!-- Save on server -->

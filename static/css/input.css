@@ -3,7 +3,7 @@
     src: url('/static/fonts/Inter/static/Inter_18pt-ExtraLight.woff2') format('woff2');
     font-weight: 100 900;
     font-style: normal;
-    font-display: swap; /* Улучшает производительность загрузки */
+    font-display: swap; 
 }
 .color-form-certs {
     color: #a99ee8;
@@ -26,7 +26,7 @@
 }
 .core-servers {
     font-family: Inter;
-    font-weight: 100; /* regular weight */
+    font-weight: 100; 
 }
 .core-certs {
     margin-top: 6px;
@@ -85,23 +85,6 @@ html, body {
     margin-right: 0;
 }
 
-
-/* @media (min-width: 1200px) {
-    .core-overview {
-        padding-left: 2%;
-        padding-right: 2%;
-    }
-}
-
-@media (min-width: 1600px) {
-    .core-overview {
-        padding-left: 1%;
-        padding-right: 1%;
-    }
-} */
-
-
-
 .left-core {
     margin-top: 40px;
     padding-left: 20%;
@@ -123,7 +106,6 @@ html, body {
     font-family: Inter;
     font-weight: 100;
     background-color: #212529;
-    /* border-left: 8px solid #1a1e21; */
     border-right: 8px solid #1a1e21;
     text-decoration: none;
 }
@@ -277,7 +259,7 @@ html, body {
     font-size: 0.9em;
     width: auto;
     margin: 0 8px;
-    border-radius: 5px; /* закругленные углы для лучшего вида */
+    border-radius: 5px; 
 } 
 .select_cert_take:hover {
     background: #0056b3;
@@ -391,8 +373,8 @@ select:focus {
     border-radius: 5px; 
     font-size: 16px; 
     cursor: pointer; 
-    transition: background-color 0.3s; 
-    
+    transition: background-color 0.3s;
+    position: relative;
 }
 .btn-custom-certs {
     padding: 1px 8%; 
@@ -404,7 +386,7 @@ select:focus {
     width: 100%;
 }
 .btn-custom:hover {
-    background-color: #0056b3; /* Темнее при наведении */
+    background-color: #0056b3; 
 }
 .search-input-container {
     padding-left: 20%;
@@ -420,16 +402,16 @@ select:focus {
     align-content: center;
 }
 .search-input {
-    width: 100%; /* Ширина 100% */
-    border: none; /* Без рамки */
-    border-bottom: 1px solid #a99ee8; /* Нижняя рамка */
-    background-color: transparent; /* Прозрачный фон */
-    color: #ffffff; /* Цвет текста */
-    transition: border-color 0.3s; /* Плавный переход цвета рамки */
+    width: 100%; 
+    border: none; 
+    border-bottom: 1px solid #a99ee8; 
+    background-color: transparent; 
+    color: #ffffff; 
+    transition: border-color 0.3s; 
 }
 .search-input:focus {
-    outline: none; /* Убираем обводку */
-    border-color: #bcb0ff; /* Цвет рамки при фокусе */
+    outline: none; 
+    border-color: #bcb0ff; 
 }
 .search-input-container-server {
     padding-left: 0%;
@@ -463,26 +445,28 @@ select:focus {
     font-size: 0.8rem;
 }
 /* Стили для анимации загрузки */
+.btn-text {
+    transition: opacity 300ms ease-in;
+}
+
+.htmx-request .btn-text {
+    opacity: 0;
+}
+
 .time-svg{
-    display: none;
-    opacity:0;
-    transition: opacity 500ms ease-in;
-    position: center;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 300ms ease-in;
+    pointer-events: none;
 }
 .htmx-request .time-svg{
-    display: block;
-    opacity:1;
+    opacity: 1;
 }
 .htmx-request.time-svg{
-    display: block;
-    opacity:1;
-}
-.btn-spinner{
-    display: none;
-}
-.htmx-request .btn-spinner{
-    display: block;
-    
+    opacity: 1;
 }
 /* tags */
 .tags-container {

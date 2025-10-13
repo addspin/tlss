@@ -81,12 +81,10 @@
                         title: 'Вы уверены, что хотите отозвать сертификат - {{ .Domain }}?', 
                         text: 'Для подтверждения введите {{ .Domain }}', 
                         showCancelButton: true,
-                        confirmButtonColor: '#983636',
-                        cancelButtonColor: '#3085d6',
                         confirmButtonText: 'Yes, revoke!',
                         
                         inputValidator: (value) => {
-                        if (value != {{ .Domain }}) {
+                        if (value != '{{ .Domain }}') {
                           return 'Вы ввели не верное имя сертификата, введите {{ .Domain }}';
                         }
                       }
@@ -134,12 +132,10 @@
                         title: 'Вы уверены, что хотите удалить сертификат - {{ .Domain }}?', 
                         text: 'Для подтверждения введите {{ .Domain }}', 
                         showCancelButton: true,
-                        confirmButtonColor: '#983636',
-                        cancelButtonColor: '#3085d6',
                         confirmButtonText: 'Yes, delete!',
                         
                         inputValidator: (value) => {
-                        if (value != {{ .Domain }}) {
+                        if (value != '{{ .Domain }}') {
                           return 'Вы ввели не верное имя сертификата, введите {{ .Domain }}';
                         }
                       }

@@ -40,14 +40,7 @@
             hx-ext="json-enc-custom" 
             parse-types="true"
             hx-trigger="confirmed"
-            hx-on::before-request="
-              document.getElementById('create-cert-btn').style.display = 'none';
-              document.getElementById('btn-spinner').style.display = 'inline-block';"
             hx-on::after-request="
-              // Скрываем спиннер и показываем кнопку
-              document.getElementById('btn-spinner').style.display = 'none';
-              document.getElementById('create-cert-btn').style.display = 'inline-block';
-              
               if (event.detail.xhr.responseText) {
                 try {
                   const response = JSON.parse(event.detail.xhr.responseText);
@@ -203,11 +196,9 @@
                               htmx.trigger(document.querySelector('form'), 'confirmed');
                           }
                       });"
-                  >Create
-                    <!-- <img src="/static/svg/time.svg" class="time-svg"> -->
-                  </button>
-                  <button  class="btn-custom btn-custom-certs btn-spinner" id="btn-spinner" style="display: none;">
-                    <img src="/static/svg/time.svg" class="time-svg">
+                  >
+                    <span class="btn-text">Create</span>
+                    <img src="/static/svg/time.svg" class="time-svg htmx-indicator">
                   </button>
                 </div>
               </div>

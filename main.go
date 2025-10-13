@@ -49,14 +49,14 @@ func main() {
 	logFile, err := utils.SetupSlogLogger()
 	if err != nil {
 		slog.Error("Ошибка настройки логирования", "error", err)
-		// Продолжаем с стандартным логированием
+		// Продолжаем со стандартным логированием
 	}
 	if logFile != nil {
 		defer logFile.Close()
 	}
 
 	database := viper.GetString("database.path")
-	//---------------------------------------Database inicialization
+	//---------------------------------------Database initialization
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
 		slog.Error("Ошибка подключения к базе данных", "error", err)
@@ -166,18 +166,33 @@ func main() {
 	if !viper.GetBool("login.authConfig") {
 		var login, user string
 		fmt.Print("Enter login: ")
-		fmt.Scanln(&login)
-		db.Get(&user, "SELECT username FROM users WHERE username = ?", login)
-		if user == "" {
+		_, err = fmt.Scanln(&login)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if len(login) == 0 {
+			log.Fatal("Логин не может быть пустым")
+		}
+		err = db.Get(&user, "SELECT username FROM users WHERE username = ?", login)
+		if err != nil {
 			log.Fatal("Логин не найден")
 		}
+
 		fmt.Print("Enter password: ")
-		fmt.Scanln(&password)
+		_, err = fmt.Scanln(&password)
+		if err != nil {
+			log.Fatal(err)
+		}
 		if len(password) == 0 {
 			log.Fatal("Пароль не может быть пустым")
 		}
+
 		fmt.Print("Enter salt: ")
-		fmt.Scanln(&salt)
+		_, err = fmt.Scanln(&salt)
+		if err != nil {
+			log.Fatal(err)
+		}
 		if len(salt) == 0 {
 			log.Fatal("Соль не может быть пустой")
 		}
@@ -187,29 +202,38 @@ func main() {
 	p := crypts.PWD{}
 	pwd := p.CreatePWDKeyFromUserInput(password, salt)
 
-	//проверяем, есть ли в таблице хотя  бы одно значение key
+	//проверяем, есть ли в таблице хотя-бы одно значение key
 	var exists bool
 	err = db.Get(&exists, "SELECT EXISTS (SELECT 1 FROM secret_key)")
 	if err != nil {
 		log.Fatal(err)
 	}
-	//если нету то просим ввести ключ
+	//если нет, то просим ввести ключ
 	aes := crypts.Aes{}
 	if !exists {
 		// запрос на ввод логина
 		var login string
 		fmt.Print("Enter login: ")
-		fmt.Scanln(&login)
+		_, err = fmt.Scanln(&login)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// запрос ввода пароля
 		var password []byte
 		fmt.Print("Enter password: ")
-		fmt.Scanln(&password)
+		_, err = fmt.Scanln(&password)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// запрос ввода соли
 		var salt []byte
 		fmt.Print("Enter salt: ")
-		fmt.Scanln(&salt)
+		_, err = fmt.Scanln(&salt)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// Проверяем, что пароль и соль не пустые
 		if len(password) == 0 || len(salt) == 0 {
@@ -263,7 +287,7 @@ func main() {
 			crypts.AesSecretKey.Key = decryptKey
 		}
 	}
-	// если в базе есть ключ то расшифровываем и передаем в переменную
+	// если в базе есть ключ, то расшифровываем и передаем в переменную
 	var keyData []models.Key
 	err = db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
 	if err != nil {
@@ -311,7 +335,7 @@ func main() {
 
 	}
 
-	// Извекаем CA из базы данных для использования в разных пакетах
+	// Извлекаем CA из базы данных для использования в разных пакетах
 	err = crypts.ExtractCA.ExtractSubCA(db)
 	if err != nil {
 		log.Println(err.Error())

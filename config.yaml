@@ -1,9 +1,9 @@
 ################################## Настройки приложения
 app:
   port: 43000
-  # hostname: tlss.lv.local
-  hostname: localhost
-  protocol: http # http или https
+  hostname: tlss.lv.local
+#  hostname: localhost
+  protocol: https # http или https
   certFile: ./https/tlss.lv.local.pem
   keyFile: ./https/tlss.lv.local.key
 
@@ -28,11 +28,6 @@ login:
 database:
   path: ./db/database.db
 
-################################## Место хранения корневого CA
-ca_tlss:
-  path_cert: ./root_ca_tlss/root_ca_tlss.pem
-  path_key: ./root_ca_tlss/root_ca_tlss.key
-
 ################################## Первичные имена для корневого CA и подчиненного CA
 root_ca_tlss:
   commonName: TLSS Root CA
@@ -42,15 +37,19 @@ sub_ca_tlss:
 
 ################################## Настройки CRL
 CAcrl:
-  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/der # der или pem большинство прокси работают с pem
+  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/pem # der или pem большинство прокси работают с pem
   unit: hours # minutes, seconds, hours
   updateInterval: 24 # minutes 12 hours
   version: 2
 
-################################## Выбираем где сохранять корневой сертификат и закрытый ключ
+################################## Настройки CA
 CApath:
   db: true # true - сохранять в базе данных
   server: false # false - сохранять на сервере
+
+ca_tlss:
+  path_cert: ./root_ca_tlss/root_ca_tlss.pem
+  path_key: ./root_ca_tlss/root_ca_tlss.key
 
 ################################## Настройки SSH при добавлении сервера
 add_server:

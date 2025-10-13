@@ -46,8 +46,6 @@
             hx-swap="none"
             hx-ext="json-enc-custom" 
             parse-types="true"
-            hx-on::before-request="
-                    document.getElementById('create-cert-btn').style.display = 'none';"
             hx-on::after-request="
               if (event.detail.xhr.responseText) {
                 try {
@@ -61,8 +59,6 @@
                       title: 'Ошибка',
                       text: response.message,
                       confirmButtonColor: '#3085d6'
-                    }).then(() => {
-                      document.getElementById('create-cert-btn').style.display = 'inline-block';
                     });
                   } else if (response.status === 'success') {
                     Swal.fire({
@@ -74,8 +70,6 @@
                       text: `Сертификат для домена ${response.domain} был успешно создан`,
                       confirmButtonColor: '#3085d6'
                     }).then(() => {
-                      document.getElementById('create-cert-btn').style.display = 'inline-block';
-                      
                       htmx.ajax('GET', '/cert_list', {
                         target: '#response', 
                         swap: 'innerHTML',  
@@ -87,10 +81,7 @@
                   }
                 } catch (e) {
                   console.error('Ошибка при обработке ответа:', e);
-                  document.getElementById('create-cert-btn').style.display = 'inline-block';
                 }
-              } else {
-                document.getElementById('create-cert-btn').style.display = 'inline-block';
               }
             ">
             <label id= "" class="form_lable" >Create server certificate</label>
@@ -201,13 +192,9 @@
                 </div>
                 
                 <div class="btn-container btn-container-right">
-                  <button type="submit" class="btn-custom btn-custom-certs" id="create-cert-btn"
-                    hx-indicator="#time-svg">
-                    Create
-                    <!-- <img src="/static/svg/time.svg" class="time-svg"> -->
-                  </button>
-                  <button  class="btn-custom btn-custom-certs btn-spinner" id="btn-spinner">
-                    <img src="/static/svg/time.svg" class="time-svg">
+                  <button type="submit" class="btn-custom btn-custom-certs" id="create-cert-btn">
+                    <span class="btn-text">Create</span>
+                    <img src="/static/svg/time.svg" class="time-svg htmx-indicator">
                   </button>
                 </div>
               </div>

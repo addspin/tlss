@@ -37,21 +37,6 @@
     font-weight: 100;
 }
 
-/* @media (min-width: 1200px) {
-    .servers_table {
-        padding-left: 2%;
-        padding-right: 2%;
-    }
-}
-
-@media (min-width: 1600px) {
-    .servers_table {
-        padding-left: 1%;
-        padding-right: 1%;
-    }
-} */
-
-
 .server-cert-tables {
     padding-left: 3%;
     padding-right: 10%;
@@ -61,21 +46,6 @@
     font-family: Inter;
     font-weight: 100;
 }
-
-/* @media (min-width: 1200px) {
-    .server-cert-tables {
-        padding-left: 2%;
-        padding-right: 2%;
-    }
-}
-
-@media (min-width: 1600px) {
-    .server-cert-tables {
-        padding-left: 1%;
-        padding-right: 1%;
-    }
-} */
-
 
 .certs_revoke_table {
     align-content: center;
@@ -120,11 +90,6 @@
     width: 4em;
     border: none;
     padding: 0;
-    /* margin-top: 12px;
-    margin-bottom: 12px; */
-    /* margin-left: 10px; */
-    /* box-shadow: 0px 0px 3px 3px rgba(97, 252, 124, 0.25); */
-    /* animation: colorPulse 2s infinite alternate; */
 }
 
 .state-online-server-certs {
@@ -194,10 +159,6 @@
     width: 4em;
     border: none;
     padding: 0;
-    /* margin-top: 12px; */
-    /* margin-left: 10px; */
-    /* box-shadow: 0px 0px 3px 3px #9836368f; */
-    /* animation: colorPulseRed 2s infinite alternate; */
 }
 
 @keyframes colorPulseRed {
@@ -234,23 +195,23 @@
     backdrop-filter: blur(3px);
 }
 .swal2-confirm {
-    background-color: #983636 !important; /* Синий цвет фона */
-    color: white ; /* Белый цвет текста */
-    border: none ; /* Без рамки */
-    border-radius: 5px ; /* Закругленные углы */
-    font-size: 16px ; /* Размер шрифта */
-    cursor: pointer; /* Указатель при наведении */
+    background-color: #007bff !important; 
+    color: white ; 
+    border: none ; 
+    border-radius: 5px ;
+    font-size: 16px ;
+    cursor: pointer; 
     transition: background-color 0.3s;
     font-family: Inter;
     padding: 0.1em 3em;
 }
 .swal2-cancel {
-    background-color: #007bff !important; /* Синий цвет фона */
-    color: white ; /* Белый цвет текста */
-    border: none ; /* Без рамки */
-    border-radius: 5px !important; /* Закругленные углы */
-    font-size: 16px !important; /* Размер шрифта */
-    cursor: pointer !important; /* Указатель при наведении */
+    background-color: #007bff !important;
+    color: white ;
+    border: none ; 
+    border-radius: 5px !important; 
+    font-size: 16px !important; 
+    cursor: pointer !important; 
     transition: background-color 0.3s;
     font-family: Inter;
     padding: 0.1em 3em;
@@ -260,7 +221,6 @@
     font-size: 0.7rem;
     color: #ffffff;
     padding: 0 !important;
-     /* height: 0 !important; */
 }
 
 .swal2-input {
@@ -271,7 +231,6 @@
     background-color: transparent;
     border-radius: 0;
     padding: 0 !important;
-    /* height: 0 !important; */
 }   
 
 .swal2-input:focus {
@@ -307,11 +266,10 @@
 .swal2-title {
     font-size: 0.9rem;
     font-family: Inter;
-    color: crimson
+    color: #a99ee8
 }
 
 .swal2-popup {
-    /* background-color: #222326; */
     background-color: #212529;
     border: 1px solid #a99ee8;
     border-color: rgb(128, 119, 176);
@@ -346,7 +304,6 @@
     font-family: Inter;
     font-weight: 100;
     font-size: 0.7rem;
-    /* border-top: 1px solid rgba(128, 119, 176, 0.3); */
     z-index: 100;
 }
 
@@ -369,10 +326,8 @@
     text-align: left;
     display: inline-block;
     font-weight: 100;
-    /* font-family: Inter; */
     font-size: 0.7rem;
     white-space: pre; 
-    /* letter-spacing: 0;  */
     line-height: 1.2; 
 }
 .qr {

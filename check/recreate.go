@@ -102,8 +102,20 @@ func checkRecreateCerts() {
 				continue
 			}
 
-			log.Printf("RecreateCerts: Сертификат %s (ID: %d) просрочен и будет перевыпущен с сохранением на сервер", cert.Domain, cert.Id)
-			certPEM, keyPEM, certErr := crypts.RecreateRSACertificate(&cert, db)
+			log.Printf("RecreateCerts: Сертификат %s (ID: %d, алгоритм: %s) просрочен и будет перевыпущен с сохранением на сервер", cert.Domain, cert.Id, cert.Algorithm)
+
+			// Выбираем функцию пересоздания в зависимости от алгоритма
+			var certPEM, keyPEM []byte
+			var certErr error
+			switch cert.Algorithm {
+			case "RSA":
+				certPEM, keyPEM, certErr = crypts.RecreateRSACertificate(&cert, db)
+			case "ED25519":
+				certPEM, keyPEM, certErr = crypts.RecreateED25519Certificate(&cert, db)
+			default:
+				log.Printf("RecreateCerts: Неподдерживаемый алгоритм %s для сертификата %s (ID: %d)", cert.Algorithm, cert.Domain, cert.Id)
+				continue
+			}
 
 			if certErr != nil {
 				log.Printf("RecreateCerts: Ошибка генерации сертификата: %v", certErr)
@@ -117,8 +129,20 @@ func checkRecreateCerts() {
 			}
 		} else {
 			// если сертификат не сохраняется на сервере, то пересоздаем его без копирования на сервер
-			log.Printf("RecreateCerts: Сертификат %s (ID: %d) просрочен и будет перевыпущен без сохранения на сервер", cert.Domain, cert.Id)
-			_, _, certErr := crypts.RecreateRSACertificate(&cert, db)
+			log.Printf("RecreateCerts: Сертификат %s (ID: %d, алгоритм: %s) просрочен и будет перевыпущен без сохранения на сервер", cert.Domain, cert.Id, cert.Algorithm)
+
+			// Выбираем функцию пересоздания в зависимости от алгоритма
+			var certErr error
+			switch cert.Algorithm {
+			case "RSA":
+				_, _, certErr = crypts.RecreateRSACertificate(&cert, db)
+			case "ED25519":
+				_, _, certErr = crypts.RecreateED25519Certificate(&cert, db)
+			default:
+				log.Printf("RecreateCerts: Неподдерживаемый алгоритм %s для сертификата %s (ID: %d)", cert.Algorithm, cert.Domain, cert.Id)
+				continue
+			}
+
 			if certErr != nil {
 				log.Printf("RecreateCerts: Ошибка генерации сертификата: %v", certErr)
 				continue
@@ -129,10 +153,22 @@ func checkRecreateCerts() {
 
 	// Сертификаты пользователей
 	for _, userCert := range userCertificate {
-		log.Printf("RecreateCerts: Сертификат %s (ID: %d) просрочен и будет перевыпущен", userCert.CommonName, userCert.Id)
-		certErr := crypts.RecreateUserRSACertificate(&userCert, db)
+		log.Printf("RecreateCerts: Пользовательский сертификат %s (ID: %d, алгоритм: %s) просрочен и будет перевыпущен", userCert.CommonName, userCert.Id, userCert.Algorithm)
+
+		// Выбираем функцию пересоздания в зависимости от алгоритма
+		var certErr error
+		switch userCert.Algorithm {
+		case "RSA":
+			certErr = crypts.RecreateUserRSACertificate(&userCert, db)
+		case "ED25519":
+			certErr = crypts.RecreateUserED25519Certificate(&userCert, db)
+		default:
+			log.Printf("RecreateCerts: Неподдерживаемый алгоритм %s для пользовательского сертификата %s (ID: %d)", userCert.Algorithm, userCert.CommonName, userCert.Id)
+			continue
+		}
+
 		if certErr != nil {
-			log.Printf("RecreateCerts: Ошибка генерации сертификата: %v", certErr)
+			log.Printf("RecreateCerts: Ошибка генерации пользовательского сертификата: %v", certErr)
 			continue
 		}
 	}

@@ -39,17 +39,19 @@ func AddUserCertsController(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		if data.Algorithm != "RSA" && data.Algorithm != "ECDSA" && data.Algorithm != "Ed25519" {
+		if data.Algorithm != "RSA" && data.Algorithm != "ECDSA" && data.Algorithm != "ED25519" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Invalid algorithm",
 			})
 		}
-		if data.KeyLength != 1024 && data.KeyLength != 2048 && data.KeyLength != 4096 {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Invalid key length",
-			})
+		if data.Algorithm == "RSA" {
+			if data.KeyLength != 1024 && data.KeyLength != 2048 && data.KeyLength != 4096 {
+				return c.Status(400).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Invalid key length",
+				})
+			}
 		}
 
 		if data.TTL == 0 || // TTL
@@ -73,19 +75,26 @@ func AddUserCertsController(c fiber.Ctx) error {
 		switch data.Algorithm {
 		case "RSA":
 			_, _, certErr = crypts.GenerateUserRSACertificate(data, db)
-		// Добавляем другие алгоритмы по мере необходимости
+			if certErr != nil {
+				log.Printf("RSA certificate generation error: %v", certErr)
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Failed to generate RSA certificate: " + certErr.Error(),
+				})
+			}
+		case "ED25519":
+			_, _, certErr = crypts.GenerateUserED25519Certificate(data, db)
+			if certErr != nil {
+				log.Printf("ED25519 certificate generation error: %v", certErr)
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Failed to generate ED25519 certificate: " + certErr.Error(),
+				})
+			}
 		default:
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Unsupported algorithm: " + data.Algorithm,
-			})
-		}
-		// Если есть ошибка вернуть
-		if certErr != nil {
-			log.Printf("Certificate generation error: %v", certErr)
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Failed to generate certificate: " + certErr.Error(),
 			})
 		}
 

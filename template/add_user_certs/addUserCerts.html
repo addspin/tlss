@@ -88,16 +88,17 @@
                   <label class="select_title">Algorithm</label>
                     <select id="select-type" name="Algorithm" class="select">
                       <option value="RSA" selected>RSA</option>
-                      <option value="ECDSA">ECDSA</option>
-                      <option value="Ed25519">Ed25519 </option>
+                      <!-- <option value="ECDSA">ECDSA</option> -->
+                      <option value="ED25519">ED25519</option>
                     </select>
                 </div>
                 <div class="col-md-3">
-                  <label class="select_title">Lenght</label>
+                  <label class="select_title">Key Length</label>
                     <select id="select-key-length" name="KeyLength" class="select" type="number">  
                       <option value="1024">1024</option>
                       <option value="2048">2048</option>
                       <option value="4096" selected>4096</option>
+                      <option value="256" style="display:none;">256</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -225,9 +226,3 @@
 
 <!-- index end template -->
 {{template "footer-tpl" .}}
-
-
-
-<!-- </div>
-</body>
-</html> -->

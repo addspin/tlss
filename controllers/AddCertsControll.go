@@ -43,17 +43,20 @@ func AddCertsControll(c fiber.Ctx) error {
 			})
 		}
 
-		if data.Algorithm != "RSA" && data.Algorithm != "ECDSA" && data.Algorithm != "Ed25519" {
+		if data.Algorithm != "RSA" && data.Algorithm != "ECDSA" && data.Algorithm != "ED25519" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Invalid algorithm",
 			})
 		}
-		if data.KeyLength != 1024 && data.KeyLength != 2048 && data.KeyLength != 4096 {
-			return c.Status(400).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Invalid key length",
-			})
+
+		if data.Algorithm == "RSA" {
+			if data.KeyLength != 1024 && data.KeyLength != 2048 && data.KeyLength != 4096 {
+				return c.Status(400).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Invalid key length",
+				})
+			}
 		}
 		if data.AppType != "haproxy" && data.AppType != "nginx" {
 			return c.Status(400).JSON(fiber.Map{
@@ -88,7 +91,25 @@ func AddCertsControll(c fiber.Ctx) error {
 			if certErr != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка генерации сертификата: " + certErr.Error(),
+					"message": "Ошибка генерации RSA сертификата: " + certErr.Error(),
+				})
+			}
+			if data.SaveOnServer {
+				saveOnServer := crypts.NewSaveOnServer()
+				err = saveOnServer.SaveOnServer(data, db, certPEM, keyPEM)
+				if err != nil {
+					return c.Status(400).JSON(fiber.Map{
+						"status":  "error",
+						"message": "Ошибка сохранения сертификата на сервер: " + err.Error(),
+					})
+				}
+			}
+		case "ED25519":
+			certPEM, keyPEM, certErr = crypts.GenerateED25519Certificate(data, db)
+			if certErr != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Ошибка генерации ED25519 сертификата: " + certErr.Error(),
 				})
 			}
 			if data.SaveOnServer {

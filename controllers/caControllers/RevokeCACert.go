@@ -399,7 +399,26 @@ func processServerCertificates(certList []models.CertsData, db *sqlx.DB, numWork
 					// dbMutex.Unlock()
 
 					if certErr != nil {
-						serverResultsErrors <- fmt.Errorf("ошибка генерации rsa сертификатов: %w", certErr)
+						serverResultsErrors <- fmt.Errorf("ошибка генерации RSA сертификатов: %w", certErr)
+						continue
+					}
+					if cert.SaveOnServer {
+						saveOnServer := crypts.NewSaveOnServer()
+						// dbMutex.Lock()
+						err := saveOnServer.SaveOnServer(&cert, db, certPEM, keyPEM)
+						// dbMutex.Unlock()
+						if err != nil {
+							log.Printf("Ошибка сохранения сертификата на сервер: %v", err)
+						}
+					}
+					serverResultsErrors <- nil
+				case "ED25519":
+					// dbMutex.Lock()
+					certPEM, keyPEM, certErr = crypts.RecreateED25519Certificate(&cert, db)
+					// dbMutex.Unlock()
+
+					if certErr != nil {
+						serverResultsErrors <- fmt.Errorf("ошибка генерации ED25519 сертификатов: %w", certErr)
 						continue
 					}
 					if cert.SaveOnServer {
@@ -471,6 +490,11 @@ func processUserCertificates(userCertList []models.UserCertsData, db *sqlx.DB, n
 				case "RSA":
 					dbMutex.Lock()
 					certErr = crypts.RecreateUserRSACertificate(&userCert, db)
+					dbMutex.Unlock()
+					userResultsErrors <- certErr
+				case "ED25519":
+					dbMutex.Lock()
+					certErr = crypts.RecreateUserED25519Certificate(&userCert, db)
 					dbMutex.Unlock()
 					userResultsErrors <- certErr
 				default:

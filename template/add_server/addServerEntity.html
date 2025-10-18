@@ -16,7 +16,10 @@
     <div class="col-2"></div>
       <div class="col-7">
         <div><ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="#">Overview</a></li>  
+          <li class="breadcrumb-item"><a href="#"  hx-get="/overview" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Overview</a></li>    
           <li class="breadcrumb-item active" aria-current="page">Add entities</li>
           <li class="breadcrumb-item"><a href="#" hx-get="/add_server" 
             hx-target="#body" 

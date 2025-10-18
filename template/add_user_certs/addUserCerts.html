@@ -25,7 +25,10 @@
       <!-- Правая панель с формой для создания сертификата -->
       <div class="col-7">
         <div><ol class="breadcrumb">
-          <li class="breadcrumb-item"><a href="#">Overview</a></li>  
+          <li class="breadcrumb-item"><a href="#"  hx-get="/overview" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Overview</a></li>   
           <li class="breadcrumb-item"><a a href="#" hx-get="/add_entity" 
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 

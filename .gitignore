@@ -44,4 +44,5 @@ ca_tlss/*
 /logs/*
 !/logs/.gitkeep
 Dockerfile
-remove_defaults.sh  
+remove_defaults.sh
+tlss

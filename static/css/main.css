@@ -31,28 +31,117 @@
     padding-left: 3%;
     padding-right: 10%;
     align-content: center;
-    padding-top: 3%;
+    /* padding-top: 3%; */
     font-size: 14px;
     font-family: Inter;
     font-weight: 100;
+    max-height: 70vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    /* Скрываем скроллбар */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE и Edge */
+}
+
+.servers_table::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background: linear-gradient(to bottom, transparent, #212529);
+    pointer-events: none;
+    z-index: 5;
+    display: block;
+    margin-top: auto;
+}
+.servers_table thead {
+    position: sticky;
+    top: 0;
+    background-color: #212529;
+    z-index: 20;
 }
 
 .server-cert-tables {
     padding-left: 3%;
     padding-right: 10%;
     align-content: center;
-    padding-top: 3%;
+    /* padding-top: 3%; */
     font-size: 14px;
     font-family: Inter;
     font-weight: 100;
+    max-height: 40vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    /* Скрываем скроллбар */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE и Edge */
+}
+
+/* Скрываем скроллбар для Webkit браузеров */
+.server-cert-tables::-webkit-scrollbar {
+    display: none;
+}
+
+/* Градиент затухания внизу списка сертификатов - появляется когда есть overflow */
+.server-cert-tables::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background: linear-gradient(to bottom, transparent, #212529);
+    pointer-events: none;
+    z-index: 5;
+    display: block;
+    margin-top: auto;
+}
+
+/* Заголовки таблицы остаются на месте */
+.table-certs thead {
+    position: sticky;
+    top: 0;
+    background-color: #212529;
+    z-index: 20;
 }
 
 .certs_revoke_table {
     align-content: center;
-    padding-top: 3%;
+    /* padding-top: 3%; */
     font-size: 14px;
     font-family: Inter;
     font-weight: 100;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    /* Скрываем скроллбар */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* Скрываем скроллбар для Webkit браузеров */
+.certs_revoke_table::-webkit-scrollbar {
+    display: none;
+}
+
+/* Градиент затухания внизу списка отозванных сертификатов - появляется когда есть overflow */
+.certs_revoke_table::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background: linear-gradient(to bottom, transparent, #212529);
+    pointer-events: none;
+    z-index: 5;
+    display: block;
+    margin-top: auto;
 }
 .table th {
     font-weight: bold;

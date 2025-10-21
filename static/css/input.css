@@ -34,6 +34,7 @@
     padding-right: 0%;
     font-family: Inter;
     font-weight: 100;
+    flex: 1;
 }
 .core-ssh-keys {
     margin-top: 6px;
@@ -91,7 +92,35 @@ html, body {
     padding-right: 0%;
     font-family: Inter;
     font-weight: 100;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 600px;
+    position: relative;
+    /* Скрываем скроллбар */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE и Edge */
 }
+
+/* Градиент внизу левого блока - появляется когда есть overflow */
+.left-core::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(to bottom, transparent, #212529);
+    pointer-events: none;
+    z-index: 5;
+    display: block;
+    /* margin-top: -200px; */
+}
+
+/* Скрываем скроллбар для Webkit браузеров (Chrome, Safari) */
+.left-core::-webkit-scrollbar {
+    display: none;
+}
+
 .left-ca-core {
     padding-left: 20%;
     padding-right: 0%;
@@ -139,10 +168,10 @@ html, body {
     font-family: Inter  ;
     font-weight: 100;
 }
-.b-example-vr {
+/* .b-example-vr {
     flex-shrink: 0;
     width: 1.5rem;
-    height: calc(100vh - 60px); /* Учитываем высоту footer */
+    height: calc(100vh - 60px); 
 }
 .b-example-divider {
     width: 100%;
@@ -150,7 +179,7 @@ html, body {
     background-color: #0000001a;
     border: solid rgba(0,0,0,.15);
     border-width: 1px 0;
-}
+} */
 .menu-container {
     padding-left: 0%;
     padding-right: 0%;
@@ -395,11 +424,23 @@ select:focus {
     padding-top: 1%;
     font-family: Inter;
     font-weight: 100;
+    position: sticky;
+    top: 0;
+    background-color: #212529;
+    z-index: 25;
+    padding-bottom: 2%;
+    margin-bottom: 0;
 }
 .search-input-container-revoke {
     padding-left: 8%;
     padding-right: 8%;
     align-content: center;
+    position: sticky;
+    top: 0;
+    background-color: #212529;
+    z-index: 25;
+    padding-top: 5px;
+    padding-bottom: 2%;
 }
 .search-input {
     width: 100%; 
@@ -418,6 +459,12 @@ select:focus {
     padding-right: 0%;
     align-content: center;
     margin-bottom: 10%;
+    position: sticky;
+    top: 0;
+    background-color: #212529;
+    z-index: 10;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 [class^="server_id_"] {
     font-family: Inter;

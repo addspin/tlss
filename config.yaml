@@ -1,13 +1,13 @@
-################################## Настройки приложения
+################################## Настройки приложения / Application Settings
 app:
   port: 43000
   hostname: tlss.lv.local
   # hostname: localhost
-  protocol: https # http или https
-  certFile: ./https/tlss.lv.local.pem
-  keyFile: ./https/tlss.lv.local.key
+  protocol: https # http или https / http or https
+  certFile: https/tlss.lv.local.pem
+  keyFile: https/tlss.lv.local.key
 
-################################## Настройки логирования
+################################## Настройки логирования / Logging Settings
 logging:
   level: info # debug, info, warn, error
   format: text # json, text
@@ -15,64 +15,64 @@ logging:
   file: logs/tlss.log
   maxSize: 100 # MB
   maxBackups: 3
-  maxAge: 28 # days
+  maxAge: 28 # days / дней
 
-################################## Настройки авторизации
+################################## Настройки авторизации при старте приложения / Authorization Settings for application start
 login:
-  authConfig: true # true - использовать конфигурацию из config.yaml, false - использовать ручной ввод
+  authConfig: true # true - использовать конфигурацию из config.yaml, false - использовать ручной ввод / true - use config.yaml settings, false - use manual input
   username: admin
   password: 1gd5hfg5jdgsyrtf
   salt: mysecuresalt123
 
-################################## Настройки базы данных
+################################## Настройки базы данных / Database Settings
 database:
-  path: ./db/database.db
+  path: db/database.db
 
-################################## Первичные имена для корневого CA и подчиненного CA
+################################## Первичные имена для корневого CA и подчиненного CA / Default names for Root CA and Sub CA
 root_ca_tlss:
   commonName: TLSS Root CA
 
 sub_ca_tlss:
   commonName: TLSS Sub CA
 
-################################## Настройки CRL
+################################## Настройки CRL / CRL Settings
 CAcrl:
-  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/pem # der или pem большинство прокси работают с pem
+  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/pem # der или pem большинство прокси работают с pem / der or pem (most proxies work with pem)
   unit: hours # minutes, seconds, hours
-  updateInterval: 24 # minutes 12 hours
+  updateInterval: 24 # minutes 12 hours / интервал обновления: 12 часов
   version: 2
 
-################################## Настройки CA
+################################## Настройки CA / CA Settings
 CApath:
-  db: true # true - сохранять в базе данных
-  server: false # false - сохранять на сервере
+  db: true # true - сохранять в базе данных / save to database
+  server: false # false - сохранять на сервере / save to server
 
 ca_tlss:
   path_cert: ./root_ca_tlss/root_ca_tlss.pem
   path_key: ./root_ca_tlss/root_ca_tlss.key
 
-################################## Настройки SSH при добавлении сервера
+################################## Настройки SSH при добавлении сервера / SSH Settings for Server Addition
 add_server:
   unit: seconds # minutes, seconds, hours
   waitingToConnect: 3 
 
-################################## Настройки чекеров
-# Проверка доступности TCP портов
+################################## Настройки чекеров / Checker Settings
+# Проверка доступности TCP портов / TCP port availability check
 checkServer:
   unit: seconds # minutes, seconds, hours
   checkServerInterval: 10
 
-# Проверка валидности сертификатов
+# Проверка валидности сертификатов / Certificate validity check
 certsValidation:
   unit: seconds # minutes, seconds, hours
   certsValidationInterval: 30 
 
-# Пересоздание сертификатов
+# Пересоздание сертификатов / Certificate recreation
 recreateCerts:
   unit: seconds # minutes, seconds, hours
   recreateCertsInterval: 5
 
-################################## Настройки мониторинга работы чекеров
+################################## Настройки мониторинга работы чекеров / Checker Monitoring Settings
 monitor:
   unitTCP: seconds # minutes, seconds, hours
   TCPInterval: 5

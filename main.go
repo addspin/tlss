@@ -306,7 +306,7 @@ func main() {
 	var testKey models.SSHKey
 	err = db.Get(&testKey, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", "Default")
 	if err != nil {
-		privateKey, err := crypts.GeneratePrivateKey(bitSize)
+		privateKey, err := crypts.GeneratePrivateKeyForSSH(bitSize)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -317,7 +317,7 @@ func main() {
 		})
 		// privateKeyBytes := crypts.EncodePrivateKeyToPEM(privateKey)
 
-		publicKeyBytes, err := crypts.GeneratePublicKey(&privateKey.PublicKey)
+		publicKeyBytes, err := crypts.GeneratePublicKeyForSSH(&privateKey.PublicKey)
 		if err != nil {
 			log.Fatal(err.Error())
 		}

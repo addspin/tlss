@@ -1,6 +1,7 @@
 package crypts
 
 import (
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -17,7 +18,7 @@ import (
 )
 
 // generatePrivateKey creates a RSA Private Key of specified byte size
-func GeneratePrivateKey(bitSize int) (*rsa.PrivateKey, error) {
+func GeneratePrivateKeyForSSH(bitSize int) (*rsa.PrivateKey, error) {
 	// Private Key generation
 	privateKey, err := rsa.GenerateKey(rand.Reader, bitSize)
 	if err != nil {
@@ -34,7 +35,7 @@ func GeneratePrivateKey(bitSize int) (*rsa.PrivateKey, error) {
 }
 
 // encodePrivateKeyToPEM encodes Private Key from RSA to PEM format
-func EncodePrivateKeyToPEM(privateKey *rsa.PrivateKey) []byte {
+func EncodePrivateKeyToPEMForSSH(privateKey *rsa.PrivateKey) []byte {
 	// Get ASN.1 DER format
 	privDER := x509.MarshalPKCS1PrivateKey(privateKey)
 
@@ -52,8 +53,7 @@ func EncodePrivateKeyToPEM(privateKey *rsa.PrivateKey) []byte {
 }
 
 // generatePublicKey take a rsa.PublicKey and return bytes suitable for writing to .pub file
-// returns in the format "ssh-rsa ..."
-func GeneratePublicKey(privatekey *rsa.PublicKey) ([]byte, error) {
+func GeneratePublicKeyForSSH(privatekey *rsa.PublicKey) ([]byte, error) {
 	publicRsaKey, err := ssh.NewPublicKey(privatekey)
 	if err != nil {
 		return nil, err
@@ -64,7 +64,42 @@ func GeneratePublicKey(privatekey *rsa.PublicKey) ([]byte, error) {
 	return pubKeyBytes, nil
 }
 
-// - error: an error if there was a problem adding the public key or connecting to the remote server.
+// GenerateED25519SSHKeyPair генерирует пару ключей ED25519 для SSH
+func GenerateED25519SSHKeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, nil, fmt.Errorf("не удалось сгенерировать ED25519 SSH ключевую пару: %w", err)
+	}
+	return publicKey, privateKey, nil
+}
+
+// EncodeED25519PrivateKeyToPEMForSSH кодирует приватный ключ ED25519 в PEM формат для SSH
+func EncodeED25519PrivateKeyToPEMForSSH(privateKey ed25519.PrivateKey) ([]byte, error) {
+	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось закодировать приватный ключ ED25519: %w", err)
+	}
+	privateKeyPEM := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "PRIVATE KEY",
+			Bytes: privateKeyBytes,
+		},
+	)
+	return privateKeyPEM, nil
+}
+
+// GenerateED25519PublicKeyForSSH генерирует публичный ключ ED25519 в SSH формате
+func GenerateED25519PublicKeyForSSH(publicKey ed25519.PublicKey) ([]byte, error) {
+	sshPublicKey, err := ssh.NewPublicKey(publicKey)
+	if err != nil {
+		return nil, fmt.Errorf("не удалось преобразовать публичный ключ ED25519 в SSH формат: %w", err)
+	}
+
+	pubKeyBytes := ssh.MarshalAuthorizedKey(sshPublicKey)
+	return pubKeyBytes, nil
+}
+
+// error: an error if there was a problem adding the public key or connecting to the remote server.
 func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, path, sshKeyName string) error {
 
 	var key models.SSHKey

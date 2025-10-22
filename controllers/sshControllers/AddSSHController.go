@@ -35,71 +35,151 @@ func AddSSHControll(c fiber.Ctx) error {
 					"data":    err},
 			)
 		}
-		if data.NameSSHKey == "" || data.Algorithm == "" || data.KeyLength == 0 {
+		// Базовая валидация
+		if data.NameSSHKey == "" || data.Algorithm == "" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Missing required fields",
+				"message": "Missing required fields: NameSSHKey and Algorithm are required",
 			})
 		}
-		// Добавление ssh key
-		if data.NameSSHKey != "" && data.Algorithm != "" && data.KeyLength != 0 {
-			// Проверяем, существует ли уже ключ с таким именем
-			var existingKey models.SSHKey
-			err = db.Get(&existingKey, "SELECT name_ssh_key FROM ssh_key WHERE name_ssh_key = ?", data.NameSSHKey)
-			if err == nil {
+
+		// Валидация специфичных параметров для каждого алгоритма
+		switch data.Algorithm {
+		case "ED25519":
+			if data.KeyLength != 256 {
 				return c.Status(400).JSON(fiber.Map{
 					"status":  "error",
-					"message": "SSH ключ с таким именем уже существует. Используйте другое имя или удалите существующий ключ.",
+					"message": "Missing required field: KeyLength is required 256",
 				})
 			}
+		case "RSA":
+			if data.KeyLength == 0 {
+				return c.Status(400).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Missing required field: KeyLength is required for RSA algorithm",
+				})
+			}
+		case "ECDSA":
+			// Зарезервировано для будущей реализации ECDSA
+			return c.Status(501).JSON(fiber.Map{
+				"status":  "error",
+				"message": "ECDSA algorithm is not implemented yet",
+			})
+		default:
+			return c.Status(400).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Unsupported algorithm: " + data.Algorithm + ". Supported algorithms: RSA, ED25519",
+			})
+		}
 
-			// Если запись не существует, генерируем ключи
-			privateKey, err := crypts.GeneratePrivateKey(data.KeyLength)
+		// Проверяем, существует ли уже ключ с таким именем
+		var existingKey models.SSHKey
+		err = db.Get(&existingKey, "SELECT name_ssh_key FROM ssh_key WHERE name_ssh_key = ?", data.NameSSHKey)
+		if err == nil {
+			return c.Status(400).JSON(fiber.Map{
+				"status":  "error",
+				"message": "SSH ключ с таким именем уже существует. Используйте другое имя или удалите существующий ключ.",
+			})
+		}
+
+		var keyPEM []byte
+		var publicKeyBytes []byte
+
+		// Генерируем ключи в зависимости от алгоритма
+		switch data.Algorithm {
+		case "ED25519":
+			// Генерация ED25519 ключей
+			publicKey, privateKey, err := crypts.GenerateED25519SSHKeyPair()
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка генерации приватного ключа: " + err.Error(),
+					"message": "Ошибка генерации ED25519 ключевой пары: " + err.Error(),
 				})
 			}
 
-			// Кодируем приватный ключ в PEM формат
-			keyPEM := pem.EncodeToMemory(&pem.Block{
+			// Кодируем приватный ключ в PEM формат (PKCS8)
+			keyPEM, err = crypts.EncodeED25519PrivateKeyToPEMForSSH(privateKey)
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Ошибка кодирования приватного ключа ED25519: " + err.Error(),
+				})
+			}
+
+			// Генерируем публичный ключ в SSH формате
+			publicKeyBytes, err = crypts.GenerateED25519PublicKeyForSSH(publicKey)
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Ошибка генерации публичного ключа ED25519: " + err.Error(),
+				})
+			}
+
+			// ED25519 всегда использует 256-битные ключи
+			data.KeyLength = 256
+
+		case "RSA":
+			// Генерация RSA ключей
+			privateKey, err := crypts.GeneratePrivateKeyForSSH(data.KeyLength)
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Ошибка генерации приватного ключа RSA: " + err.Error(),
+				})
+			}
+
+			// Кодируем приватный ключ в PEM формат (PKCS1)
+			keyPEM = pem.EncodeToMemory(&pem.Block{
 				Type:  "RSA PRIVATE KEY",
 				Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 			})
 
 			// Генерируем публичный ключ
-			publicKeyBytes, err := crypts.GeneratePublicKey(&privateKey.PublicKey)
+			publicKeyBytes, err = crypts.GeneratePublicKeyForSSH(&privateKey.PublicKey)
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка генерации публичного ключа: " + err.Error(),
+					"message": "Ошибка генерации публичного ключа RSA: " + err.Error(),
 				})
 			}
 
-			// Шифруем приватный ключ
-			aes := crypts.Aes{}
-			encryptedKey, err := aes.Encrypt(keyPEM, crypts.AesSecretKey.Key)
-			if err != nil {
-				return c.Status(500).JSON(fiber.Map{
-					"status":  "error",
-					"message": "Ошибка шифрования приватного ключа: " + err.Error(),
-				})
-			}
-
-			_, err = db.Exec(`INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm) VALUES (?, ?, ?, ?, ?)`,
-				data.NameSSHKey, string(publicKeyBytes), string(encryptedKey), data.KeyLength, data.Algorithm)
-			if err != nil {
-				return c.Status(500).JSON(fiber.Map{
-					"status":  "error",
-					"message": "Ошибка при добавлении SSH ключа: " + err.Error(),
-				})
-			}
-			return c.Status(200).JSON(fiber.Map{
-				"status":  "success",
-				"message": "SSH key успешно добавлен",
+		default:
+			// Этот случай не должен произойти из-за валидации выше, но для безопасности
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Internal error: unknown algorithm",
 			})
 		}
+
+		// Шифруем приватный ключ
+		aes := crypts.Aes{}
+		encryptedKey, err := aes.Encrypt(keyPEM, crypts.AesSecretKey.Key)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка шифрования приватного ключа: " + err.Error(),
+			})
+		}
+
+		// Сохраняем в базу данных
+		_, err = db.Exec(`INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm) VALUES (?, ?, ?, ?, ?)`,
+			data.NameSSHKey, string(publicKeyBytes), string(encryptedKey), data.KeyLength, data.Algorithm)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Ошибка при добавлении SSH ключа: " + err.Error(),
+			})
+		}
+
+		return c.Status(200).JSON(fiber.Map{
+			"status":  "success",
+			"message": "SSH key успешно добавлен",
+			"data": fiber.Map{
+				"name":      data.NameSSHKey,
+				"algorithm": data.Algorithm,
+				"keyLength": data.KeyLength,
+			},
+		})
 	}
 	if c.Method() == "GET" {
 		sshKeyList := []models.SSHKey{}
@@ -136,7 +216,6 @@ func SSHCertListController(c fiber.Ctx) error {
 			log.Fatal(err)
 		}
 
-		// Рендерим только шаблон списка серверов
 		return c.Render("add_ssh/sshKeyList", fiber.Map{
 			"sshKeyList": &sshKeyList,
 		})

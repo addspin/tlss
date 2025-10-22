@@ -1,4 +1,3 @@
-// Инициализация select элементов только для этой страницы
 function initializeOIDSelect() {
     const selectElements = document.querySelectorAll('select[data-placeholder]');
     

@@ -14,10 +14,12 @@ function initKeyLengthControl() {
       
       if (algorithm === 'ED25519') {
         // Блокируем выбор и устанавливаем 256
-        keyLengthSelect.disabled = true;
+        // НЕ используем disabled, чтобы значение отправлялось в форме
+        keyLengthSelect.style.pointerEvents = 'none';
         keyLengthSelect.value = '256';
         keyLengthSelect.style.opacity = '0.6';
         keyLengthSelect.style.cursor = 'not-allowed';
+        keyLengthSelect.setAttribute('readonly', true);
         
         // Показываем опцию 256 и скрываем остальные
         Array.from(keyLengthSelect.options).forEach(option => {
@@ -30,9 +32,10 @@ function initKeyLengthControl() {
         });
       } else {
         // Разблокируем для RSA
-        keyLengthSelect.disabled = false;
+        keyLengthSelect.style.pointerEvents = 'auto';
         keyLengthSelect.style.opacity = '1';
         keyLengthSelect.style.cursor = 'pointer';
+        keyLengthSelect.removeAttribute('readonly');
         
         // Скрываем опцию 256 и показываем RSA опции
         Array.from(keyLengthSelect.options).forEach(option => {

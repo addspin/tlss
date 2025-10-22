@@ -325,7 +325,7 @@ func TakeCert(c fiber.Ctx) error {
 
 		if serverId != "" {
 			// Добавляем публичный ключ (сертификат)
-			publicKeyFile, err := zipWriter.Create(*domain + ".crt")
+			publicKeyFile, err := zipWriter.Create(*domain + ".pem")
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
@@ -358,7 +358,7 @@ func TakeCert(c fiber.Ctx) error {
 		}
 		if entityId != "" {
 			// Добавляем публичный ключ (сертификат)
-			publicKeyFile, err := zipWriter.Create(*commonName + ".crt")
+			publicKeyFile, err := zipWriter.Create(*commonName + ".pem")
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",

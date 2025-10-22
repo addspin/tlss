@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/middleware"
@@ -17,7 +17,7 @@ func LoginControll(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -52,7 +52,7 @@ func LoginControll(c fiber.Ctx) error {
 		var userExists bool
 		err = db.Get(&userExists, "SELECT EXISTS (SELECT 1 FROM users WHERE username = ?)", data.Username)
 		if err != nil {
-			log.Println(err)
+			slog.Error("Database query error", "error", err)
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Login controller: Check user in Database, error",
@@ -90,7 +90,7 @@ func LoginControll(c fiber.Ctx) error {
 		// Создание сессии для авторизации пользователя
 		sess, err := middleware.Store.Get(c)
 		if err != nil {
-			log.Println("Session error:", err)
+			slog.Error("Session error", "error", err)
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Session error",
@@ -99,7 +99,7 @@ func LoginControll(c fiber.Ctx) error {
 		sess.Set("authenticated", true)
 		sess.Set("username", data.Username)
 		if err := sess.Save(); err != nil {
-			log.Println("Session save error:", err)
+			slog.Error("Session save error", "error", err)
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Session save error",

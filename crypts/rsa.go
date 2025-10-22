@@ -7,7 +7,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/big"
 	"strings"
 	"time"
@@ -22,7 +22,7 @@ import (
 func GenerateRSAKeyPair(bits int) (*rsa.PrivateKey, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось сгенерировать RSA ключевую пару: %w", err)
+		return nil, fmt.Errorf("failed to generate RSA key pair: %w", err)
 	}
 	return privateKey, nil
 }
@@ -43,7 +43,7 @@ func EncodeRSAPrivateKeyToPEM(privateKey *rsa.PrivateKey) []byte {
 func EncodeRSAPublicKeyToPEM(publicKey *rsa.PublicKey) []byte {
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
-		log.Fatalf("не удалось закодировать публичный ключ: %v", err)
+		slog.Error("Failed to encode RSA public key", "error", err)
 	}
 	publicKeyPEM := pem.EncodeToMemory(
 		&pem.Block{
@@ -68,18 +68,18 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	// Генерируем новую RSA ключевую пару для сертификата
 	privateKey, err := rsa.GenerateKey(rand.Reader, data.KeyLength)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось сгенерировать RSA ключевую пару: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate RSA key pair: %w", err)
 	}
 
 	// Генерируем случайный серийный номер
 	serialNumber, err := rand.Int(rand.Reader, big.NewInt(1).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
 	// Стандартизируем серийный номер и сохраняем
 	data.SerialNumber = standardizeSerialNumber(serialNumber)
-	log.Printf("Сгенерирован серийный номер для сертификата %s: %s", data.Domain, data.SerialNumber)
+	slog.Info("Generated serial number for certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
 	// Подготавливаем шаблон сертификата
 	//dnsNames = SAN
@@ -135,7 +135,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
 		err = ExtractCA.ExtractSubCA(db)
 		if err != nil {
-			return nil, nil, fmt.Errorf("GenerateRSACertificate: не удалось извлечь промежуточный CA сертификат и ключ: %w", err)
+			return nil, nil, fmt.Errorf("GenerateRSACertificate: failed to extract intermediate CA certificate and key: %w", err)
 		}
 	}
 	// Получаем промежуточный CA сертификат и ключ
@@ -145,7 +145,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	// Создаем сертификат
 	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, &privateKey.PublicKey, subCAKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось создать сертификат: %w", err)
+		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
 	// Кодируем сертификат и приватный ключ в PEM
@@ -163,12 +163,12 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	if len(AesSecretKey.Key) > 0 {
 		encryptedKey, err = aes.Encrypt(keyPEM, AesSecretKey.Key)
 		if err != nil {
-			return nil, nil, fmt.Errorf("не удалось зашифровать приватный ключ: %w", err)
+			return nil, nil, fmt.Errorf("failed to encrypt private key: %w", err)
 		}
 	} else {
 		// Если AesSecretKey.Key не доступен, сохраняем ключ без шифрования
 		// Это потенциальная проблема безопасности
-		log.Printf("ВНИМАНИЕ: Приватный ключ сохраняется без шифрования для домена %s, т.к. AesSecretKey.Key не установлен", data.Domain)
+		slog.Warn("Private key is being saved without encryption for domain", "domain", data.Domain, "reason", "AesSecretKey.Key not set")
 		encryptedKey = keyPEM
 	}
 
@@ -183,7 +183,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		// Если произошла паника или транзакция не была зафиксирована, выполняем откат
 		if !txCommitted && tx != nil {
 			tx.Rollback()
-			log.Printf("Транзакция отменена из-за ошибки для домена %s", data.Domain)
+			slog.Error("Transaction rolled back due to error for domain", "domain", data.Domain)
 		}
 	}()
 
@@ -200,14 +200,14 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339), data.SerialNumber, "", "", 0, daysLeft)
 	if err != nil {
 		tx.Rollback()
-		return nil, nil, fmt.Errorf("не удалось добавить новый сертификат в базу данных: %w", err)
+		return nil, nil, fmt.Errorf("failed to add new certificate to database: %w", err)
 	}
-	log.Printf("Новый сертификат для домена %s добавлен в базу данных", data.Domain)
+	slog.Info("New certificate for domain added to database", "domain", data.Domain)
 	// если не установлен флаг SaveOnServer, комитим транзакцию в базу и завершаем работу
 	if !data.SaveOnServer {
 		// Фиксируем транзакцию перед возвратом
 		if err = tx.Commit(); err != nil {
-			return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+			return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
 		}
 		txCommitted = true
 		return certPEM, keyPEM, nil
@@ -215,11 +215,11 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 
 	// Если все операции прошли успешно, фиксируем транзакцию
 	if err = tx.Commit(); err != nil {
-		return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+		return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	txCommitted = true
 
-	log.Printf("Успешно сгенерирован новый RSA сертификат для домена %s", data.Domain)
+	slog.Info("Successfully generated new RSA certificate for domain", "domain", data.Domain)
 	return certPEM, keyPEM, nil
 }
 
@@ -228,18 +228,18 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	// Генерируем новую RSA ключевую пару для сертификата
 	privateKey, err := rsa.GenerateKey(rand.Reader, data.KeyLength)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось сгенерировать RSA ключевую пару: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate RSA key pair: %w", err)
 	}
 
 	// Генерируем случайный серийный номер
 	serialNumber, err := rand.Int(rand.Reader, big.NewInt(1).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
 	// Стандартизируем серийный номер и сохраняем
 	data.SerialNumber = standardizeSerialNumber(serialNumber)
-	log.Printf("Сгенерирован серийный номер для сертификата %s: %s", data.Domain, data.SerialNumber)
+	slog.Info("Generated serial number for certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
 	// Подготавливаем шаблон сертификата
 	//dnsNames = SAN
@@ -294,7 +294,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
 		err = ExtractCA.ExtractSubCA(db)
 		if err != nil {
-			return nil, nil, fmt.Errorf("RecreateRSACertificate: не удалось извлечь промежуточный CA сертификат и ключ: %w", err)
+			return nil, nil, fmt.Errorf("RecreateRSACertificate: failed to extract intermediate CA certificate and key: %w", err)
 		}
 	}
 	// Получаем промежуточный CA сертификат и ключ
@@ -305,7 +305,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	// Создаем сертификат
 	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, &privateKey.PublicKey, subCAKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось создать сертификат: %w", err)
+		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
 	// Кодируем сертификат и приватный ключ в PEM
@@ -323,12 +323,12 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	if len(AesSecretKey.Key) > 0 {
 		encryptedKey, err = aes.Encrypt(keyPEM, AesSecretKey.Key)
 		if err != nil {
-			return nil, nil, fmt.Errorf("не удалось зашифровать приватный ключ: %w", err)
+			return nil, nil, fmt.Errorf("failed to encrypt private key: %w", err)
 		}
 	} else {
 		// Если AesSecretKey.Key не доступен, сохраняем ключ без шифрования
 		// Это потенциальная проблема безопасности
-		log.Printf("ВНИМАНИЕ: Приватный ключ сохраняется без шифрования для домена %s, т.к. AesSecretKey.Key не установлен", data.Domain)
+		slog.Warn("Private key is being saved without encryption for domain", "domain", data.Domain, "reason", "AesSecretKey.Key not set")
 		encryptedKey = keyPEM
 	}
 
@@ -342,7 +342,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		// Если произошла паника или транзакция не была зафиксирована, выполняем откат
 		if !txCommitted && tx != nil {
 			tx.Rollback()
-			log.Printf("Транзакция отменена из-за ошибки для домена %s", data.Domain)
+			slog.Error("Transaction rolled back due to error for domain", "domain", data.Domain)
 		}
 	}()
 
@@ -361,15 +361,15 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		data.Domain, data.ServerId)
 	if err != nil {
 		tx.Rollback()
-		return nil, nil, fmt.Errorf("не удалось обновить существующий сертификат в базе данных: %w", err)
+		return nil, nil, fmt.Errorf("failed to update existing certificate in database: %w", err)
 	}
 
-	log.Printf("Сертификат для домена %s обновлен в базе данных (ID: %d)", data.Domain, data.Id)
+	slog.Info("Certificate for domain updated in database", "domain", data.Domain, "id", data.Id)
 
 	if !data.SaveOnServer {
 		// Фиксируем транзакцию перед возвратом
 		if err = tx.Commit(); err != nil {
-			return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+			return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
 		}
 		txCommitted = true
 		return certPEM, keyPEM, nil
@@ -377,10 +377,10 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 
 	// Если все операции прошли успешно, фиксируем транзакцию
 	if err = tx.Commit(); err != nil {
-		return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+		return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	txCommitted = true
 
-	log.Printf("Успешно сгенерирован новый RSA сертификат для домена %s", data.Domain)
+	slog.Info("Successfully generated new RSA certificate for domain", "domain", data.Domain)
 	return certPEM, keyPEM, nil
 }

@@ -2,7 +2,7 @@ package caControllers
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/addspin/tlss/models"
@@ -18,7 +18,7 @@ func AddCAController(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	fmt.Println("Connected to database: ", database)
 	defer db.Close()
@@ -27,9 +27,9 @@ func AddCAController(c fiber.Ctx) error {
 		data := new(models.CAData)
 
 		err := c.Bind().JSON(data)
-		// log.Println(data.Algorithm, data.KeyLength, data.TTL, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email, data.SAN)
+		// slog.Info(data.Algorithm, data.KeyLength, data.TTL, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email, data.SAN)
 		if err != nil {
-			log.Printf("AddCAController: %v", err)
+			slog.Error("AddCAController: Error binding JSON", "error", err)
 			return c.Status(400).JSON(
 				fiber.Map{"status": "error",
 					"message": "Cannot parse JSON!",
@@ -74,7 +74,7 @@ func AddCAController(c fiber.Ctx) error {
 		// }
 		// Если есть ошибка вернуть
 		// if certErr != nil {
-		// 	log.Printf("Certificate generation error: %v", certErr)
+		// 	slog.Info("Certificate generation error: %v", certErr)
 		// 	return c.Status(500).JSON(fiber.Map{
 		// 		"status":  "error",
 		// 		"message": "Failed to generate certificate: " + certErr.Error(),
@@ -106,7 +106,7 @@ func CACertListController(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -116,7 +116,7 @@ func CACertListController(c fiber.Ctx) error {
 		// Получаем список сертификатов с фильтрацией по статусу 0 - valid, 1 - expired
 		err = db.Select(&certList, "SELECT id, algorithm, type_ca, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, cert_create_time, cert_expire_time, days_left, data_revoke, reason_revoke, cert_status FROM ca_certs WHERE cert_status IN (0, 1)")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 		// Преобразуем формат времени из RFC3339 в 02.01.2006 15:04:05
 		for i := range certList {
@@ -125,7 +125,7 @@ func CACertListController(c fiber.Ctx) error {
 			if certList[i].CertCreateTime != "" {
 				createTime, err := time.Parse(time.RFC3339, certList[i].CertCreateTime)
 				if err != nil {
-					log.Printf("DEBUG: Ошибка парсинга CertCreateTime: %v", err)
+					slog.Error("DEBUG: Error parsing CertCreateTime", "error", err)
 				} else {
 					certList[i].CertCreateTime = createTime.Format("02.01.2006 15:04:05")
 				}
@@ -135,7 +135,7 @@ func CACertListController(c fiber.Ctx) error {
 			if certList[i].CertExpireTime != "" {
 				expireTime, err := time.Parse(time.RFC3339, certList[i].CertExpireTime)
 				if err != nil {
-					log.Printf("DEBUG: Ошибка парсинга CertExpireTime: %v", err)
+					slog.Error("DEBUG: Error parsing CertExpireTime", "error", err)
 				} else {
 					certList[i].CertExpireTime = expireTime.Format("02.01.2006 15:04:05")
 				}

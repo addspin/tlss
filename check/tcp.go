@@ -1,7 +1,7 @@
 package check
 
 import (
-	"log"
+	"log/slog"
 	"net"
 	"sync"
 	"time"
@@ -35,13 +35,13 @@ func (s *StatusCodeTcp) checkPort() {
 	s.MutexTcp.Lock()
 	defer s.MutexTcp.Unlock()
 
-	log.Println("TCP checker: Проверка доступности серверов началась")
+	slog.Info("TCP checker: Server availability check started")
 	//---------------------------------------Database inicialization
 	database := viper.GetString("database.path")
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Printf("TCP checker: Ошибка открытия базы данных: %v", err)
+		slog.Error("TCP checker: Database open error", "error", err)
 		return
 	}
 	defer db.Close()
@@ -50,12 +50,12 @@ func (s *StatusCodeTcp) checkPort() {
 	// проверяем, есть хотя бы один сервер в базе данных?
 	err = db.Get(&checkServerList, "SELECT EXISTS(SELECT 1 FROM server)")
 	if err != nil {
-		log.Printf("TCP checker: Ошибка проверки списка серверов: %v", err)
+		slog.Error("TCP checker: Server list check error", "error", err)
 		return
 	}
 	// если нет, пишем что в базе нет серверов
 	if !checkServerList {
-		log.Println("TCP checker: В базе данных нет ни одного сервера")
+		slog.Info("TCP checker: No servers in database")
 		Monitors.CheckTCP = time.Now()
 		return
 	}
@@ -63,39 +63,39 @@ func (s *StatusCodeTcp) checkPort() {
 	serverList := []models.Server{}
 	err = db.Select(&serverList, "SELECT hostname, port FROM server WHERE port IS NOT NULL")
 	if err != nil {
-		log.Printf("TCP checker: Ошибка извлечения серверов из базы данных: %v", err)
+		slog.Error("TCP checker: Error retrieving servers from database", "error", err)
 		return
 	}
 	// Проверка на наличие сервера в базе данных
 	if len(serverList) == 0 {
-		log.Println("TCP checker: В базе данных нет серверов для проверки")
+		slog.Info("TCP checker: No servers to check in database")
 	} else {
 		// проходимся по списку серверов и проверяем доступность
 		testData := utils.NewTestData()
 		for _, server := range serverList {
 			port, err := testData.TestString(server.Port)
 			if err != nil {
-				log.Printf("TCP checker: Ошибка преобразования порта для %s: %v", server.Hostname, err)
+				slog.Error("TCP checker: Port conversion error", "hostname", server.Hostname, "error", err)
 				continue
 			}
 			conn, err := net.Dial("tcp", server.Hostname+":"+port)
 			if err != nil {
 				s.ExitCodeTcp = false // port is not available
-				// log.Println("TCP port is not available:", server.Hostname+":"+server.Port)
-				log.Printf("TCP checker: порт не доступен: %s:%d, ошибка: %v", server.Hostname, server.Port, err)
+				// slog.Info("TCP port is not available", "hostname", server.Hostname, "port", server.Port)
+				slog.Warn("TCP checker: Port is not available", "hostname", server.Hostname, "port", server.Port, "error", err)
 				_, err = db.Exec("UPDATE server SET server_status = ? WHERE hostname = ? AND port = ?", "offline", server.Hostname, server.Port)
 				if err != nil {
-					log.Printf("TCP checker: Ошибка обновления статуса сервера: %v", err)
+					slog.Error("TCP checker: Server status update error", "error", err)
 					continue
 				}
 			} else {
 				s.ExitCodeTcp = true // port is available
-				// log.Println("TCP port is available:", server.Hostname+":"+server.Port)
-				log.Printf("TCP checker: порт доступен: %s:%d", server.Hostname, server.Port)
+				// slog.Info("TCP port is available", "hostname", server.Hostname, "port", server.Port)
+				slog.Info("TCP checker: Port is available", "hostname", server.Hostname, "port", server.Port)
 				// меняем значение в базе данных c offline на online
 				_, err = db.Exec("UPDATE server SET server_status = ? WHERE hostname = ? AND port = ?", "online", server.Hostname, server.Port)
 				if err != nil {
-					log.Printf("TCP checker: Ошибка обновления статуса сервера: %v", err)
+					slog.Error("TCP checker: Server status update error", "error", err)
 				}
 				conn.Close()
 			}

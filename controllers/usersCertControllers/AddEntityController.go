@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -17,7 +17,7 @@ func AddEntityController(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -46,7 +46,8 @@ func AddEntityController(c fiber.Ctx) error {
 		dataTest := `SELECT * FROM entity WHERE entity_name = $1`
 		t, err := tx.Query(dataTest, data.EntityName)
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Fatal error", "error", err)
+			return err
 		}
 		if t.Next() { //Если предыдущий запрос выполнился успешно, проверяется есть ли хотябы одна строка с таким именем
 			// Закрываем результат запроса
@@ -55,7 +56,7 @@ func AddEntityController(c fiber.Ctx) error {
 			tx.Rollback() // Откатываем транзакцию
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Сущность с таким именем уже существует",
+				"message": "Entity with this name already exists",
 			})
 		} else {
 			// Закрываем результат запроса
@@ -67,22 +68,22 @@ func AddEntityController(c fiber.Ctx) error {
 				tx.Rollback() // Откатываем транзакцию при ошибке
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка при добавлении данных в базу данных: " + err.Error(),
+					"message": "Error adding data to database: " + err.Error(),
 				})
 			}
 			err = tx.Commit() // Проверяем ошибку при коммите
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка при сохранении данных: " + err.Error(),
+					"message": "Error saving data: " + err.Error(),
 				})
 			}
 			entityList := []models.EntityData{}
 			error := db.Select(&entityList, "SELECT id, TRIM(entity_name) as entity_name, TRIM(entity_description) as entity_description FROM entity")
 			if error != nil {
-				log.Fatal(err)
+				slog.Error("Fatal error", "error", err)
 			}
-			log.Println("entityList", entityList)
+			slog.Info("Entity list retrieved", "count", len(entityList))
 			return c.Render("add_entity/addEntity", fiber.Map{
 				"Title":      "Add entity",
 				"entityList": &entityList,
@@ -93,9 +94,9 @@ func AddEntityController(c fiber.Ctx) error {
 		entityList := []models.EntityData{}
 		err := db.Select(&entityList, "SELECT id, TRIM(entity_name) as entity_name, TRIM(entity_description) as entity_description FROM entity")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
-		log.Println("entityList", entityList)
+		slog.Info("Entity list retrieved", "count", len(entityList))
 		return c.Render("add_entity/addEntity", fiber.Map{
 			"Title":      "Add entity",
 			"entityList": &entityList,

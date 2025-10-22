@@ -24,37 +24,37 @@ func (e *ca) ExtractSubCA(db *sqlx.DB) error {
 	var subCA models.CAData
 	err := db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
-		return fmt.Errorf("ExtractCA: не удалось получить промежуточный CA: %v", err)
+		return fmt.Errorf("ExtractCA: failed to get intermediate CA: %v", err)
 	}
 	if subCA.CertStatus != 0 {
-		return fmt.Errorf("ExtractCA: промежуточный CA сертификат недоступен")
+		return fmt.Errorf("ExtractCA: intermediate CA certificate is unavailable")
 	}
 
 	// Декодируем промежуточный CA сертификат
 	subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
 	if subCACertBlock == nil {
-		return fmt.Errorf("ExtractCA: не удалось декодировать PEM промежуточного CA сертификата")
+		return fmt.Errorf("ExtractCA: failed to decode intermediate CA certificate PEM")
 	}
 	subCAcert, err := x509.ParseCertificate(subCACertBlock.Bytes)
 	if err != nil {
-		return fmt.Errorf("ExtractCA: не удалось разобрать промежуточный CA сертификат: %w", err)
+		return fmt.Errorf("ExtractCA: failed to parse intermediate CA certificate: %w", err)
 	}
 
 	// Расшифровываем приватный ключ промежуточного CA
 	aes := Aes{}
 	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), AesSecretKey.Key)
 	if err != nil {
-		return fmt.Errorf("ExtractCA: не удалось расшифровать приватный ключ промежуточного CA: %w", err)
+		return fmt.Errorf("ExtractCA: failed to decrypt intermediate CA private key: %w", err)
 	}
 
 	// Декодируем приватный ключ промежуточного CA
 	subCAKeyBlock, _ := pem.Decode(decryptedKey)
 	if subCAKeyBlock == nil {
-		return fmt.Errorf("ExtractCA: не удалось декодировать PEM приватного ключа промежуточного CA")
+		return fmt.Errorf("ExtractCA: failed to decode intermediate CA private key PEM")
 	}
 	subCAKey, err := x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
 	if err != nil {
-		return fmt.Errorf("ExtractCA: не удалось разобрать приватный ключ промежуточного CA: %w", err)
+		return fmt.Errorf("ExtractCA: failed to parse intermediate CA private key: %w", err)
 	}
 	e.SubCAcert = subCAcert
 	e.SubCAKey = subCAKey

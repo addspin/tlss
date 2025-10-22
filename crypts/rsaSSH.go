@@ -7,7 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/addspin/tlss/models"
@@ -68,7 +68,7 @@ func GeneratePublicKeyForSSH(privatekey *rsa.PublicKey) ([]byte, error) {
 func GenerateED25519SSHKeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось сгенерировать ED25519 SSH ключевую пару: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate ED25519 SSH key pair: %w", err)
 	}
 	return publicKey, privateKey, nil
 }
@@ -77,7 +77,7 @@ func GenerateED25519SSHKeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) 
 func EncodeED25519PrivateKeyToPEMForSSH(privateKey ed25519.PrivateKey) ([]byte, error) {
 	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось закодировать приватный ключ ED25519: %w", err)
+		return nil, fmt.Errorf("failed to encode ED25519 private key: %w", err)
 	}
 	privateKeyPEM := pem.EncodeToMemory(
 		&pem.Block{
@@ -92,7 +92,7 @@ func EncodeED25519PrivateKeyToPEMForSSH(privateKey ed25519.PrivateKey) ([]byte, 
 func GenerateED25519PublicKeyForSSH(publicKey ed25519.PublicKey) ([]byte, error) {
 	sshPublicKey, err := ssh.NewPublicKey(publicKey)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось преобразовать публичный ключ ED25519 в SSH формат: %w", err)
+		return nil, fmt.Errorf("failed to convert ED25519 public key to SSH format: %w", err)
 	}
 
 	pubKeyBytes := ssh.MarshalAuthorizedKey(sshPublicKey)
@@ -106,19 +106,19 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 	if sshKeyName != "" {
 		err := db.Get(&key, "SELECT * FROM ssh_key WHERE server_name = ?", sshKeyName)
 		if err != nil {
-			return fmt.Errorf("не удалось извлечь сертфиикаты: %w", err)
+			return fmt.Errorf("failed to retrieve certificates: %w", err)
 		}
 		aes := Aes{}
 		decryptPrivKey, err := aes.Decrypt(([]byte(key.PrivateKey)), AesSecretKey.Key)
 		if err != nil {
-			log.Fatalf("rsaSSH: ошибка расшифровки приватного ключа %v", err)
+			slog.Error("rsaSSH: Private key decryption error", "error", err)
 		}
-		// log.Println("decryptPrivKey: ", string(decryptPrivKey))
+		// slog.Debug("decryptPrivKey", "key", string(decryptPrivKey))
 		signer, err := ssh.ParsePrivateKey(decryptPrivKey)
 		if err != nil {
-			log.Fatalf("rsaSSH: ошибка, невозможно получить приватный ключ %v", err)
+			slog.Error("rsaSSH: Unable to get private key", "error", err)
 		}
-		// log.Println("signer: ", signer)
+		// slog.Debug("signer", "signer", signer)
 		keyConfig := &ssh.ClientConfig{
 			User: username,
 			Auth: []ssh.AuthMethod{
@@ -130,20 +130,20 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 		}
 		client, err := ssh.Dial("tcp", hostname+":"+tlssSSHport, keyConfig)
 		if err != nil {
-			log.Println("addServer: ошибка подключения к серверу:", err)
-			return fmt.Errorf("ошибка подключения к серверу: %w", err)
+			slog.Error("addServer: Server connection error", "error", err)
+			return fmt.Errorf("failed to connect to server: %w", err)
 		}
 		defer client.Close()
 
 		err = testEndCopy(client, hostname, path, key)
 		if err != nil {
-			return fmt.Errorf("addServer: key:ошибка тестирования пути и копирования ключа: %w", err)
+			return fmt.Errorf("addServer: key: failed to test path and copy key: %w", err)
 		}
 	}
 	if password != "" {
 		err := db.Get(&key, "SELECT * FROM ssh_key WHERE server_name = ?", "Default")
 		if err != nil {
-			return fmt.Errorf("не удалось извлечь сертфиикаты: %w", err)
+			return fmt.Errorf("failed to retrieve certificates: %w", err)
 		}
 		keyConfig := &ssh.ClientConfig{
 			User: username,
@@ -156,14 +156,14 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 		}
 		client, err := ssh.Dial("tcp", hostname+":"+tlssSSHport, keyConfig)
 		if err != nil {
-			log.Println("addServer: ошибка подключения к серверу:", err)
-			return fmt.Errorf("ошибка подключения к серверу: %w", err)
+			slog.Error("addServer: Server connection error", "error", err)
+			return fmt.Errorf("failed to connect to server: %w", err)
 		}
 		defer client.Close()
 
 		err = testEndCopy(client, hostname, path, key)
 		if err != nil {
-			return fmt.Errorf("addServer: password: ошибка тестирования пути и копирования ключа: %w", err)
+			return fmt.Errorf("addServer: password: failed to test path and copy key: %w", err)
 		}
 	}
 	return nil
@@ -172,7 +172,7 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 func testEndCopy(client *ssh.Client, hostname, path string, key models.SSHKey) error {
 	TestPathCert, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("addServer: ошибка создания сессии: %w", err)
+		return fmt.Errorf("addServer: failed to create session: %w", err)
 	}
 	defer TestPathCert.Close()
 
@@ -180,12 +180,12 @@ func testEndCopy(client *ssh.Client, hostname, path string, key models.SSHKey) e
 
 	err = TestPathCert.Run(cmdPathCertTest)
 	if err != nil {
-		return fmt.Errorf("addServer: ошибка, путь хранения сертификата не существует: %w", err)
+		return fmt.Errorf("addServer: certificate storage path does not exist: %w", err)
 	}
 
 	sessionTestCert, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("addServer: ошибка создания сессии: %w", err)
+		return fmt.Errorf("addServer: failed to create session: %w", err)
 	}
 	defer sessionTestCert.Close()
 
@@ -196,7 +196,7 @@ func testEndCopy(client *ssh.Client, hostname, path string, key models.SSHKey) e
 	// Извлекаем основную часть ключа (тип и ключ без комментария) - первые два поля
 	keyParts := strings.Fields(pubKey)
 	if len(keyParts) < 2 {
-		return fmt.Errorf("addServer: некорректный формат публичного ключа")
+		return fmt.Errorf("addServer: invalid public key format")
 	}
 	keyCore := keyParts[0] + " " + keyParts[1] // ssh-rsa + base64_key
 	// Ищем по основной части ключа, игнорируя комментарий
@@ -208,19 +208,19 @@ func testEndCopy(client *ssh.Client, hostname, path string, key models.SSHKey) e
 
 	sessionAddCert, err := client.NewSession()
 	if err != nil {
-		return fmt.Errorf("addServer: ошибка создания сессии: %w", err)
+		return fmt.Errorf("addServer: failed to create session: %w", err)
 	}
 	defer sessionAddCert.Close()
 
 	if !keyExists {
 		err := sessionAddCert.Run(cmdAddCert)
 		if err != nil {
-			return fmt.Errorf("addServer: ошибка выполнения команды sessionAddCert: %w", err)
+			return fmt.Errorf("addServer: failed to execute sessionAddCert command: %w", err)
 		}
-		log.Println("rsaSSH: ключ успешно добавлен на сервер ", hostname)
+		slog.Info("rsaSSH: Key successfully added to server", "hostname", hostname)
 		sessionAddCert.Close()
 	} else {
-		log.Println("rsaSSH: ключ уже существует, пропускаем добавление на сервер ", hostname)
+		slog.Info("rsaSSH: Key already exists, skipping addition to server", "hostname", hostname)
 	}
 	return nil
 }

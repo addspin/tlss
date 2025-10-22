@@ -3,7 +3,7 @@ package sshControllers
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
@@ -20,7 +20,7 @@ func AddSSHControll(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -78,7 +78,7 @@ func AddSSHControll(c fiber.Ctx) error {
 		if err == nil {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "SSH ключ с таким именем уже существует. Используйте другое имя или удалите существующий ключ.",
+				"message": "SSH key with this name already exists. Use a different name or delete the existing key.",
 			})
 		}
 
@@ -93,7 +93,7 @@ func AddSSHControll(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка генерации ED25519 ключевой пары: " + err.Error(),
+					"message": "Error generating ED25519 key pair: " + err.Error(),
 				})
 			}
 
@@ -102,7 +102,7 @@ func AddSSHControll(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка кодирования приватного ключа ED25519: " + err.Error(),
+					"message": "Error encoding ED25519 private key: " + err.Error(),
 				})
 			}
 
@@ -111,7 +111,7 @@ func AddSSHControll(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка генерации публичного ключа ED25519: " + err.Error(),
+					"message": "Error generating ED25519 public key: " + err.Error(),
 				})
 			}
 
@@ -124,7 +124,7 @@ func AddSSHControll(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка генерации приватного ключа RSA: " + err.Error(),
+					"message": "Error generating RSA private key: " + err.Error(),
 				})
 			}
 
@@ -139,7 +139,7 @@ func AddSSHControll(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка генерации публичного ключа RSA: " + err.Error(),
+					"message": "Error generating RSA public key: " + err.Error(),
 				})
 			}
 
@@ -157,7 +157,7 @@ func AddSSHControll(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка шифрования приватного ключа: " + err.Error(),
+				"message": "Error encrypting private key: " + err.Error(),
 			})
 		}
 
@@ -167,13 +167,13 @@ func AddSSHControll(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при добавлении SSH ключа: " + err.Error(),
+				"message": "Error adding SSH key: " + err.Error(),
 			})
 		}
 
 		return c.Status(200).JSON(fiber.Map{
 			"status":  "success",
-			"message": "SSH key успешно добавлен",
+			"message": "SSH key successfully added",
 			"data": fiber.Map{
 				"name":      data.NameSSHKey,
 				"algorithm": data.Algorithm,
@@ -185,7 +185,7 @@ func AddSSHControll(c fiber.Ctx) error {
 		sshKeyList := []models.SSHKey{}
 		err = db.Select(&sshKeyList, "SELECT id, name_ssh_key, algorithm, key_length FROM ssh_key")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 		return c.Render("add_ssh/addSSHKey", fiber.Map{
 			"Title":      "Add ssh key",
@@ -205,7 +205,7 @@ func SSHCertListController(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -213,7 +213,7 @@ func SSHCertListController(c fiber.Ctx) error {
 		sshKeyList := []models.SSHKey{}
 		err = db.Select(&sshKeyList, "SELECT id, name_ssh_key, algorithm, key_length FROM ssh_key")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 
 		return c.Render("add_ssh/sshKeyList", fiber.Map{

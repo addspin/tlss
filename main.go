@@ -7,7 +7,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/fs"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -42,13 +41,14 @@ func main() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Fatalf("Error reading config file: %s", err)
+		slog.Error("Error reading config file", "error", err)
+		os.Exit(1)
 	}
 
 	// Настраиваем структурированное логирование
 	logFile, err := utils.SetupSlogLogger()
 	if err != nil {
-		slog.Error("Ошибка настройки логирования", "error", err)
+		slog.Error("Error setting up logging", "error", err)
 		// Продолжаем со стандартным логированием
 	}
 	if logFile != nil {
@@ -59,10 +59,10 @@ func main() {
 	//---------------------------------------Database initialization
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		slog.Error("Ошибка подключения к базе данных", "error", err)
+		slog.Error("Database connection error", "error", err)
 		os.Exit(1)
 	}
-	slog.Info("Подключение к базе данных успешно", "database", database)
+	slog.Info("Database connection successful", "database", database)
 	defer db.Close()
 
 	// init
@@ -71,95 +71,98 @@ func main() {
 	for _, dir := range dirs {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
-			slog.Error("Ошибка создания директории", "directory", dir, "error", err)
+			slog.Error("Error creating directory", "directory", dir, "error", err)
 		} else {
-			slog.Debug("Директория создана или уже существует", "directory", dir)
+			slog.Debug("Directory created or already exists", "directory", dir)
 		}
 	}
 
 	// create add_server tables in db (хранит данные серверов)
 	_, err = db.Exec(models.SchemaServer)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating server table", "error", err)
 	}
 	// create SchemaKey tables in db (хранит данные ключа)
 	_, err = db.Exec(models.SchemaKey)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating key table", "error", err)
 	}
 	// create SchemaCerts tables in db (хранит данные сертификатов)
 	_, err = db.Exec(models.SchemaCerts)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating certs table", "error", err)
 	}
 
 	// create SchemaCA tables in db (хранит данные CA)
 	_, err = db.Exec(models.SchemaCA)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating CA table", "error", err)
 	}
 
 	// create SchemaCrlInfoSubCA tables in db (хранит данные CRL подписанных сертификатами Sub CA)
 	_, err = db.Exec(models.SchemaCrlInfoSubCA)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating CRL info SubCA table", "error", err)
 	}
 
 	// create SchemaCrlInfoRootCA tables in db (хранит данные CRL подписанных сертификатами Root CA)
 	_, err = db.Exec(models.SchemaCrlInfoRootCA)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating CRL info RootCA table", "error", err)
 	}
 
 	// create SchemaCRL tables in db (хранит данные CRL)
 	_, err = db.Exec(models.SchemaCRL)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating CRL table", "error", err)
 	}
 
 	// create SchemaSSHKey tables in db (хранит данные ssh ключей)
 	_, err = db.Exec(models.SchemaSSHKey)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating SSH key table", "error", err)
 	}
 
 	// create Users tables in db (хранит данные Users)
 	_, err = db.Exec(models.UsersData)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating users table", "error", err)
 	}
 
 	// create SchemaEntity tables in db (хранит данные сущностей)
 	_, err = db.Exec(models.SchemaEntity)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating entity table", "error", err)
 	}
 
 	// create SchemaOID tables in db (хранит данные OID)
 	_, err = db.Exec(models.SchemaOID)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating OID table", "error", err)
 	}
 
 	// create SchemaUserCerts tables in db (хранит данные пользовательских сертификатов)
 	_, err = db.Exec(models.SchemaUserCerts)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error creating user certs table", "error", err)
 	}
 	var password, salt []byte
 	// Получаем логин, пароль и соль из конфигурации для отладки
 	if viper.GetBool("login.authConfig") {
 		login := viper.GetString("login.username")
 		if login == "" {
-			log.Fatal("Логин не может быть пустым")
+			slog.Error("Login cannot be empty")
+			os.Exit(1)
 		}
 		password = []byte(viper.GetString("login.password"))
 		if len(password) == 0 {
-			log.Fatal("Пароль не может быть пустым")
+			slog.Error("Password cannot be empty")
+			os.Exit(1)
 		}
 		salt = []byte(viper.GetString("login.salt"))
 		if len(salt) == 0 {
-			log.Fatal("Соль не может быть пустой")
+			slog.Error("Salt cannot be empty")
+			os.Exit(1)
 		}
 	}
 	// Если не используем конфигурацию, то запрашиваем логин, пароль и соль вручную
@@ -168,33 +171,40 @@ func main() {
 		fmt.Print("Enter login: ")
 		_, err = fmt.Scanln(&login)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Error reading login", "error", err)
+			os.Exit(1)
 		}
 
 		if len(login) == 0 {
-			log.Fatal("Логин не может быть пустым")
+			slog.Error("Login cannot be empty")
+			os.Exit(1)
 		}
 		err = db.Get(&user, "SELECT username FROM users WHERE username = ?", login)
 		if err != nil {
-			log.Fatal("Логин не найден")
+			slog.Error("Login not found", "error", err)
+			os.Exit(1)
 		}
 
 		fmt.Print("Enter password: ")
 		_, err = fmt.Scanln(&password)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Error reading password", "error", err)
+			os.Exit(1)
 		}
 		if len(password) == 0 {
-			log.Fatal("Пароль не может быть пустым")
+			slog.Error("Password cannot be empty")
+			os.Exit(1)
 		}
 
 		fmt.Print("Enter salt: ")
 		_, err = fmt.Scanln(&salt)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Error reading salt", "error", err)
+			os.Exit(1)
 		}
 		if len(salt) == 0 {
-			log.Fatal("Соль не может быть пустой")
+			slog.Error("Salt cannot be empty")
+			os.Exit(1)
 		}
 
 	}
@@ -206,7 +216,8 @@ func main() {
 	var exists bool
 	err = db.Get(&exists, "SELECT EXISTS (SELECT 1 FROM secret_key)")
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Error checking if secret key exists", "error", err)
+		os.Exit(1)
 	}
 	//если нет, то просим ввести ключ
 	aes := crypts.Aes{}
@@ -216,7 +227,8 @@ func main() {
 		fmt.Print("Enter login: ")
 		_, err = fmt.Scanln(&login)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Error reading login", "error", err)
+			os.Exit(1)
 		}
 
 		// запрос ввода пароля
@@ -224,7 +236,8 @@ func main() {
 		fmt.Print("Enter password: ")
 		_, err = fmt.Scanln(&password)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Error reading password", "error", err)
+			os.Exit(1)
 		}
 
 		// запрос ввода соли
@@ -232,12 +245,14 @@ func main() {
 		fmt.Print("Enter salt: ")
 		_, err = fmt.Scanln(&salt)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Error reading salt", "error", err)
+			os.Exit(1)
 		}
 
 		// Проверяем, что пароль и соль не пустые
 		if len(password) == 0 || len(salt) == 0 {
-			log.Fatal("Пароль и соль не могут быть пустыми")
+			slog.Error("Password and salt cannot be empty")
+			os.Exit(1)
 		}
 
 		// Генерируем итоговый пароль через PBKDF2
@@ -248,29 +263,34 @@ func main() {
 		key := make([]byte, 32)
 		_, err := rand.Read(key)
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Error generating random key", "error", err)
+			os.Exit(1)
 		}
 		// шифруем ключ паролем
 		cryptoKey, err := aes.Encrypt(key, pwd) // cryptoKey - зашифрованный ключ
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Fatal error", "error", err)
+			os.Exit(1)
 		}
 		tx := db.MustBegin()
 		// записываем в таблицу key зашифрованный ключ
 		keyInsert := `INSERT INTO secret_key (key_data) VALUES ($1)`
 		_, err = tx.Exec(keyInsert, cryptoKey)
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Error inserting secret key", "error", err)
+			os.Exit(1)
 		}
 		// записываем в таблицу login владельца
 		loginInsert := `INSERT INTO users (username) VALUES ($1)`
 		_, err = tx.Exec(loginInsert, login)
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Error inserting user", "error", err)
+			os.Exit(1)
 		}
 		err = tx.Commit()
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Error committing transaction", "error", err)
+			os.Exit(1)
 		}
 		//расшифровываем и передаем в переменную ключ
 		var keyData []models.Key
@@ -281,7 +301,8 @@ func main() {
 		for _, keyData := range keyData {
 			decryptKey, err := aes.Decrypt([]byte(keyData.Key), pwd)
 			if err != nil {
-				log.Fatal(err.Error())
+				slog.Error("Error decrypting key", "error", err)
+				os.Exit(1)
 			}
 			//записываем расшифрованный ключ в переменную
 			crypts.AesSecretKey.Key = decryptKey
@@ -296,7 +317,8 @@ func main() {
 	for _, keyData := range keyData {
 		decryptKey, err := aes.Decrypt([]byte(keyData.Key), pwd)
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Error decrypting key", "error", err)
+			os.Exit(1)
 		}
 		//записываем расшифрованный ключ в переменную
 		crypts.AesSecretKey.Key = decryptKey
@@ -308,7 +330,8 @@ func main() {
 	if err != nil {
 		privateKey, err := crypts.GeneratePrivateKeyForSSH(bitSize)
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Fatal error", "error", err)
+			os.Exit(1)
 		}
 
 		keyPEM := pem.EncodeToMemory(&pem.Block{
@@ -319,18 +342,21 @@ func main() {
 
 		publicKeyBytes, err := crypts.GeneratePublicKeyForSSH(&privateKey.PublicKey)
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Fatal error", "error", err)
+			os.Exit(1)
 		}
 
 		// privateKeyBytes := crypts.EncodePrivateKeyToPEM(privateKey)
 		encryptedKey, err := aes.Encrypt(keyPEM, crypts.AesSecretKey.Key)
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Fatal error", "error", err)
+			os.Exit(1)
 		}
 		// Если записи нет, вставляем новую
 		_, err = db.Exec("INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm) VALUES (?, ?, ?, ?, ?)", "Default", string(publicKeyBytes), string(encryptedKey), bitSize, "RSA")
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Fatal error", "error", err)
+			os.Exit(1)
 		}
 
 	}
@@ -338,9 +364,9 @@ func main() {
 	// Извлекаем CA из базы данных для использования в разных пакетах
 	err = crypts.ExtractCA.ExtractSubCA(db)
 	if err != nil {
-		log.Println(err.Error())
+		slog.Error("Error occurred", "error", err)
 	} else {
-		log.Printf("ExtractCA: промежуточный CA сертификат и ключ успешно извлечены")
+		slog.Info("ExtractCA: Intermediate CA certificate and key successfully extracted")
 	}
 
 	//---------------------------------------Start Monitor
@@ -370,7 +396,8 @@ func main() {
 	// Создаем поддиректорию для шаблонов
 	templateFiles, err := fs.Sub(templateFS, "template")
 	if err != nil {
-		log.Fatal("Ошибка при создании файловой системы для шаблонов:", err)
+		slog.Error("Error creating filesystem for templates", "error", err)
+		os.Exit(1)
 	}
 
 	// Инициализируем движок шаблонов с встроенными файлами
@@ -395,7 +422,7 @@ func main() {
 		keyFile := viper.GetString("app.keyFile")
 		address := viper.GetString("app.hostname") + ":" + viper.GetString("app.port")
 
-		slog.Info("Запуск TLSS сервера с HTTPS",
+		slog.Info("Starting TLSS server with HTTPS",
 			"address", address,
 			"cert_file", certFile,
 			"key_file", keyFile)
@@ -404,17 +431,17 @@ func main() {
 			CertFile:    certFile,
 			CertKeyFile: keyFile,
 		}); err != nil {
-			slog.Error("Ошибка запуска HTTPS сервера", "error", err)
+			slog.Error("Error starting HTTPS server", "error", err)
 			os.Exit(1)
 		}
 	} else {
 		// Запуск без TLS (HTTP)
 		address := viper.GetString("app.hostname") + ":" + viper.GetString("app.port")
 
-		slog.Info("Запуск TLSS сервера с HTTP", "address", address)
+		slog.Info("Starting TLSS server with HTTP", "address", address)
 
 		if err := app.Listen(address); err != nil {
-			slog.Error("Ошибка запуска HTTP сервера", "error", err)
+			slog.Error("Error starting HTTP server", "error", err)
 			os.Exit(1)
 		}
 	}

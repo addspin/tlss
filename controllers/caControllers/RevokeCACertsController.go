@@ -2,7 +2,7 @@ package caControllers
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/addspin/tlss/models"
@@ -18,7 +18,7 @@ func RevokeCACertsController(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	fmt.Println("Connected to database: ", database)
 	defer db.Close()
@@ -27,7 +27,7 @@ func RevokeCACertsController(c fiber.Ctx) error {
 		certList := []models.CAData{}
 		err := db.Select(&certList, "SELECT id, common_name, type_ca, algorithm, key_length, ttl, cert_create_time, cert_expire_time, days_left, data_revoke, reason_revoke FROM ca_certs WHERE cert_status IN (2)")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 		// Преобразуем формат времени из RFC3339 в 02.01.2006 15:04:05
 		for i := range certList {

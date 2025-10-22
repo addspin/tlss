@@ -37,7 +37,7 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 
 	serialNumber, err := rand.Int(rand.Reader, big.NewInt(1).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		return fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
+		return fmt.Errorf("failed to generate serial number: %w", err)
 	}
 	serialNumberStr := strings.ToUpper(serialNumber.Text(16))
 
@@ -80,7 +80,7 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 		certPath := viper.GetString("ca_tlss.path_cert")
 		keyPath := viper.GetString("ca_tlss.path_key")
 		if certPath == "" || keyPath == "" {
-			return fmt.Errorf("в конфигурации не заданы ca_tlss.path_cert/ca_tlss.path_key")
+			return fmt.Errorf("ca_tlss.path_cert/ca_tlss.path_key not set in configuration")
 		}
 
 		// Создать директории при необходимости
@@ -122,7 +122,7 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 		aes := Aes{}
 		encryptedKey, err := aes.Encrypt(keyPEM, AesSecretKey.Key)
 		if err != nil {
-			return fmt.Errorf("root CA: ошибка при шифровании приватного ключа: %w", err)
+			return fmt.Errorf("root CA: error encrypting private key: %w", err)
 		}
 
 		tx := db.MustBegin()
@@ -141,16 +141,16 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 			daysLeft, serialNumberStr, "", "", 0,
 		)
 		if err != nil {
-			return fmt.Errorf("root CA: ошибка при вставке нового сертификата: %w", err)
+			return fmt.Errorf("root CA: error inserting new certificate: %w", err)
 		}
 		err = tx.Commit()
 		if err != nil {
-			return fmt.Errorf("root CA: ошибка при коммите: %w", err)
+			return fmt.Errorf("root CA: error committing: %w", err)
 		}
 		// Когда отзывается Root CA автоматически пересоздается Sub CA
 		data.CommonName = viper.GetString("sub_ca_tlss.commonName") // Значение Sub CA из config
 		if err := GenerateRSASubCA(data, db); err != nil {
-			return fmt.Errorf("GenerateRSARootCA: Ошибка при генерации Sub CA %w", err)
+			return fmt.Errorf("GenerateRSARootCA: Error generating Sub CA %w", err)
 		}
 	}
 

@@ -14,7 +14,7 @@ func GetUserCRL(c fiber.Ctx) error {
 	// Проверяем существование файла
 	if _, err := os.Stat(crlPath); os.IsNotExist(err) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "CRL файл не найден",
+			"error": "CRL file not found",
 		})
 	}
 

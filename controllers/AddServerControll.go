@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 	"strconv"
 
 	"github.com/addspin/tlss/crypts"
@@ -19,7 +19,7 @@ func AddServerControll(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -44,7 +44,7 @@ func AddServerControll(c fiber.Ctx) error {
 		if data.SSHKey != "" && data.Password != "" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Выберите что то одно - Пароль или Ключ, если выбран пароль ключ Default будет скопирован на сервер",
+				"message": "Choose one: Password or Key. If password is selected, the Default key will be copied to the server",
 			})
 		}
 
@@ -65,7 +65,8 @@ func AddServerControll(c fiber.Ctx) error {
 			dataTest := `SELECT * FROM server WHERE hostname = $1`
 			t, err := tx.Query(dataTest, data.Hostname)
 			if err != nil {
-				log.Fatal(err.Error())
+				slog.Error("Database query error", "error", err)
+				return err
 			}
 			if t.Next() { //Если предыдущий запрос выполнился успешно, проверяется есть ли хотябы одна строка с таким именем
 				// Закрываем результат запроса
@@ -74,7 +75,7 @@ func AddServerControll(c fiber.Ctx) error {
 				tx.Rollback() // Откатываем транзакцию
 				return c.Status(400).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Сервер с таким именем уже существует",
+					"message": "Server with this name already exists",
 				})
 			} else {
 				// Закрываем результат запроса
@@ -86,19 +87,19 @@ func AddServerControll(c fiber.Ctx) error {
 					tx.Rollback() // Откатываем транзакцию при ошибке
 					return c.Status(500).JSON(fiber.Map{
 						"status":  "error",
-						"message": "Ошибка при добавлении данных в базу данных: " + err.Error(),
+						"message": "Error adding data to database: " + err.Error(),
 					})
 				}
 				err = tx.Commit() // Проверяем ошибку при коммите
 				if err != nil {
 					return c.Status(500).JSON(fiber.Map{
 						"status":  "error",
-						"message": "Ошибка при сохранении данных: " + err.Error(),
+						"message": "Error saving data: " + err.Error(),
 					})
 				}
 				return c.Status(200).JSON(fiber.Map{
 					"status":  "success",
-					"message": "Сервер успешно добавлен",
+					"message": "Server successfully added",
 				})
 			}
 		}
@@ -107,12 +108,12 @@ func AddServerControll(c fiber.Ctx) error {
 		serverList := []models.Server{}
 		err := db.Select(&serverList, "SELECT id, hostname, COALESCE(cert_config_path, '') as cert_config_path, server_status FROM server WHERE cert_config_path NOT NULL")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 		sshKeyList := []models.SSHKey{}
 		err = db.Select(&sshKeyList, "SELECT name_ssh_key FROM ssh_key")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 		return c.Render("add_server/addServer", fiber.Map{
 			"Title":      "Add server",
@@ -133,7 +134,7 @@ func ServerListController(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -141,7 +142,7 @@ func ServerListController(c fiber.Ctx) error {
 		serverList := []models.Server{}
 		err = db.Select(&serverList, "SELECT id, hostname, COALESCE(cert_config_path, '') as cert_config_path, server_status FROM server WHERE cert_config_path NOT NULL")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 
 		// Рендерим только шаблон списка серверов

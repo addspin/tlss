@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -15,7 +15,7 @@ func RollbackUserCert(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -36,7 +36,7 @@ func RollbackUserCert(c fiber.Ctx) error {
 
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Отсутствуют обязательные поля ID сертификата, ID сущности, количество дней до истечения срока действия сертификата",
+				"message": "Missing required fields: certificate ID, entity ID, or days until expiration",
 			})
 		}
 		tx := db.MustBegin()
@@ -60,7 +60,7 @@ func RollbackUserCert(c fiber.Ctx) error {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при восстановлении сертификата: " + err.Error(),
+				"message": "Error rolling back certificate: " + err.Error(),
 			})
 		}
 
@@ -68,7 +68,7 @@ func RollbackUserCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при сохранении изменений: " + err.Error(),
+				"message": "Error saving changes: " + err.Error(),
 			})
 		}
 

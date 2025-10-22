@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/middleware"
 	"github.com/gofiber/fiber/v3"
@@ -11,7 +11,7 @@ import (
 func LogoutController(c fiber.Ctx) error {
 	sess, err := middleware.Store.Get(c)
 	if err != nil {
-		log.Println("Session error:", err)
+		slog.Error("Session error", "error", err)
 		c.Set("Location", "/login")
 		return c.SendStatus(fiber.StatusFound)
 	}
@@ -20,7 +20,7 @@ func LogoutController(c fiber.Ctx) error {
 	sess.Delete("authenticated")
 	sess.Delete("username")
 	if err := sess.Save(); err != nil {
-		log.Println("Session save error:", err)
+		slog.Error("Session save error", "error", err)
 	}
 
 	c.Set("Location", "/login")

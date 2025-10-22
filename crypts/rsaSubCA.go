@@ -62,7 +62,7 @@ func GenerateRSASubCA(data *models.CAData, db *sqlx.DB) error {
 		rootCertPath := viper.GetString("ca_tlss.path_cert")
 		rootKeyPath := viper.GetString("ca_tlss.path_key")
 		if rootCertPath == "" || rootKeyPath == "" {
-			return fmt.Errorf("GenerateRSASubCA: Root CA не найден в базе данных и в конфигурации не заданы ca_tlss.path_cert/ca_tlss.path_key")
+			return fmt.Errorf("GenerateRSASubCA: Root CA not found in database and ca_tlss.path_cert/ca_tlss.path_key not set in configuration")
 		}
 
 		rootCertData, err := os.ReadFile(rootCertPath)
@@ -177,11 +177,11 @@ func GenerateRSASubCA(data *models.CAData, db *sqlx.DB) error {
 		daysLeft, serialNumberStr, "", "", 0,
 	)
 	if err != nil {
-		return fmt.Errorf("sub CA: ошибка при вставке нового сертификата: %w", err)
+		return fmt.Errorf("sub CA: error inserting new certificate: %w", err)
 	}
 	err = tx.Commit()
 	if err != nil {
-		return fmt.Errorf("sub CA: ошибка при коммите: %w", err)
+		return fmt.Errorf("sub CA: error committing: %w", err)
 	}
 	return nil
 }

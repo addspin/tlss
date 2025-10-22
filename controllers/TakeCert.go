@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
@@ -26,14 +26,14 @@ func TakeCert(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
 	if c.Method() != "GET" {
 		return c.Status(405).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Метод не разрешен. Используйте GET запрос.",
+			"message": "Method not allowed. Use GET request.",
 		})
 	}
 
@@ -52,7 +52,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": fmt.Sprintf("Не удалось получить SSH ключ: %v", err),
+				"message": fmt.Sprintf("Failed to get SSH key: %v", err),
 			})
 		}
 
@@ -62,7 +62,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": fmt.Sprintf("Ошибка расшифровки приватного SSH ключа: %v", err),
+				"message": fmt.Sprintf("Error decrypting private SSH key: %v", err),
 			})
 		}
 
@@ -75,14 +75,14 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка создания файла публичного ключа в архиве",
+				"message": "Error creating public key file in archive",
 			})
 		}
 		_, err = publicKeyFile.Write([]byte(sshKey.PublicKey))
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка записи публичного ключа в архив",
+				"message": "Error writing public key to archive",
 			})
 		}
 
@@ -91,14 +91,14 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка создания файла приватного ключа в архиве",
+				"message": "Error creating private key file in archive",
 			})
 		}
 		_, err = privateKeyFile.Write(decryptedPrivateKey)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка записи приватного ключа в архив",
+				"message": "Error writing private key to archive",
 			})
 		}
 
@@ -106,7 +106,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err = zipWriter.Close(); err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка закрытия архива",
+				"message": "Error closing archive",
 			})
 		}
 
@@ -125,7 +125,7 @@ func TakeCert(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": fmt.Sprintf("Не удалось получить промежуточный сертификат: %v", err),
+			"message": fmt.Sprintf("Failed to get intermediate certificate: %v", err),
 		})
 	}
 
@@ -135,7 +135,7 @@ func TakeCert(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": fmt.Sprintf("Не удалось получить корневой сертификат: %v", err),
+			"message": fmt.Sprintf("Failed to get root certificate: %v", err),
 		})
 	}
 
@@ -145,7 +145,7 @@ func TakeCert(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": fmt.Sprintf("Не удалось получить приватный ключ Sub CA: %v", err),
+			"message": fmt.Sprintf("Failed to get Sub CA private key: %v", err),
 		})
 	}
 	aes := crypts.Aes{}
@@ -154,14 +154,14 @@ func TakeCert(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Ошибка расшифровки приватного ключа Sub CA",
+			"message": "Error decrypting Sub CA private key",
 		})
 	}
 	subCAKeyBlock, _ := pem.Decode(decryptedSubCAKey)
 	if subCAKeyBlock == nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Не удалось декодировать PEM приватного ключа Sub CA",
+			"message": "Failed to decode Sub CA private key PEM",
 		})
 	}
 
@@ -175,20 +175,20 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка создания архива",
+				"message": "Error creating archive",
 			})
 		}
 		_, err = rootCAFile.Write([]byte(rootCACert))
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка записи Root CA в архив",
+				"message": "Error writing Root CA to archive",
 			})
 		}
 		if err = zipWriter.Close(); err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка закрытия архива",
+				"message": "Error closing archive",
 			})
 		}
 		c.Set("Content-Type", "application/zip")
@@ -207,20 +207,20 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка создания архива",
+				"message": "Error creating archive",
 			})
 		}
 		_, err = subCAFile.Write([]byte(subCACert))
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка записи Sub CA в архив",
+				"message": "Error writing Sub CA to archive",
 			})
 		}
 		if err = zipWriter.Close(); err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка закрытия архива",
+				"message": "Error closing archive",
 			})
 		}
 		c.Set("Content-Type", "application/zip")
@@ -243,7 +243,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка извлечения сертификата из таблицы certs",
+				"message": "Error extracting certificate from certs table",
 			})
 		}
 		publicKey = &certList[0].PublicKey
@@ -257,7 +257,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка извлечения сертификата из таблицы user_certs",
+				"message": "Error extracting certificate from user_certs table",
 			})
 		}
 		commonName = &certList[0].CommonName
@@ -272,7 +272,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка расшифровки приватного ключа",
+				"message": "Error decrypting private key",
 			})
 		}
 
@@ -281,7 +281,7 @@ func TakeCert(c fiber.Ctx) error {
 		if subCAKeyBlock == nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Не удалось декодировать PEM приватного ключа",
+				"message": "Failed to decode private key PEM",
 			})
 		}
 	}
@@ -295,7 +295,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка создания архива",
+				"message": "Error creating archive",
 			})
 		}
 
@@ -303,7 +303,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка записи Sub CA в архив",
+				"message": "Error writing Sub CA to archive",
 			})
 		}
 
@@ -312,14 +312,14 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка создания архива",
+				"message": "Error creating archive",
 			})
 		}
 		_, err = rootCAFile.Write([]byte(rootCACert))
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка записи Root CA в архив",
+				"message": "Error writing Root CA to archive",
 			})
 		}
 
@@ -329,14 +329,14 @@ func TakeCert(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка создания файла сертификата в архиве",
+					"message": "Error creating certificate file in archive",
 				})
 			}
 			_, err = publicKeyFile.Write([]byte(*publicKey))
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка записи сертификата в архив",
+					"message": "Error writing certificate to archive",
 				})
 			}
 
@@ -345,14 +345,14 @@ func TakeCert(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка создания файла приватного ключа в архиве",
+					"message": "Error creating private key file in archive",
 				})
 			}
 			_, err = privateKeyFile.Write(decryptedKey)
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка записи приватного ключа в архив",
+					"message": "Error writing private key to archive",
 				})
 			}
 		}
@@ -362,14 +362,14 @@ func TakeCert(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка создания файла сертификата в архиве",
+					"message": "Error creating certificate file in archive",
 				})
 			}
 			_, err = publicKeyFile.Write([]byte(*publicKey))
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка записи сертификата в архив",
+					"message": "Error writing certificate to archive",
 				})
 			}
 			// Добавляем приватный ключ
@@ -377,14 +377,14 @@ func TakeCert(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка создания файла приватного ключа в архиве",
+					"message": "Error creating private key file in archive",
 				})
 			}
 			_, err = privateKeyFile.Write(decryptedKey)
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка записи приватного ключа в архив",
+					"message": "Error writing private key to archive",
 				})
 			}
 		}
@@ -394,7 +394,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка закрытия архива",
+				"message": "Error closing archive",
 			})
 		}
 		var fileName string
@@ -422,7 +422,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": fmt.Sprintf("Не удалось получить пароль для сертификата: %v", err),
+				"message": fmt.Sprintf("Failed to get password for certificate: %v", err),
 			})
 		}
 
@@ -431,7 +431,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка расшифровки пароля",
+				"message": "Error decrypting password",
 			})
 		}
 		password = string(decryptedPassword)
@@ -441,7 +441,7 @@ func TakeCert(c fiber.Ctx) error {
 		if certBlock == nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Не удалось декодировать PEM сертификата",
+				"message": "Failed to decode certificate PEM",
 			})
 		}
 
@@ -450,7 +450,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": fmt.Sprintf("Не удалось распарсить сертификат: %v", err),
+				"message": fmt.Sprintf("Failed to parse certificate: %v", err),
 			})
 		}
 
@@ -459,7 +459,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": fmt.Sprintf("Не удалось распарсить приватный ключ: %v", err),
+				"message": fmt.Sprintf("Failed to parse private key: %v", err),
 			})
 		}
 
@@ -468,7 +468,7 @@ func TakeCert(c fiber.Ctx) error {
 		if subCABlock == nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Не удалось декодировать PEM промежуточного сертификата",
+				"message": "Failed to decode intermediate certificate PEM",
 			})
 		}
 
@@ -476,7 +476,7 @@ func TakeCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": fmt.Sprintf("Не удалось распарсить промежуточный сертификат: %v", err),
+				"message": fmt.Sprintf("Failed to parse intermediate certificate: %v", err),
 			})
 		}
 
@@ -487,7 +487,7 @@ func TakeCert(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": fmt.Sprintf("Не удалось создать PKCS12 сертификат (Modern формат): %v", err),
+					"message": fmt.Sprintf("Failed to create PKCS12 certificate (Modern format): %v", err),
 				})
 			}
 		}
@@ -497,7 +497,7 @@ func TakeCert(c fiber.Ctx) error {
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": fmt.Sprintf("Не удалось создать PKCS12 сертификат (Legacy формат): %v", err),
+					"message": fmt.Sprintf("Failed to create PKCS12 certificate (Legacy format): %v", err),
 				})
 			}
 		}
@@ -514,6 +514,6 @@ func TakeCert(c fiber.Ctx) error {
 
 	return c.Status(400).JSON(fiber.Map{
 		"status":  "error",
-		"message": "Неподдерживаемый формат",
+		"message": "Unsupported format",
 	})
 }

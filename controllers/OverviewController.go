@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/check"
 	"github.com/addspin/tlss/models"
@@ -24,7 +24,7 @@ func Overview(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -33,31 +33,19 @@ func Overview(c fiber.Ctx) error {
 
 		err := db.Select(&serverList, "SELECT id, hostname, COALESCE(cert_config_path, '') as cert_config_path, server_status FROM server WHERE cert_config_path NOT NULL")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
-
-		// serverCertId := []models.CertsData{}
-		// err = db.Select(&serverCertId, "SELECT * FROM certs where cert_status = ?", certStatusValid)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-
-		// serverHostname := []models.Server{}
-		// err = db.Select(&serverHostname, "SELECT hostname FROM server" )
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
 
 		caCertList := []models.CAData{}
 		err = db.Select(&caCertList, "SELECT type_ca, days_left, data_revoke  FROM ca_certs WHERE cert_status = ?", certStatusValid)
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 
 		serverCertList := []models.CertsData{}
 		err = db.Select(&serverCertList, "SELECT * FROM certs")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 		serverCertCount := 0
 		serverCertExpired := 0
@@ -82,7 +70,7 @@ func Overview(c fiber.Ctx) error {
 		userCertList := []models.UserCertsData{}
 		err = db.Select(&userCertList, "SELECT * FROM user_certs")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 
 		userCertCount := 0

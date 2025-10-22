@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/addspin/tlss/crypts"
@@ -18,7 +18,7 @@ func AddCertsControll(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -27,14 +27,14 @@ func AddCertsControll(c fiber.Ctx) error {
 
 		err := c.Bind().JSON(data)
 		if err != nil {
-			log.Printf("AddCertsControll: %v", err)
+			slog.Error("AddCertsControll: Error occurred", "error", err)
 			return c.Status(400).JSON(
 				fiber.Map{"status": "error",
 					"message": "Cannot parse JSON!",
 					"data":    err},
 			)
 		}
-		// log.Println(data.SaveOnServer, data.ServerStatus, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.AppType, data.Organization, data.OrganizationUnit, data.Email)
+		// slog.Info(data.SaveOnServer, data.ServerStatus, data.Algorithm, data.KeyLength, data.TTL, data.Domain, data.ServerId, data.Wildcard, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.AppType, data.Organization, data.OrganizationUnit, data.Email)
 
 		if data.ServerStatus == "offline" && data.SaveOnServer {
 			return c.Status(400).JSON(fiber.Map{
@@ -91,7 +91,7 @@ func AddCertsControll(c fiber.Ctx) error {
 			if certErr != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка генерации RSA сертификата: " + certErr.Error(),
+					"message": "Error generating RSA certificate: " + certErr.Error(),
 				})
 			}
 			if data.SaveOnServer {
@@ -100,7 +100,7 @@ func AddCertsControll(c fiber.Ctx) error {
 				if err != nil {
 					return c.Status(400).JSON(fiber.Map{
 						"status":  "error",
-						"message": "Ошибка сохранения сертификата на сервер: " + err.Error(),
+						"message": "Error saving certificate to server: " + err.Error(),
 					})
 				}
 			}
@@ -109,7 +109,7 @@ func AddCertsControll(c fiber.Ctx) error {
 			if certErr != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка генерации ED25519 сертификата: " + certErr.Error(),
+					"message": "Error generating ED25519 certificate: " + certErr.Error(),
 				})
 			}
 			if data.SaveOnServer {
@@ -118,14 +118,14 @@ func AddCertsControll(c fiber.Ctx) error {
 				if err != nil {
 					return c.Status(400).JSON(fiber.Map{
 						"status":  "error",
-						"message": "Ошибка сохранения сертификата на сервер: " + err.Error(),
+						"message": "Error saving certificate to server: " + err.Error(),
 					})
 				}
 			}
 		default:
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Неподдерживаемый алгоритм: " + data.Algorithm,
+				"message": "Unsupported algorithm: " + data.Algorithm,
 			})
 		}
 
@@ -139,7 +139,7 @@ func AddCertsControll(c fiber.Ctx) error {
 		serverList := []models.Server{}
 		err := db.Select(&serverList, "SELECT id, hostname, server_status, COALESCE(cert_config_path, '') as cert_config_path FROM server")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 
 		return c.Render("add_certs/addCerts", fiber.Map{
@@ -159,7 +159,7 @@ func CertListController(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 	if c.Method() == "POST" {
@@ -171,7 +171,7 @@ func CertListController(c fiber.Ctx) error {
 			// Если указан ID сервера, фильтруем сертификаты по серверу
 			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, domain, wildcard, cert_status, cert_create_time, cert_expire_time, recreate, days_left FROM certs WHERE server_id = ?", serverId)
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("Fatal error", "error", err)
 			}
 		}
 		// Обрабатываем wildcard домены для отображения
@@ -199,7 +199,7 @@ func CertListController(c fiber.Ctx) error {
 			// Если указан ID сервера, фильтруем сертификаты по серверу кроме результатов 2 - revoked
 			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, domain, wildcard, cert_status, cert_create_time, cert_expire_time, recreate, save_on_server, days_left FROM certs WHERE server_id = ? AND cert_status IN (0, 1)", serverId)
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("Fatal error", "error", err)
 			}
 		}
 		// Обрабатываем wildcard домены для отображения

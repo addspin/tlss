@@ -1,7 +1,7 @@
 package check
 
 import (
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -22,7 +22,7 @@ type Mon struct {
 var Monitors = Mon{}
 
 func Monitore(TCPInterval, RecreateCertsInterval, CheckValidCertsInterval time.Duration) {
-	log.Println("CheckMonitor: Запуск модуля мониторинга")
+	slog.Info("CheckMonitor: Starting monitoring module")
 
 	// Инициализируем время при запуске мониторинга
 	now := time.Now()
@@ -67,17 +67,17 @@ func checkMonitorTCP() {
 	checkTCPTimeNow := time.Now()
 	// время разницу между временем сейчас и временем последнего пересоздания сертификатов
 	checkTCPDuration := checkTCPTimeNow.Sub(Monitors.CheckTCP)
-	// log.Println("CheckMonitor: Время разницы:", checkTCPDuration)
+	// slog.Info("CheckMonitor: Time difference", "duration", checkTCPDuration)
 	// если время разницы больше интервала чекера + небольшой запас, то устанавливаем статус false
 	// добавляем 50% запаса времени для учета задержек выполнения
 	if checkTCPDuration > checkTCPInterval+(checkTCPInterval/2) {
 		Monitors.CheckTCPStatus = false // чекер не работает
-		log.Println("CheckMonitor TCP: Чекер не работает")
+		slog.Warn("CheckMonitor TCP: Checker is not working")
 	} else {
 		Monitors.CheckTCPStatus = true // чекер работает
-		log.Println("CheckMonitor TCP: Чекер работает")
+		slog.Info("CheckMonitor TCP: Checker is working")
 	}
-	log.Println("CheckMonitor: Мониторинг выполняется")
+	slog.Info("CheckMonitor: Monitoring is running")
 }
 
 func checkMonitorRecreateCerts() {
@@ -86,14 +86,14 @@ func checkMonitorRecreateCerts() {
 	recreateCertsInterval := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.recreateCertsInterval"))
 	recreateCertsTimeNow := time.Now()
 	recreateDuration := recreateCertsTimeNow.Sub(Monitors.RecreateCerts)
-	// log.Println("CheckMonitor RecreateCerts: Время разницы:", recreateDuration)
+	// slog.Info("CheckMonitor RecreateCerts: Time difference", "duration", recreateDuration)
 	// добавляем 50% запаса времени для учета задержек выполнения
 	if recreateDuration > recreateCertsInterval+(recreateCertsInterval/2) {
 		Monitors.RecreateCertStatus = false // чекер не работает
-		log.Println("CheckMonitor RecreateCerts: Чекер не работает")
+		slog.Warn("CheckMonitor RecreateCerts: Checker is not working")
 	} else {
 		Monitors.RecreateCertStatus = true // чекер работает
-		log.Println("CheckMonitor RecreateCerts: Чекер работает")
+		slog.Info("CheckMonitor RecreateCerts: Checker is working")
 	}
 }
 
@@ -103,13 +103,13 @@ func checkMonitorCheckValidCerts() {
 	CheckValidCertsInterval := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.certsValidationInterval"))
 	CheckValidCertsTimeNow := time.Now()
 	CheckValidCertsDuration := CheckValidCertsTimeNow.Sub(Monitors.CheckValidCerts)
-	// log.Println("CheckMonitor CheckValidCerts: Время разницы:", CheckValidCertsDuration)
+	// slog.Info("CheckMonitor CheckValidCerts: Time difference", "duration", CheckValidCertsDuration)
 	// добавляем 50% запаса времени для учета задержек выполнения
 	if CheckValidCertsDuration > CheckValidCertsInterval+(CheckValidCertsInterval/2) {
 		Monitors.CheckValidCertsStatus = false // чекер не работает
-		log.Println("CheckMonitor CheckValidCerts: Чекер не работает")
+		slog.Warn("CheckMonitor CheckValidCerts: Checker is not working")
 	} else {
 		Monitors.CheckValidCertsStatus = true // чекер работает
-		log.Println("CheckMonitor CheckValidCerts: Чекер работает")
+		slog.Info("CheckMonitor CheckValidCerts: Checker is working")
 	}
 }

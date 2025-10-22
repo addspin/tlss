@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -17,7 +17,7 @@ func AddOIDController(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -46,7 +46,8 @@ func AddOIDController(c fiber.Ctx) error {
 		dataTest := `SELECT * FROM oid WHERE oid_name = $1`
 		t, err := tx.Query(dataTest, data.OIDName)
 		if err != nil {
-			log.Fatal(err.Error())
+			slog.Error("Database query error", "error", err)
+			return err
 		}
 		if t.Next() { //Если предыдущий запрос выполнился успешно, проверяется есть ли хотябы одна строка с таким именем
 			// Закрываем результат запроса
@@ -55,7 +56,7 @@ func AddOIDController(c fiber.Ctx) error {
 			tx.Rollback() // Откатываем транзакцию
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Сущность с таким именем уже существует",
+				"message": "Entity with this name already exists",
 			})
 		} else {
 			// Закрываем результат запроса
@@ -67,20 +68,20 @@ func AddOIDController(c fiber.Ctx) error {
 				tx.Rollback() // Откатываем транзакцию при ошибке
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка при добавлении данных в базу данных: " + err.Error(),
+					"message": "Error adding data to database: " + err.Error(),
 				})
 			}
 			err = tx.Commit() // Проверяем ошибку при коммите
 			if err != nil {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка при сохранении данных: " + err.Error(),
+					"message": "Error saving data: " + err.Error(),
 				})
 			}
 			oidList := []models.OIDData{}
 			error := db.Select(&oidList, "SELECT id, TRIM(oid_name) as oid_name, TRIM(oid_description) as oid_description FROM oid")
 			if error != nil {
-				log.Fatal(err)
+				slog.Error("Fatal error", "error", err)
 			}
 
 			return c.Render("add_oid/addOID", fiber.Map{
@@ -93,7 +94,7 @@ func AddOIDController(c fiber.Ctx) error {
 		oidList := []models.OIDData{}
 		err := db.Select(&oidList, "SELECT id, TRIM(oid_name) as oid_name, TRIM(oid_description) as oid_description FROM oid")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 
 		return c.Render("add_oid/addOID", fiber.Map{

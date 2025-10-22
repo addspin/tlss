@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -15,7 +15,7 @@ func RemoveServer(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -48,7 +48,7 @@ func RemoveServer(c fiber.Ctx) error {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при удалении сертификатов сервера: " + err.Error(),
+				"message": "Error deleting server certificates: " + err.Error(),
 			})
 		}
 
@@ -59,14 +59,14 @@ func RemoveServer(c fiber.Ctx) error {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при удалении сервера: " + err.Error(),
+				"message": "Error deleting server: " + err.Error(),
 			})
 		}
 		err = tx.Commit() // Проверяем ошибку при коммите
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при сохранении изменений: " + err.Error(),
+				"message": "Error saving changes: " + err.Error(),
 			})
 		}
 	}

@@ -1,7 +1,7 @@
 package check
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/addspin/tlss/models"
@@ -24,7 +24,7 @@ func calculateDaysLeft(expireTime time.Time) int {
 }
 
 func CheckValidCerts(checkValidationTime time.Duration) {
-	log.Println("CheckValidCerts: Запуск модуля проверки валидности сертификатов")
+	slog.Info("CheckValidCerts: Starting certificate validation module")
 
 	// Выполняем проверку сразу при запуске функции
 	checkCerts()
@@ -39,12 +39,12 @@ func CheckValidCerts(checkValidationTime time.Duration) {
 }
 
 func checkCerts() {
-	log.Println("CheckValidCerts: Проверка валидности сертификатов начата")
+	slog.Info("CheckValidCerts: Certificate validation check started")
 
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Println("CheckValidCerts: Ошибка подключения к базе данных:", err)
+		slog.Error("CheckValidCerts: Database connection error", "error", err)
 		return
 	}
 	defer db.Close()
@@ -53,29 +53,29 @@ func checkCerts() {
 	certificates := []models.CertsData{}
 	err = db.Select(&certificates, `SELECT id, domain, cert_create_time, cert_expire_time FROM certs WHERE cert_status = 0`)
 	if err != nil {
-		log.Println("CheckValidCerts: Ошибка запроса серверных сертификатов:", err)
+		slog.Error("CheckValidCerts: Server certificate query error", "error", err)
 		return
 	}
 
 	userCertificates := []models.UserCertsData{}
 	err = db.Select(&userCertificates, "SELECT id, common_name, cert_create_time, cert_expire_time FROM user_certs WHERE cert_status = 0")
 	if err != nil {
-		log.Println("CheckValidCerts: Ошибка запроса клиентских сертификатов:", err)
+		slog.Error("CheckValidCerts: Client certificate query error", "error", err)
 		return
 	}
 
 	caCertificates := []models.CAData{}
 	err = db.Select(&caCertificates, "SELECT id, common_name, cert_create_time, cert_expire_time FROM ca_certs WHERE cert_status = 0")
 	if err != nil {
-		log.Println("CheckValidCerts: Ошибка запроса CA сертификатов:", err)
+		slog.Error("CheckValidCerts: CA certificate query error", "error", err)
 		return
 	}
 
-	log.Printf("CheckValidCerts: Найдено действующих сертификатов для проверки: серверные=%d, пользовательские=%d, CA=%d, итого=%d", len(certificates), len(userCertificates), len(caCertificates), len(certificates)+len(userCertificates)+len(caCertificates))
+	slog.Info("CheckValidCerts: Found active certificates to check", "server_certs", len(certificates), "user_certs", len(userCertificates), "ca_certs", len(caCertificates), "total", len(certificates)+len(userCertificates)+len(caCertificates))
 
 	// Текущее время для сравнения
 	currentTime := time.Now()
-	// log.Printf("CheckValidCerts: Текущее время: %s", currentTime.Format(time.RFC3339))
+	// slog.Info("CheckValidCerts: Current time", "time", currentTime.Format(time.RFC3339))
 
 	expiredCount := 0
 
@@ -84,30 +84,30 @@ func checkCerts() {
 		// Преобразуем строку времени истечения в объект time.Time
 		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
 		if err != nil {
-			log.Printf("CheckValidCerts: Ошибка парсинга времени истечения для сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+			slog.Error("CheckValidCerts: Expiration time parsing error for certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 			continue
 		}
 
 		// Вычисляем оставшиеся дни
 		daysLeft := calculateDaysLeft(expireTime)
 
-		log.Printf("CheckValidCerts: Сертификат %s (ID: %d), срок действия до: %s, осталось дней: %d", cert.CommonName, cert.Id, expireTime.Format(time.RFC3339), daysLeft)
+		slog.Info("CheckValidCerts: Certificate", "common_name", cert.CommonName, "id", cert.Id, "expires_at", expireTime.Format(time.RFC3339), "days_left", daysLeft)
 
 		// Обновляем days_left в любом случае
 		_, err = db.Exec("UPDATE ca_certs SET days_left = ? WHERE id = ?", daysLeft, cert.Id)
 		if err != nil {
-			log.Printf("CheckValidCerts: Ошибка обновления days_left для сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+			slog.Error("CheckValidCerts: Error updating days_left for certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 		}
 
 		// Если сертификат истек
 		if currentTime.After(expireTime) {
-			log.Printf("CheckValidCerts: currentTime: %s, expireTime: %s", currentTime.Format(time.RFC3339), expireTime.Format(time.RFC3339))
+			slog.Info("CheckValidCerts: Certificate expired", "current_time", currentTime.Format(time.RFC3339), "expire_time", expireTime.Format(time.RFC3339))
 			// Обновляем статус на истекший (1)
 			_, err := db.Exec("UPDATE ca_certs SET cert_status = 1 WHERE id = ?", cert.Id)
 			if err != nil {
-				log.Printf("CheckValidCerts: Ошибка обновления статуса сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+				slog.Error("CheckValidCerts: Error updating certificate status", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 			} else {
-				log.Printf("CheckValidCerts: Сертификат для домена %s (ID: %d) истёк и помечен как недействительный", cert.CommonName, cert.Id)
+				slog.Warn("CheckValidCerts: Certificate expired and marked as invalid", "common_name", cert.CommonName, "id", cert.Id)
 				expiredCount++
 			}
 		}
@@ -118,30 +118,30 @@ func checkCerts() {
 		// Преобразуем строку времени истечения в объект time.Time
 		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
 		if err != nil {
-			log.Printf("CheckValidCerts: Ошибка парсинга времени истечения для сертификата %s (ID: %d): %v", cert.Domain, cert.Id, err)
+			slog.Error("CheckValidCerts: Expiration time parsing error for certificate", "domain", cert.Domain, "id", cert.Id, "error", err)
 			continue
 		}
 
 		// Вычисляем оставшиеся дни
 		daysLeft := calculateDaysLeft(expireTime)
 
-		log.Printf("CheckValidCerts: Сертификат %s (ID: %d), срок действия до: %s, осталось дней: %d", cert.Domain, cert.Id, expireTime.Format(time.RFC3339), daysLeft)
+		slog.Info("CheckValidCerts: Certificate", "domain", cert.Domain, "id", cert.Id, "expires_at", expireTime.Format(time.RFC3339), "days_left", daysLeft)
 
 		// Обновляем days_left в любом случае
 		_, err = db.Exec("UPDATE certs SET days_left = ? WHERE id = ?", daysLeft, cert.Id)
 		if err != nil {
-			log.Printf("CheckValidCerts: Ошибка обновления days_left для сертификата %s (ID: %d): %v", cert.Domain, cert.Id, err)
+			slog.Error("CheckValidCerts: Error updating days_left for certificate", "domain", cert.Domain, "id", cert.Id, "error", err)
 		}
 
 		// Если сертификат истек
 		if currentTime.After(expireTime) {
-			log.Printf("CheckValidCerts: currentTime: %s, expireTime: %s", currentTime.Format(time.RFC3339), expireTime.Format(time.RFC3339))
+			slog.Info("CheckValidCerts: Certificate expired", "current_time", currentTime.Format(time.RFC3339), "expire_time", expireTime.Format(time.RFC3339))
 			// Обновляем статус на истекший (1)
 			_, err := db.Exec("UPDATE certs SET cert_status = 1 WHERE id = ?", cert.Id)
 			if err != nil {
-				log.Printf("CheckValidCerts: Ошибка обновления статуса сертификата %s (ID: %d): %v", cert.Domain, cert.Id, err)
+				slog.Error("CheckValidCerts: Error updating certificate status", "domain", cert.Domain, "id", cert.Id, "error", err)
 			} else {
-				log.Printf("CheckValidCerts: Сертификат для домена %s (ID: %d) истёк и помечен как недействительный", cert.Domain, cert.Id)
+				slog.Warn("CheckValidCerts: Certificate expired and marked as invalid", "domain", cert.Domain, "id", cert.Id)
 				expiredCount++
 			}
 		}
@@ -152,35 +152,35 @@ func checkCerts() {
 		// Преобразуем строку времени истечения в объект time.Time
 		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
 		if err != nil {
-			log.Printf("CheckValidCerts: Ошибка парсинга времени истечения для сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+			slog.Error("CheckValidCerts: Expiration time parsing error for certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 			continue
 		}
 
 		// Вычисляем оставшиеся дни
 		daysLeft := calculateDaysLeft(expireTime)
 
-		log.Printf("CheckValidCerts: Сертификат %s (ID: %d), срок действия до: %s, осталось дней: %d", cert.CommonName, cert.Id, expireTime.Format(time.RFC3339), daysLeft)
+		slog.Info("CheckValidCerts: Certificate", "common_name", cert.CommonName, "id", cert.Id, "expires_at", expireTime.Format(time.RFC3339), "days_left", daysLeft)
 
 		// Обновляем days_left в любом случае
 		_, err = db.Exec("UPDATE user_certs SET days_left = ? WHERE id = ?", daysLeft, cert.Id)
 		if err != nil {
-			log.Printf("CheckValidCerts: Ошибка обновления days_left для сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+			slog.Error("CheckValidCerts: Error updating days_left for certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 		}
 
 		// Если сертификат истек
 		if currentTime.After(expireTime) {
-			log.Printf("CheckValidCerts: currentTime: %s, expireTime: %s", currentTime.Format(time.RFC3339), expireTime.Format(time.RFC3339))
+			slog.Info("CheckValidCerts: Certificate expired", "current_time", currentTime.Format(time.RFC3339), "expire_time", expireTime.Format(time.RFC3339))
 			// Обновляем статус на истекший (1)
 			_, err := db.Exec("UPDATE user_certs SET cert_status = 1 WHERE id = ?", cert.Id)
 			if err != nil {
-				log.Printf("CheckValidCerts: Ошибка обновления статуса сертификата %s (ID: %d): %v", cert.CommonName, cert.Id, err)
+				slog.Error("CheckValidCerts: Error updating certificate status", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 			} else {
-				log.Printf("CheckValidCerts: Сертификат для %s (ID: %d) истёк и помечен как недействительный", cert.CommonName, cert.Id)
+				slog.Warn("CheckValidCerts: Certificate expired and marked as invalid", "common_name", cert.CommonName, "id", cert.Id)
 				expiredCount++
 			}
 		}
 	}
 
-	log.Printf("CheckValidCerts: Проверка валидности сертификатов завершена. Обновлены days_left для всех сертификатов. Обновлено статусов (истёкших): %d", expiredCount)
+	slog.Info("CheckValidCerts: Certificate validation check completed. Updated days_left for all certificates", "expired_count", expiredCount)
 	Monitors.CheckValidCerts = time.Now()
 }

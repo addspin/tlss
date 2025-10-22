@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/crypts"
@@ -17,7 +17,7 @@ func RollbackCert(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -39,7 +39,7 @@ func RollbackCert(c fiber.Ctx) error {
 
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Отсутствуют обязательные поля ID сертификата, ID сервера, количество дней до истечения срока действия сертификата",
+				"message": "Missing required fields: certificate ID, server ID, or days until expiration",
 			})
 		}
 		tx := db.MustBegin()
@@ -62,7 +62,7 @@ func RollbackCert(c fiber.Ctx) error {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при восстановлении сертификата: " + err.Error(),
+				"message": "Error rolling back certificate: " + err.Error(),
 			})
 		}
 
@@ -71,18 +71,18 @@ func RollbackCert(c fiber.Ctx) error {
 			err = db.Get(&serverInfo, "SELECT COALESCE(cert_config_path, '') as cert_config_path FROM server WHERE id = ?", data.ServerId)
 			if err != nil {
 				tx.Rollback()
-				log.Println("RollbackCert: GetServerInfo: Ошибка при получении cert_config_path из базы данных:" + err.Error())
+				slog.Error("RollbackCert: GetServerInfo: Error retrieving cert_config_path from database", "error", err)
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка при извлечении из базы данных, см. лог:" + err.Error(),
+					"message": "Error retrieving from database, see log:" + err.Error(),
 				})
 			}
 			if serverInfo.CertConfigPath == "" {
 				tx.Rollback()
-				log.Println("RollbackCert: CheckSaveOnServer: Объект не является сервером для сохранения сертификата")
+				slog.Info("RollbackCert: CheckSaveOnServer: Object is not a server for certificate saving")
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Выбран Save on server, но объект не является сервером, сохранить сертификат невозможно",
+					"message": "Save on server selected, but object is not a server, cannot save certificate",
 				})
 			}
 			// Изменим имя сертифмката с wildcard именами с  *.test.ru на test.ru
@@ -94,7 +94,7 @@ func RollbackCert(c fiber.Ctx) error {
 				tx.Rollback()
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка при получении домена из базы данных: " + err.Error(),
+					"message": "Error getting domain from database: " + err.Error(),
 				})
 			}
 			data.Domain = domain
@@ -106,7 +106,7 @@ func RollbackCert(c fiber.Ctx) error {
 				tx.Rollback()
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка при получении сертификата и ключа из базы данных: " + err.Error(),
+					"message": "Error getting certificate and key from database: " + err.Error(),
 				})
 			}
 
@@ -114,7 +114,7 @@ func RollbackCert(c fiber.Ctx) error {
 				tx.Rollback()
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Сертификат не найден в базе данных",
+					"message": "Certificate not found in database",
 				})
 			}
 
@@ -125,7 +125,7 @@ func RollbackCert(c fiber.Ctx) error {
 				tx.Rollback()
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка при расшифровке приватного ключа: " + err.Error(),
+					"message": "Error decrypting private key: " + err.Error(),
 				})
 			}
 
@@ -134,10 +134,10 @@ func RollbackCert(c fiber.Ctx) error {
 			saveOnServer := crypts.NewSaveOnServer()
 			err = saveOnServer.SaveOnServer(data, db, []byte(keyList[0].PublicKey), decryptedKey)
 			if err != nil {
-				log.Printf("Ошибка сохранения сертификата на сервер: %v", err)
+				slog.Error("Error saving certificate to server", "error", err)
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Ошибка сохранения сертификата на сервер: " + err.Error(),
+					"message": "Error saving certificate to server: " + err.Error(),
 				})
 			}
 		}
@@ -146,7 +146,7 @@ func RollbackCert(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при сохранении изменений: " + err.Error(),
+				"message": "Error saving changes: " + err.Error(),
 			})
 		}
 

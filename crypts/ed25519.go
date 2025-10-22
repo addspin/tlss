@@ -7,7 +7,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/big"
 	"strings"
 	"time"
@@ -22,7 +22,7 @@ import (
 func GenerateED25519KeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось сгенерировать ED25519 ключевую пару: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate ED25519 key pair: %w", err)
 	}
 	return publicKey, privateKey, nil
 }
@@ -32,7 +32,7 @@ func GenerateED25519KeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 func EncodeED25519PrivateKeyToPEM(privateKey ed25519.PrivateKey) ([]byte, error) {
 	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось закодировать приватный ключ ED25519: %w", err)
+		return nil, fmt.Errorf("failed to encode ED25519 private key: %w", err)
 	}
 	privateKeyPEM := pem.EncodeToMemory(
 		&pem.Block{
@@ -47,7 +47,7 @@ func EncodeED25519PrivateKeyToPEM(privateKey ed25519.PrivateKey) ([]byte, error)
 func EncodeED25519PublicKeyToPEM(publicKey ed25519.PublicKey) []byte {
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
-		log.Fatalf("не удалось закодировать публичный ключ ED25519: %v", err)
+		slog.Error("Failed to encode ED25519 public key", "error", err)
 	}
 	publicKeyPEM := pem.EncodeToMemory(
 		&pem.Block{
@@ -71,12 +71,12 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	// Генерируем случайный серийный номер
 	serialNumber, err := rand.Int(rand.Reader, big.NewInt(1).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
 	// Стандартизируем серийный номер и сохраняем
 	data.SerialNumber = standardizeSerialNumberED25519(serialNumber)
-	log.Printf("Сгенерирован серийный номер для ED25519 сертификата %s: %s", data.Domain, data.SerialNumber)
+	slog.Info("Generated serial number for ED25519 certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
 	// Подготавливаем шаблон сертификата
 	dnsNames := []string{data.Domain}
@@ -131,7 +131,7 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
 		err = ExtractCA.ExtractSubCA(db)
 		if err != nil {
-			return nil, nil, fmt.Errorf("GenerateED25519Certificate: не удалось извлечь промежуточный CA сертификат и ключ: %w", err)
+			return nil, nil, fmt.Errorf("GenerateED25519Certificate: failed to extract intermediate CA certificate and key: %w", err)
 		}
 	}
 	// Получаем промежуточный CA сертификат и ключ
@@ -141,7 +141,7 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	// Создаем сертификат (CA может быть RSA, но подписывает ED25519 сертификат)
 	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, publicKey, subCAKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось создать сертификат: %w", err)
+		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
 	// Кодируем сертификат в PEM
@@ -153,7 +153,7 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	// Кодируем приватный ключ в PEM (PKCS8 формат для ED25519)
 	keyPEM, err := EncodeED25519PrivateKeyToPEM(privateKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось закодировать приватный ключ: %w", err)
+		return nil, nil, fmt.Errorf("failed to encode private key: %w", err)
 	}
 
 	aes := Aes{}
@@ -162,12 +162,12 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	if len(AesSecretKey.Key) > 0 {
 		encryptedKey, err = aes.Encrypt(keyPEM, AesSecretKey.Key)
 		if err != nil {
-			return nil, nil, fmt.Errorf("не удалось зашифровать приватный ключ: %w", err)
+			return nil, nil, fmt.Errorf("failed to encrypt private key: %w", err)
 		}
 	} else {
 		// Если AesSecretKey.Key не доступен, сохраняем ключ без шифрования
 		// Это потенциальная проблема безопасности
-		log.Printf("ВНИМАНИЕ: Приватный ключ ED25519 сохраняется без шифрования для домена %s, т.к. AesSecretKey.Key не установлен", data.Domain)
+		slog.Warn("Private ED25519 key is being saved without encryption for domain", "domain", data.Domain, "reason", "AesSecretKey.Key not set")
 		encryptedKey = keyPEM
 	}
 
@@ -181,7 +181,7 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		// Если произошла паника или транзакция не была зафиксирована, выполняем откат
 		if !txCommitted && tx != nil {
 			tx.Rollback()
-			log.Printf("Транзакция отменена из-за ошибки для домена %s", data.Domain)
+			slog.Error("Transaction rolled back due to error for domain", "domain", data.Domain)
 		}
 	}()
 
@@ -199,15 +199,15 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339), data.SerialNumber, "", "", 0, daysLeft)
 	if err != nil {
 		tx.Rollback()
-		return nil, nil, fmt.Errorf("не удалось добавить новый ED25519 сертификат в базу данных: %w", err)
+		return nil, nil, fmt.Errorf("failed to add new ED25519 certificate to database: %w", err)
 	}
-	log.Printf("Новый ED25519 сертификат для домена %s добавлен в базу данных", data.Domain)
+	slog.Info("New ED25519 certificate for domain added to database", "domain", data.Domain)
 
 	// если не установлен флаг SaveOnServer, комитим транзакцию в базу и завершаем работу
 	if !data.SaveOnServer {
 		// Фиксируем транзакцию перед возвратом
 		if err = tx.Commit(); err != nil {
-			return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+			return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
 		}
 		txCommitted = true
 		return certPEM, keyPEM, nil
@@ -215,11 +215,11 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 
 	// Если все операции прошли успешно, фиксируем транзакцию
 	if err = tx.Commit(); err != nil {
-		return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+		return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	txCommitted = true
 
-	log.Printf("Успешно сгенерирован новый ED25519 сертификат для домена %s", data.Domain)
+	slog.Info("Successfully generated new ED25519 certificate for domain", "domain", data.Domain)
 	return certPEM, keyPEM, nil
 }
 
@@ -235,12 +235,12 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	// Генерируем случайный серийный номер
 	serialNumber, err := rand.Int(rand.Reader, big.NewInt(1).Lsh(big.NewInt(1), 128))
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось сгенерировать серийный номер: %w", err)
+		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
 	}
 
 	// Стандартизируем серийный номер и сохраняем
 	data.SerialNumber = standardizeSerialNumberED25519(serialNumber)
-	log.Printf("Сгенерирован серийный номер для ED25519 сертификата %s: %s", data.Domain, data.SerialNumber)
+	slog.Info("Generated serial number for ED25519 certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
 	// Подготавливаем шаблон сертификата
 	dnsNames := []string{data.Domain}
@@ -295,7 +295,7 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
 		err = ExtractCA.ExtractSubCA(db)
 		if err != nil {
-			return nil, nil, fmt.Errorf("RecreateED25519Certificate: не удалось извлечь промежуточный CA сертификат и ключ: %w", err)
+			return nil, nil, fmt.Errorf("RecreateED25519Certificate: failed to extract intermediate CA certificate and key: %w", err)
 		}
 	}
 	// Получаем промежуточный CA сертификат и ключ
@@ -306,7 +306,7 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	// Создаем сертификат
 	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, publicKey, subCAKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось создать сертификат: %w", err)
+		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
 
 	// Кодируем сертификат в PEM
@@ -318,7 +318,7 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	// Кодируем приватный ключ в PEM (PKCS8 формат для ED25519)
 	keyPEM, err := EncodeED25519PrivateKeyToPEM(privateKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("не удалось закодировать приватный ключ: %w", err)
+		return nil, nil, fmt.Errorf("failed to encode private key: %w", err)
 	}
 
 	// Шифруем приватный ключ с использованием AesSecretKey.Key
@@ -326,12 +326,12 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	if len(AesSecretKey.Key) > 0 {
 		encryptedKey, err = aes.Encrypt(keyPEM, AesSecretKey.Key)
 		if err != nil {
-			return nil, nil, fmt.Errorf("не удалось зашифровать приватный ключ: %w", err)
+			return nil, nil, fmt.Errorf("failed to encrypt private key: %w", err)
 		}
 	} else {
 		// Если AesSecretKey.Key не доступен, сохраняем ключ без шифрования
 		// Это потенциальная проблема безопасности
-		log.Printf("ВНИМАНИЕ: Приватный ключ ED25519 сохраняется без шифрования для домена %s, т.к. AesSecretKey.Key не установлен", data.Domain)
+		slog.Warn("Private ED25519 key is being saved without encryption for domain", "domain", data.Domain, "reason", "AesSecretKey.Key not set")
 		encryptedKey = keyPEM
 	}
 
@@ -345,7 +345,7 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		// Если произошла паника или транзакция не была зафиксирована, выполняем откат
 		if !txCommitted && tx != nil {
 			tx.Rollback()
-			log.Printf("Транзакция отменена из-за ошибки для домена %s", data.Domain)
+			slog.Error("Transaction rolled back due to error for domain", "domain", data.Domain)
 		}
 	}()
 
@@ -365,15 +365,15 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		data.Domain, data.ServerId)
 	if err != nil {
 		tx.Rollback()
-		return nil, nil, fmt.Errorf("не удалось обновить существующий ED25519 сертификат в базе данных: %w", err)
+		return nil, nil, fmt.Errorf("failed to update existing ED25519 certificate in database: %w", err)
 	}
 
-	log.Printf("ED25519 сертификат для домена %s обновлен в базе данных (ID: %d)", data.Domain, data.Id)
+	slog.Info("ED25519 certificate for domain updated in database", "domain", data.Domain, "id", data.Id)
 
 	if !data.SaveOnServer {
 		// Фиксируем транзакцию перед возвратом
 		if err = tx.Commit(); err != nil {
-			return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+			return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
 		}
 		txCommitted = true
 		return certPEM, keyPEM, nil
@@ -381,11 +381,11 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 
 	// Если все операции прошли успешно, фиксируем транзакцию
 	if err = tx.Commit(); err != nil {
-		return nil, nil, fmt.Errorf("не удалось зафиксировать транзакцию: %w", err)
+		return nil, nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	txCommitted = true
 
-	log.Printf("Успешно пересоздан ED25519 сертификат для домена %s", data.Domain)
+	slog.Info("Successfully recreated ED25519 certificate for domain", "domain", data.Domain)
 	return certPEM, keyPEM, nil
 }
 

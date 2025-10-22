@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -15,7 +15,7 @@ func AddServerEntityController(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -45,7 +45,8 @@ func AddServerEntityController(c fiber.Ctx) error {
 			dataTest := `SELECT * FROM server WHERE hostname = $1`
 			t, err := tx.Query(dataTest, data.Hostname)
 			if err != nil {
-				log.Fatal(err.Error())
+				slog.Error("Database query error", "error", err)
+				return err
 			}
 			if t.Next() { //Если предыдущий запрос выполнился успешно, проверяется есть ли хотябы одна строка с таким именем
 				// Закрываем результат запроса
@@ -54,7 +55,7 @@ func AddServerEntityController(c fiber.Ctx) error {
 				tx.Rollback() // Откатываем транзакцию
 				return c.Status(400).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Сервер с таким именем уже существует",
+					"message": "Server with this name already exists",
 				})
 			} else {
 				// Закрываем результат запроса
@@ -66,21 +67,21 @@ func AddServerEntityController(c fiber.Ctx) error {
 					tx.Rollback() // Откатываем транзакцию при ошибке
 					return c.Status(500).JSON(fiber.Map{
 						"status":  "error",
-						"message": "Ошибка при добавлении данных в базу данных: " + err.Error(),
+						"message": "Error adding data to database: " + err.Error(),
 					})
 				}
 				err = tx.Commit() // Проверяем ошибку при коммите
 				if err != nil {
 					return c.Status(500).JSON(fiber.Map{
 						"status":  "error",
-						"message": "Ошибка при сохранении данных: " + err.Error(),
+						"message": "Error saving data: " + err.Error(),
 					})
 				}
 
 				serverEntityList := []models.Server{}
 				err := db.Select(&serverEntityList, "SELECT id, TRIM(hostname) as hostname, COALESCE(description, '') as description FROM server WHERE cert_config_path IS NULL OR cert_config_path = ''")
 				if err != nil {
-					log.Fatal(err)
+					slog.Error("Fatal error", "error", err)
 				}
 
 				return c.Render("add_server/addServerEntity", fiber.Map{
@@ -94,7 +95,7 @@ func AddServerEntityController(c fiber.Ctx) error {
 		serverEntityList := []models.Server{}
 		err := db.Select(&serverEntityList, "SELECT id, TRIM(hostname) as hostname, COALESCE(description, '') as description FROM server WHERE cert_config_path IS NULL OR cert_config_path = ''")
 		if err != nil {
-			log.Fatal(err)
+			slog.Error("Fatal error", "error", err)
 		}
 
 		return c.Render("add_server/addServerEntity", fiber.Map{

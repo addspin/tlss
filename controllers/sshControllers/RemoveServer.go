@@ -1,7 +1,7 @@
 package sshControllers
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -15,7 +15,7 @@ func RemoveSSHKey(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -38,7 +38,7 @@ func RemoveSSHKey(c fiber.Ctx) error {
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при удалении ssh ключа: " + err.Error(),
+				"message": "Error deleting SSH key: " + err.Error(),
 			})
 		}
 

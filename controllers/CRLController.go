@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"encoding/pem"
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/models"
@@ -25,7 +25,7 @@ func GenerateCombinedCACRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -34,12 +34,12 @@ func GenerateCombinedCACRL(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Ошибка генерации CRL для серверных и клиентских сертификатов подписанных Root CA и Sub CA: " + err.Error(),
+			"message": "Error generating CRL for server and client certificates signed by Root CA and Sub CA: " + err.Error(),
 		})
 	}
 	return c.JSON(fiber.Map{
 		"status":  "success",
-		"message": "CRL для серверных и клиентских сертификатов подписанных Root CA и Sub CA успешно сгенерирован",
+		"message": "CRL for server and client certificates signed by Root CA and Sub CA successfully generated",
 	})
 }
 
@@ -48,7 +48,7 @@ func GetBundleCACRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -56,7 +56,7 @@ func GetBundleCACRL(c fiber.Ctx) error {
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Bundle'")
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "CRL файл не найден",
+			"error": "CRL file not found",
 		})
 	}
 
@@ -76,7 +76,7 @@ func GetBundleCACRL(c fiber.Ctx) error {
 
 	if len(bundleDer) == 0 {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Ошибка декодирования CRL данных бандла",
+			"error": "Error decoding CRL data bundle",
 		})
 	}
 
@@ -91,7 +91,7 @@ func GetBundleCAPemCRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -100,7 +100,7 @@ func GetBundleCAPemCRL(c fiber.Ctx) error {
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Bundle'")
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "CRL файл не найден",
+			"error": "CRL file not found",
 		})
 	}
 
@@ -117,7 +117,7 @@ func GetRootCACRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -126,7 +126,7 @@ func GetRootCACRL(c fiber.Ctx) error {
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Root'")
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "CRL файл не найден",
+			"error": "CRL file not found",
 		})
 	}
 
@@ -134,7 +134,7 @@ func GetRootCACRL(c fiber.Ctx) error {
 	block, _ := pem.Decode([]byte(crlData.DataCRL))
 	if block == nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Ошибка декодирования CRL данных",
+			"error": "Error decoding CRL data",
 		})
 	}
 
@@ -151,7 +151,7 @@ func GetRootCAPemCRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -160,7 +160,7 @@ func GetRootCAPemCRL(c fiber.Ctx) error {
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Root'")
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "CRL файл не найден",
+			"error": "CRL file not found",
 		})
 	}
 
@@ -183,7 +183,7 @@ func GetSubCACRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -192,7 +192,7 @@ func GetSubCACRL(c fiber.Ctx) error {
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Sub'")
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "CRL файл не найден",
+			"error": "CRL file not found",
 		})
 	}
 
@@ -200,7 +200,7 @@ func GetSubCACRL(c fiber.Ctx) error {
 	block, _ := pem.Decode([]byte(crlData.DataCRL))
 	if block == nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Ошибка декодирования CRL данных",
+			"error": "Error decoding CRL data",
 		})
 	}
 
@@ -217,7 +217,7 @@ func GetSubCAPemCRL(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -226,7 +226,7 @@ func GetSubCAPemCRL(c fiber.Ctx) error {
 	err = db.Get(&crlData, "SELECT * FROM crl WHERE type_crl = 'Sub'")
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "CRL файл не найден",
+			"error": "CRL file not found",
 		})
 	}
 	// Преобразуем данные из базы в PEM формат

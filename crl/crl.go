@@ -8,7 +8,7 @@ import (
 	"database/sql"
 	"encoding/pem"
 	"fmt"
-	"log"
+	"log/slog"
 	"math/big"
 	"os"
 	"time"
@@ -29,13 +29,13 @@ func StartCombinedCRLGeneration(updateInterval time.Duration, db *sqlx.DB) {
 
 	// Генерируем CRL сразу при запуске
 	if err := CombinedCRL(db); err != nil {
-		log.Printf("Combined CRL: Ошибка начальной генерации CRL: %v", err)
+		slog.Error("Combined CRL: Initial CRL generation error", "error", err)
 	}
 
 	// Запускаем периодическую генерацию
 	for range ticker.C {
 		if err := CombinedCRL(db); err != nil {
-			log.Printf("Combined CRL: Ошибка генерации CRL: %v", err)
+			slog.Error("Combined CRL: CRL generation error", "error", err)
 		}
 	}
 }
@@ -76,7 +76,7 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		return nil, fmt.Errorf("sub CA CRL: не удалось подключиться к базе данных: %w", err)
+		return nil, fmt.Errorf("sub CA CRL: failed to connect to database: %w", err)
 	}
 	defer db.Close()
 
@@ -84,37 +84,37 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	var subCA models.CAData
 	err = db.Get(&subCA, "SELECT * FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
-		return nil, fmt.Errorf("sub CA CRL: не удалось получить промежуточный CA: %w", err)
+		return nil, fmt.Errorf("sub CA CRL: failed to get intermediate CA: %w", err)
 	}
 
 	if subCA.CertStatus != 0 {
-		return nil, fmt.Errorf("sub CA CRL: промежуточный CA недействителен")
+		return nil, fmt.Errorf("sub CA CRL: intermediate CA is invalid")
 	}
 
 	// Декодируем сертификат промежуточного CA
 	subCACertBlock, _ := pem.Decode([]byte(subCA.PublicKey))
 	if subCACertBlock == nil {
-		return nil, fmt.Errorf("sub CA CRL: не удалось декодировать сертификат промежуточного CA")
+		return nil, fmt.Errorf("sub CA CRL: failed to decode intermediate CA certificate")
 	}
 	subCACert, err := x509.ParseCertificate(subCACertBlock.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("sub CA CRL: не удалось разобрать сертификат промежуточного CA: %w", err)
+		return nil, fmt.Errorf("sub CA CRL: failed to parse intermediate CA certificate: %w", err)
 	}
 
 	// Расшифровываем и декодируем приватный ключ промежуточного CA
 	aes := crypts.Aes{}
 	decryptedKey, err := aes.Decrypt([]byte(subCA.PrivateKey), crypts.AesSecretKey.Key)
 	if err != nil {
-		return nil, fmt.Errorf("sub CA CRL: не удалось расшифровать приватный ключ промежуточного CA: %w", err)
+		return nil, fmt.Errorf("sub CA CRL: failed to decrypt intermediate CA private key: %w", err)
 	}
 
 	subCAKeyBlock, _ := pem.Decode(decryptedKey)
 	if subCAKeyBlock == nil {
-		return nil, fmt.Errorf("sub CA CRL: не удалось декодировать приватный ключ промежуточного CA")
+		return nil, fmt.Errorf("sub CA CRL: failed to decode intermediate CA private key")
 	}
 	subCAKey, err := x509.ParsePKCS1PrivateKey(subCAKeyBlock.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("sub CA CRL: не удалось разобрать приватный ключ промежуточного CA: %w", err)
+		return nil, fmt.Errorf("sub CA CRL: failed to parse intermediate CA private key: %w", err)
 	}
 
 	var revokedEntries []pkix.RevokedCertificate
@@ -129,12 +129,12 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 		WHERE cert_status = 2
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("sub CA CRL: предупреждение - не удалось получить отозванные серверные сертификаты: %v", err)
+		return nil, fmt.Errorf("sub CA CRL: warning - failed to get revoked server certificates: %v", err)
 	} else {
 		for _, cert := range revokedServerCerts {
 			entry, err := createRevokedEntry(cert.SerialNumber, cert.DataRevoke, cert.ReasonRevoke)
 			if err != nil {
-				return nil, fmt.Errorf("sub CA CRL: ошибка создания записи для серверного сертификата %s: %v", cert.SerialNumber, err)
+				return nil, fmt.Errorf("sub CA CRL: error creating entry for server certificate %s: %v", cert.SerialNumber, err)
 			}
 			revokedEntries = append(revokedEntries, entry)
 		}
@@ -150,12 +150,12 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 		WHERE cert_status = 2
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("sub CA CRL: предупреждение - не удалось получить отозванные клинтские сертификаты: %v", err)
+		return nil, fmt.Errorf("sub CA CRL: warning - failed to get revoked client certificates: %v", err)
 	} else {
 		for _, cert := range revokedUserCerts {
 			entry, err := createRevokedEntry(cert.SerialNumber, cert.DataRevoke, cert.ReasonRevoke)
 			if err != nil {
-				return nil, fmt.Errorf("sub CA CRL: ошибка создания записи для клинтского сертификата %s: %v", cert.SerialNumber, err)
+				return nil, fmt.Errorf("sub CA CRL: error creating entry for client certificate %s: %v", cert.SerialNumber, err)
 			}
 			revokedEntries = append(revokedEntries, entry)
 		}
@@ -184,10 +184,10 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 			SubCAcrlInfo.LastUpdate, SubCAcrlInfo.NextUpdate, SubCAcrlInfo.CrlNumber,
 			subCACert.SubjectKeyId, SubCAcrlInfo.CrlURL)
 		if err != nil {
-			return nil, fmt.Errorf("sub CA CRL: не удалось вставить информацию о CRL: %w", err)
+			return nil, fmt.Errorf("sub CA CRL: failed to insert CRL information: %w", err)
 		}
 	} else if err != nil {
-		return nil, fmt.Errorf("sub CA CRL: не удалось получить информацию о CRL: %w", err)
+		return nil, fmt.Errorf("sub CA CRL: failed to get CRL information: %w", err)
 	} else {
 		// Обновляем существующую информацию о CRL
 		SubCAcrlInfo.LastUpdate = time.Now().Format(time.RFC3339)
@@ -200,7 +200,7 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 				crl_number = ?
 		`, SubCAcrlInfo.LastUpdate, SubCAcrlInfo.NextUpdate, SubCAcrlInfo.CrlNumber)
 		if err != nil {
-			return nil, fmt.Errorf("sub CA CRL: не удалось обновить информацию о CRL: %w", err)
+			return nil, fmt.Errorf("sub CA CRL: failed to update CRL information: %w", err)
 		}
 	}
 
@@ -216,10 +216,10 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	// Генерируем CRL в DER формате
 	crlSubCABytes, err = x509.CreateRevocationList(rand.Reader, template, subCACert, subCAKey)
 	if err != nil {
-		return nil, fmt.Errorf("sub CA CRL: не удалось создать CRL: %w", err)
+		return nil, fmt.Errorf("sub CA CRL: failed to create CRL: %w", err)
 	}
 
-	log.Printf("sub CA CRL: Успешно сгенерирован CRL с %d отозванными сертификатами", len(revokedEntries))
+	slog.Info("sub CA CRL: CRL successfully generated", "revoked_certs_count", len(revokedEntries))
 	return crlSubCABytes, nil
 }
 
@@ -232,7 +232,7 @@ func createRevokedEntry(serialNumber, dataRevoke, reasonRevoke string) (pkix.Rev
 		// Используем только формат RFC3339
 		revocationTime, err = time.Parse(time.RFC3339, dataRevoke)
 		if err != nil {
-			log.Printf("combined CRL: Ошибка парсинга времени отзыва: %v, использую текущее время", err)
+			slog.Warn("combined CRL: Error parsing revocation time, using current time", "error", err)
 			revocationTime = time.Now()
 		}
 	} else {
@@ -271,7 +271,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		return nil, fmt.Errorf("root CA CRL: не удалось подключиться к базе данных: %w", err)
+		return nil, fmt.Errorf("root CA CRL: failed to connect to database: %w", err)
 	}
 	defer db.Close()
 
@@ -312,7 +312,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 		rootCertPath := viper.GetString("ca_tlss.path_cert")
 		rootKeyPath := viper.GetString("ca_tlss.path_key")
 		if rootCertPath == "" || rootKeyPath == "" {
-			return nil, fmt.Errorf("root CA CRL: Root CA не найден в базе данных и в конфигурации не заданы ca_tlss.path_cert/ca_tlss.path_key")
+			return nil, fmt.Errorf("root CA CRL: Root CA not found in database and ca_tlss.path_cert/ca_tlss.path_key not set")
 		}
 
 		rootCertData, err := os.ReadFile(rootCertPath)
@@ -353,13 +353,13 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 		WHERE type_ca = 'Sub' AND cert_status = 2
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("root CA CRL: предупреждение - не удалось получить отозванные Sub CA сертификаты: %v", err)
+		return nil, fmt.Errorf("root CA CRL: warning - failed to get revoked Sub CA certificates: %v", err)
 	} else {
 		for _, cert := range revokedSubCACerts {
 			entry, err := createRevokedEntry(cert.SerialNumber, cert.DataRevoke, cert.ReasonRevoke)
 			if err != nil {
-				log.Printf("root CA CRL: ошибка создания записи для Sub CA сертификата %s: %v", cert.SerialNumber, err)
-				return nil, fmt.Errorf("root CA CRL: ошибка создания записи для Sub CA сертификата %s: %v", cert.SerialNumber, err)
+				slog.Warn("root CA CRL: Error creating entry for Sub CA certificate", "serial_number", cert.SerialNumber, "error", err)
+				return nil, fmt.Errorf("root CA CRL: error creating entry for Sub CA certificate %s: %v", cert.SerialNumber, err)
 			}
 			revokedEntries = append(revokedEntries, entry)
 		}
@@ -388,10 +388,10 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 			rootCACrlInfo.LastUpdate, rootCACrlInfo.NextUpdate, rootCACrlInfo.CrlNumber,
 			rootCert.SubjectKeyId, rootCACrlInfo.CrlURL)
 		if err != nil {
-			return nil, fmt.Errorf("root CA CRL: не удалось вставить информацию о CRL: %w", err)
+			return nil, fmt.Errorf("root CA CRL: failed to insert CRL information: %w", err)
 		}
 	} else if err != nil {
-		return nil, fmt.Errorf("root CA CRL: не удалось получить информацию о CRL: %w", err)
+		return nil, fmt.Errorf("root CA CRL: failed to get CRL information: %w", err)
 	} else {
 		// Обновляем существующую информацию о Root CA CRL
 		rootCACrlInfo.LastUpdate = time.Now().Format(time.RFC3339)
@@ -404,7 +404,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 				crl_number = ?
 		`, rootCACrlInfo.LastUpdate, rootCACrlInfo.NextUpdate, rootCACrlInfo.CrlNumber)
 		if err != nil {
-			return nil, fmt.Errorf("root CA CRL: не удалось обновить информацию о CRL: %w", err)
+			return nil, fmt.Errorf("root CA CRL: failed to update CRL information: %w", err)
 		}
 	}
 
@@ -419,27 +419,26 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 	// Генерируем CRL в DER формате
 	crlRootBytes, err = x509.CreateRevocationList(rand.Reader, template, rootCert, rootKey)
 	if err != nil {
-		return nil, fmt.Errorf("root CA CRL: не удалось создать CRL: %w", err)
+		return nil, fmt.Errorf("root CA CRL: failed to create CRL: %w", err)
 	}
 
-	log.Printf("Root CA CRL: Успешно сгенерирован с %d отозванными Sub CA сертификатами", len(revokedEntries))
+	slog.Info("Root CA CRL: CRL successfully generated", "revoked_certs_count", len(revokedEntries))
 	return crlRootBytes, nil
 }
 
 // CombinedCRL генерирует CRL для Root CA и Sub CA, сохраняет их отдельно и создает бандл rootca.pem и subca.pem
 func CombinedCRL(db *sqlx.DB) error {
-	var err error
-	log.Println("combined CRL: Генерируем CRL для Root CA и Sub CA")
+	slog.Info("combined CRL: Generating CRL for Root CA and Sub CA")
 	// Генерируем Sub CA CRL
 	subCABytes, err := GenerateSubCACRL()
 	if err != nil {
-		return fmt.Errorf("combined CRL: не удалось сгенерировать Sub CA CRL: %w", err)
+		return fmt.Errorf("combined CRL: failed to generate Sub CA CRL: %w", err)
 	}
 
 	// Генерируем Root CA CRL
 	rootCABytes, err := GenerateRootCACRL()
 	if err != nil {
-		return fmt.Errorf("combined CRL: не удалось сгенерировать Root CA CRL: %w", err)
+		return fmt.Errorf("combined CRL: failed to generate Root CA CRL: %w", err)
 	}
 
 	// Сохраняем Sub CA CRL в PEM формате
@@ -448,7 +447,7 @@ func CombinedCRL(db *sqlx.DB) error {
 		Bytes: subCABytes,
 	})
 	if subCAPem == nil {
-		return fmt.Errorf("combined CRL: не удалось конвертировать Sub CA CRL в PEM формат")
+		return fmt.Errorf("combined CRL: failed to convert Sub CA CRL to PEM format")
 	}
 
 	// Сохраняем Sub CA CRL в базу данных
@@ -456,7 +455,7 @@ func CombinedCRL(db *sqlx.DB) error {
 		INSERT OR REPLACE INTO crl (type_crl, data_crl) VALUES (?, ?)
 	`, "Sub", string(subCAPem))
 	if err != nil {
-		return fmt.Errorf("combined CRL: не удалось сохранить Sub CA CRL в базу данных: %w", err)
+		return fmt.Errorf("combined CRL: failed to save Sub CA CRL to database: %w", err)
 	}
 
 	// Сохраняем Root CA CRL в PEM формате
@@ -465,14 +464,14 @@ func CombinedCRL(db *sqlx.DB) error {
 		Bytes: rootCABytes,
 	})
 	if rootCAPem == nil {
-		return fmt.Errorf("combined CRL: не удалось конвертировать Root CA CRL в PEM формат")
+		return fmt.Errorf("combined CRL: failed to convert Root CA CRL to PEM format")
 	}
 	// Сохраняем Root CA CRL в базу данных
 	_, err = db.Exec(`
 		INSERT OR REPLACE INTO crl (type_crl, data_crl) VALUES (?, ?)
 	`, "Root", string(rootCAPem))
 	if err != nil {
-		return fmt.Errorf("combined CRL: не удалось сохранить Root CA CRL в базу данных: %w", err)
+		return fmt.Errorf("combined CRL: failed to save Root CA CRL to database: %w", err)
 	}
 
 	// Создаем и сохраняем бандл из Root CA и Sub CA CRL как отдельные PEM блоки
@@ -488,7 +487,7 @@ func CombinedCRL(db *sqlx.DB) error {
 		INSERT OR REPLACE INTO crl (type_crl, data_crl) VALUES (?, ?)
 	`, "Bundle", string(bundlePem))
 	if err != nil {
-		return fmt.Errorf("combined CRL: не удалось сохранить бандл CRL в базу данных: %w", err)
+		return fmt.Errorf("combined CRL: failed to save CRL bundle to database: %w", err)
 	}
 	return nil
 }

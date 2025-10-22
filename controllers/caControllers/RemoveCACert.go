@@ -2,7 +2,7 @@ package caControllers
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -16,7 +16,7 @@ func RemoveCACert(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	fmt.Println("Connected to database: ", database)
 	defer db.Close()
@@ -25,7 +25,7 @@ func RemoveCACert(c fiber.Ctx) error {
 		data := new(models.CAData)
 
 		c.Bind().JSON(data)
-		log.Println("id data:", data.Id)
+		slog.Info("id data", "id", data.Id)
 
 		err := c.Bind().JSON(data)
 		if err != nil {
@@ -38,7 +38,7 @@ func RemoveCACert(c fiber.Ctx) error {
 		if data.Id == 0 {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Отсутствуют обязательные поля",
+				"message": "Missing required fields",
 			})
 		}
 		tx := db.MustBegin()
@@ -49,14 +49,14 @@ func RemoveCACert(c fiber.Ctx) error {
 			tx.Rollback() // Откатываем транзакцию при ошибке
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при удалении сертификата: " + err.Error(),
+				"message": "Error deleting certificate: " + err.Error(),
 			})
 		}
 		err = tx.Commit() // Проверяем ошибку при коммите
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Ошибка при сохранении изменений: " + err.Error(),
+				"message": "Error saving changes: " + err.Error(),
 			})
 		}
 	}

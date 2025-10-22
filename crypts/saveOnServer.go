@@ -2,7 +2,7 @@ package crypts
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"strconv"
 
 	"github.com/addspin/tlss/models"
@@ -31,12 +31,12 @@ func sshClient(key models.SSHKey, port int, username, serverName string) (*ssh.C
 	aes := Aes{}
 	decryptPrivKey, err := aes.Decrypt(([]byte(key.PrivateKey)), AesSecretKey.Key)
 	if err != nil {
-		log.Fatalf("rsaSSH: ошибка расшифровки приватного ключа %v", err)
+		slog.Error("rsaSSH: ошибка расшифровки приватного ключа", slog.Any("error", err))
 	}
 
 	signer, err := ssh.ParsePrivateKey(decryptPrivKey)
 	if err != nil {
-		log.Fatalf("rsaSSH: ошибка, невозможно получить приватный ключ %v", err)
+		slog.Error("rsaSSH: ошибка, невозможно получить приватный ключ", slog.Any("error", err))
 	}
 
 	keyConfig := &ssh.ClientConfig{
@@ -50,7 +50,7 @@ func sshClient(key models.SSHKey, port int, username, serverName string) (*ssh.C
 	}
 	client, err := ssh.Dial("tcp", serverName+":"+strconv.Itoa(port), keyConfig)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось подключиться к серверу: %w", err)
+		return nil, fmt.Errorf("failed to connect to server: %w", err)
 	}
 	return client, nil
 }
@@ -59,13 +59,13 @@ func sshClient(key models.SSHKey, port int, username, serverName string) (*ssh.C
 func executeSSHCommand(client *ssh.Client, command string) ([]byte, error) {
 	session, err := client.NewSession()
 	if err != nil {
-		return nil, fmt.Errorf("не удалось создать SSH сессию: %w", err)
+		return nil, fmt.Errorf("failed to create SSH session: %w", err)
 	}
 	defer session.Close()
 
 	output, err := session.CombinedOutput(command)
 	if err != nil {
-		return output, fmt.Errorf("ошибка выполнения команды: %w", err)
+		return output, fmt.Errorf("error executing command: %w", err)
 	}
 
 	return output, nil
@@ -77,7 +77,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 	var serverInfo models.Server
 	err := db.Get(&serverInfo, "SELECT id, hostname, port, username, cert_config_path, server_status FROM server WHERE id = ?", data.ServerId)
 	if err != nil {
-		return fmt.Errorf("не удалось получить информацию о сервере: %w", err)
+		return fmt.Errorf("failed to get server information: %w", err)
 	}
 	// получаем ssh ключ для подключения к серверу по имени сервера
 	var sshKey models.SSHKey
@@ -86,7 +86,7 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		// Если не найден ключ для конкретного сервера, пробуем получить ключ по умолчанию
 		err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", "Default")
 		if err != nil {
-			return fmt.Errorf("не удалось получить ssh ключ: %w", err)
+			return fmt.Errorf("failed to get SSH key: %w", err)
 		}
 	}
 
@@ -94,19 +94,19 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 	var subCACert string
 	err = db.Get(&subCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 	if err != nil {
-		return fmt.Errorf("не удалось получить промежуточный сертификат: %w", err)
+		return fmt.Errorf("failed to get intermediate certificate: %w", err)
 	}
 
 	// Получаем корневой сертификат из таблицы ca_certs
 	var rootCACert string
 	err = db.Get(&rootCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Root' AND cert_status = 0")
 	if err != nil {
-		return fmt.Errorf("не удалось получить корневой сертификат: %w", err)
+		return fmt.Errorf("failed to get root certificate: %w", err)
 	}
 
 	sshClient, err := sshClient(sshKey, serverInfo.Port, serverInfo.Username, serverInfo.Hostname)
 	if err != nil {
-		return fmt.Errorf("не удалось подключиться к серверу: %w", err)
+		return fmt.Errorf("failed to connect to server: %w", err)
 	}
 	defer sshClient.Close()
 	// Сохраняем сертификат на сервере в зависимости от типа приложени
@@ -118,59 +118,56 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		subCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, subCAPEM)
 		rootCAPath := fmt.Sprintf("%s/%s", serverInfo.CertConfigPath, rootCAPEM)
 
-		log.Printf("SaveOnServer: Пути файлов - cert: %s, key: %s, subCA: %s, rootCA: %s",
-			certPath, keyPath, subCAPath, rootCAPath)
+		slog.Info("SaveOnServer: Пути файлов - cert", slog.String("certPath", certPath), slog.String("keyPath", keyPath), slog.String("subCAPath", subCAPath), slog.String("rootCAPath", rootCAPath))
 
 		// Проверяем существование директории
 		checkDirCommand := fmt.Sprintf("test -d %s || { echo 'Директория %s не существует'; exit 1; }",
 			serverInfo.CertConfigPath, serverInfo.CertConfigPath)
 
-		log.Printf("SaveOnServer: Проверяем существование директории %s", serverInfo.CertConfigPath)
+		slog.Info("SaveOnServer: Проверяем существование директории", slog.String("path", serverInfo.CertConfigPath))
 		output, err := executeSSHCommand(sshClient, checkDirCommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Директория %s не существует или недоступна: %v, вывод: %s",
-				serverInfo.CertConfigPath, err, string(output))
-			return fmt.Errorf("директория %s не существует или недоступна: %w", serverInfo.CertConfigPath, err)
+			slog.Error("SaveOnServer: Директория не существует или недоступна", slog.String("path", serverInfo.CertConfigPath), slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("directory %s does not exist or is inaccessible: %w", serverInfo.CertConfigPath, err)
 		}
 
 		// Сохраняем сертификат сервера
 		certCommand := fmt.Sprintf("echo '%s' > %s", string(certPEM), certPath)
-		log.Printf("SaveOnServer: Сохраняем сертификат сервера")
+		slog.Info("SaveOnServer: Сохраняем сертификат сервера")
 		output, err = executeSSHCommand(sshClient, certCommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Ошибка сохранения сертификата: %v, вывод: %s", err, string(output))
-			return fmt.Errorf("не удалось сохранить сертификат: %w", err)
+			slog.Error("SaveOnServer: Ошибка сохранения сертификата", slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("failed to save certificate: %w", err)
 		}
 
 		// Сохраняем приватный ключ
 		keyCommand := fmt.Sprintf("echo '%s' > %s && chmod 600 %s", string(keyPEM), keyPath, keyPath)
-		log.Printf("SaveOnServer: Сохраняем приватный ключ")
+		slog.Info("SaveOnServer: Сохраняем приватный ключ")
 		output, err = executeSSHCommand(sshClient, keyCommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Ошибка сохранения приватного ключа: %v, вывод: %s", err, string(output))
-			return fmt.Errorf("не удалось сохранить приватный ключ: %w", err)
+			slog.Error("SaveOnServer: Ошибка сохранения приватного ключа", slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("failed to save private key: %w", err)
 		}
 
 		// Сохраняем промежуточный CA сертификат
 		subCACommand := fmt.Sprintf("echo '%s' > %s", subCACert, subCAPath)
-		log.Printf("SaveOnServer: Сохраняем промежуточный CA сертификат")
+		slog.Info("SaveOnServer: Сохраняем промежуточный CA сертификат")
 		output, err = executeSSHCommand(sshClient, subCACommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Ошибка сохранения промежуточного CA: %v, вывод: %s", err, string(output))
-			return fmt.Errorf("не удалось сохранить промежуточный CA сертификат: %w", err)
+			slog.Error("SaveOnServer: Ошибка сохранения промежуточного CA", slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("failed to save intermediate CA certificate: %w", err)
 		}
 
 		// Сохраняем корневой CA сертификат
 		rootCACommand := fmt.Sprintf("echo '%s' > %s", rootCACert, rootCAPath)
-		log.Printf("SaveOnServer: Сохраняем корневой CA сертификат")
+		slog.Info("SaveOnServer: Сохраняем корневой CA сертификат")
 		output, err = executeSSHCommand(sshClient, rootCACommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Ошибка сохранения корневого CA: %v, вывод: %s", err, string(output))
-			return fmt.Errorf("не удалось сохранить корневой CA сертификат: %w", err)
+			slog.Error("SaveOnServer: Ошибка сохранения корневого CA", slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("failed to save root CA certificate: %w", err)
 		}
 
-		log.Printf("SaveOnServer: Сертификат и ключ успешно сохранены на удаленном сервере %s:%d по путям %s и %s",
-			serverInfo.Hostname, serverInfo.Port, certPath, keyPath)
+		slog.Info("SaveOnServer: Сертификат и ключ успешно сохранены на удаленном сервере", slog.String("hostname", serverInfo.Hostname), slog.Int("port", serverInfo.Port), slog.String("certPath", certPath), slog.String("keyPath", keyPath))
 
 	case "haproxy":
 		// Для HAProxy нужно объединить сертификат сервера и ключ в один файл
@@ -178,21 +175,21 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		var subCACert string
 		err = db.Get(&subCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Sub' AND cert_status = 0")
 		if err != nil {
-			return fmt.Errorf("не удалось получить промежуточный сертификат: %w", err)
+			return fmt.Errorf("failed to get intermediate certificate: %w", err)
 		}
 
 		// Получаем корневой сертификат из таблицы ca_certs
 		var rootCACert string
 		err = db.Get(&rootCACert, "SELECT public_key FROM ca_certs WHERE type_ca = 'Root' AND cert_status = 0")
 		if err != nil {
-			return fmt.Errorf("не удалось получить корневой сертификат: %w", err)
+			return fmt.Errorf("failed to get root certificate: %w", err)
 		}
 
 		// получаем bundle crl
 		var bundleCRL string
 		err = db.Get(&bundleCRL, "SELECT data_crl FROM crl WHERE type_crl = 'Bundle'")
 		if err != nil {
-			return fmt.Errorf("не удалось получить bundle crl: %w", err)
+			return fmt.Errorf("failed to get bundle CRL: %w", err)
 		}
 
 		// Объединяем сертификат сервера и его ключ в один файл
@@ -208,55 +205,53 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 		// Проверяем существование директории
 		checkDirCommand := fmt.Sprintf("test -d %s || { echo 'Директория %s не существует'; exit 1; }",
 			serverInfo.CertConfigPath, serverInfo.CertConfigPath)
-		log.Printf("SaveOnServer: Проверяем существование директории %s", serverInfo.CertConfigPath)
+		slog.Info("SaveOnServer: Проверяем существование директории", slog.String("path", serverInfo.CertConfigPath))
 		output, err := executeSSHCommand(sshClient, checkDirCommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Директория %s не существует или недоступна: %v, вывод: %s",
-				serverInfo.CertConfigPath, err, string(output))
-			return fmt.Errorf("директория %s не существует или недоступна: %w", serverInfo.CertConfigPath, err)
+			slog.Error("SaveOnServer: Директория не существует или недоступна", slog.String("path", serverInfo.CertConfigPath), slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("directory %s does not exist or is inaccessible: %w", serverInfo.CertConfigPath, err)
 		}
 
 		// Сохраняем объединенный файл сертификата и ключа
 		combinedCommand := fmt.Sprintf("echo '%s' > %s && chmod 600 %s", combinedContent, combinedPath, combinedPath)
-		log.Printf("SaveOnServer: Сохраняем объединенный файл сертификата и ключа")
+		slog.Info("SaveOnServer: Сохраняем объединенный файл сертификата и ключа")
 		output, err = executeSSHCommand(sshClient, combinedCommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Ошибка сохранения объединенного файла: %v, вывод: %s", err, string(output))
-			return fmt.Errorf("не удалось сохранить объединенный файл сертификата и ключа: %w", err)
+			slog.Error("SaveOnServer: Ошибка сохранения объединенного файла", slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("failed to save combined certificate and key file: %w", err)
 		}
 
 		// Сохраняем промежуточный CA сертификат
 		subCACommand := fmt.Sprintf("echo '%s' > %s", subCACert, subCAPath)
-		log.Printf("SaveOnServer: Сохраняем промежуточный CA сертификат")
+		slog.Info("SaveOnServer: Сохраняем промежуточный CA сертификат")
 		output, err = executeSSHCommand(sshClient, subCACommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Ошибка сохранения промежуточного CA: %v, вывод: %s", err, string(output))
-			return fmt.Errorf("не удалось сохранить промежуточный CA сертификат: %w", err)
+			slog.Error("SaveOnServer: Ошибка сохранения промежуточного CA", slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("failed to save intermediate CA certificate: %w", err)
 		}
 
 		// Сохраняем корневой CA сертификат
 		rootCACommand := fmt.Sprintf("echo '%s' > %s", rootCACert, rootCAPath)
-		log.Printf("SaveOnServer: Сохраняем корневой CA сертификат")
+		slog.Info("SaveOnServer: Сохраняем корневой CA сертификат")
 		output, err = executeSSHCommand(sshClient, rootCACommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Ошибка сохранения корневого CA: %v, вывод: %s", err, string(output))
-			return fmt.Errorf("не удалось сохранить корневой CA сертификат: %w", err)
+			slog.Error("SaveOnServer: Ошибка сохранения корневого CA", slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("failed to save root CA certificate: %w", err)
 		}
 
 		// Сохраняем bundle CRL
 		bundleCRLCommand := fmt.Sprintf("echo '%s' > %s", bundleCRL, bundlePEMCRLPath)
-		log.Printf("SaveOnServer: Сохраняем bundle CRL")
+		slog.Info("SaveOnServer: Сохраняем bundle CRL")
 		output, err = executeSSHCommand(sshClient, bundleCRLCommand)
 		if err != nil {
-			log.Printf("SaveOnServer: Ошибка сохранения bundle CRL: %v, вывод: %s", err, string(output))
-			return fmt.Errorf("не удалось сохранить bundle CRL: %w", err)
+			slog.Error("SaveOnServer: Ошибка сохранения bundle CRL", slog.Any("error", err), slog.String("output", string(output)))
+			return fmt.Errorf("failed to save bundle CRL: %w", err)
 		}
 
-		log.Printf("SaveOnServer: Объединенный файл сертификата и ключа успешно сохранен на удаленном сервере %s:%d по пути %s",
-			serverInfo.Hostname, serverInfo.Port, combinedPath)
+		slog.Info("SaveOnServer: Объединенный файл сертификата и ключа успешно сохранен на удаленном сервере", slog.String("hostname", serverInfo.Hostname), slog.Int("port", serverInfo.Port), slog.String("combinedPath", combinedPath))
 
 	default:
-		log.Printf("Тип приложения %s не поддерживается для сохранения сертификата", data.AppType)
+		slog.Warn("SaveOnServer: Тип приложения не поддерживается для сохранения сертификата", slog.String("appType", data.AppType))
 	}
 	return nil
 }

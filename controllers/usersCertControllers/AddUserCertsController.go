@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/addspin/tlss/crypts"
@@ -18,7 +18,7 @@ func AddUserCertsController(c fiber.Ctx) error {
 
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 
 	defer db.Close()
@@ -29,9 +29,9 @@ func AddUserCertsController(c fiber.Ctx) error {
 		// c.Bind().JSON(data)
 
 		err := c.Bind().JSON(data)
-		// log.Println(data.Algorithm, data.KeyLength, data.TTL, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email, data.SAN)
+		// slog.Info(data.Algorithm, data.KeyLength, data.TTL, data.Recreate, data.CommonName, data.CountryName, data.StateProvince, data.LocalityName, data.Organization, data.OrganizationUnit, data.Email, data.SAN)
 		if err != nil {
-			log.Printf("AddUserCertsController: %v", err)
+			slog.Error("AddUserCertsController: Error occurred", "error", err)
 
 			return c.Status(400).JSON(
 				fiber.Map{"status": "error",
@@ -76,7 +76,7 @@ func AddUserCertsController(c fiber.Ctx) error {
 		case "RSA":
 			_, _, certErr = crypts.GenerateUserRSACertificate(data, db)
 			if certErr != nil {
-				log.Printf("RSA certificate generation error: %v", certErr)
+				slog.Error("RSA certificate generation error", "error", certErr)
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
 					"message": "Failed to generate RSA certificate: " + certErr.Error(),
@@ -85,7 +85,7 @@ func AddUserCertsController(c fiber.Ctx) error {
 		case "ED25519":
 			_, _, certErr = crypts.GenerateUserED25519Certificate(data, db)
 			if certErr != nil {
-				log.Printf("ED25519 certificate generation error: %v", certErr)
+				slog.Error("ED25519 certificate generation error", "error", certErr)
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
 					"message": "Failed to generate ED25519 certificate: " + certErr.Error(),
@@ -108,12 +108,12 @@ func AddUserCertsController(c fiber.Ctx) error {
 		entityList := []models.EntityData{}
 		err := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
 		if err != nil {
-			log.Printf("AddUserCertsController: %v", err)
+			slog.Error("AddUserCertsController: Error occurred", "error", err)
 		}
 		oidList := []models.OIDData{}
 		err = db.Select(&oidList, "SELECT id, oid_name, oid_description FROM oid")
 		if err != nil {
-			log.Printf("AddUserCertsController: %v", err)
+			slog.Error("AddUserCertsController: Error occurred", "error", err)
 		}
 
 		return c.Render("add_user_certs/addUserCerts", fiber.Map{
@@ -134,7 +134,7 @@ func UserCertListController(c fiber.Ctx) error {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
 	}
 	defer db.Close()
 
@@ -147,7 +147,7 @@ func UserCertListController(c fiber.Ctx) error {
 			// Если указан ID сущности, фильтруем сертификаты по сущности кроме результатов 2 - revoked
 			err = db.Select(&certList, "SELECT id, entity_id, algorithm, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM user_certs WHERE entity_id = ? AND cert_status IN (0, 1)", EntityId)
 			if err != nil {
-				log.Fatal(err)
+				slog.Error("Fatal error", "error", err)
 			}
 		}
 

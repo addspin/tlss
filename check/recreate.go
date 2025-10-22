@@ -1,7 +1,7 @@
 package check
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/addspin/tlss/controllers/caControllers"
@@ -15,20 +15,20 @@ func RecreateCerts(checkRecreateTime time.Duration) {
 
 	switch {
 	case viper.GetInt("recreateCerts.recreateCertsInterval") == 0:
-		log.Println("RecreateCerts: Ошибка в конфигурации: Время пересоздания сертификатов не установлено")
+		slog.Error("RecreateCerts: Configuration error: Certificate recreation time is not set")
 		return
 	case viper.GetInt("recreateCerts.recreateCertsInterval") < 0:
-		log.Println("RecreateCerts: Ошибка в конфигурации: Время пересоздания сертификатов отрицательное")
+		slog.Error("RecreateCerts: Configuration error: Certificate recreation time is negative")
 		return
 	case viper.GetString("app.hostname") == "":
-		log.Println("RecreateCerts: Ошибка в конфигурации: Hostname не установлен")
+		slog.Error("RecreateCerts: Configuration error: Hostname is not set")
 		return
 	case viper.GetString("app.port") == "":
-		log.Println("RecreateCerts: Ошибка в конфигурации: Port не установлен")
+		slog.Error("RecreateCerts: Configuration error: Port is not set")
 		return
 	}
 
-	log.Println("RecreateCerts: Запуск модуля повторного создания сертификатов")
+	slog.Info("RecreateCerts: Starting certificate recreation module")
 
 	// Выполняем проверку сразу при запуске функции
 	checkRecreateCerts()
@@ -37,7 +37,7 @@ func RecreateCerts(checkRecreateTime time.Duration) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		log.Println("RecreateCerts: Запуск проверки на пересоздание сертификатов")
+		slog.Info("RecreateCerts: Starting certificate recreation check")
 		checkRecreateCerts()
 	}
 }
@@ -47,7 +47,7 @@ func checkRecreateCerts() {
 	database := viper.GetString("database.path")
 	db, err := sqlx.Open("sqlite3", database)
 	if err != nil {
-		log.Println("RecreateCerts: Ошибка подключения к базе данных:", err)
+		slog.Error("RecreateCerts: Database connection error", "error", err)
 		return
 	}
 	defer db.Close()
@@ -56,34 +56,34 @@ func checkRecreateCerts() {
 	// Извлекаем все записи с типом cert_status = 1 или помеченные на пересоздание recreate = 1
 	err = db.Select(&certificates, "SELECT * FROM certs WHERE cert_status = 1 AND recreate = 1")
 	if err != nil {
-		log.Println("RecreateCerts: Ошибка запроса сертификатов:", err)
+		slog.Error("RecreateCerts: Certificate query error", "error", err)
 		return
 	}
 
 	userCertificate := []models.UserCertsData{}
 	err = db.Select(&userCertificate, "SELECT * FROM user_certs WHERE cert_status = 1 AND recreate = 1")
 	if err != nil {
-		log.Println("RecreateCerts: Ошибка запроса сертификатов:", err)
+		slog.Error("RecreateCerts: Certificate query error", "error", err)
 		return
 	}
 
 	caCertificates := []models.CAData{}
 	err = db.Select(&caCertificates, "SELECT * FROM ca_certs WHERE cert_status = 1 AND recreate = 1")
 	if err != nil {
-		log.Println("RecreateCerts: Ошибка запроса CA сертификатов:", err)
+		slog.Error("RecreateCerts: CA certificate query error", "error", err)
 		return
 	}
 
 	// CA сертификаты
 	for _, cert := range caCertificates {
-		log.Printf("RecreateCerts: CA сертификат %s (ID: %d) просрочен и будет перевыпущен", cert.CommonName, cert.Id)
+		slog.Info("RecreateCerts: CA certificate expired and will be reissued", "common_name", cert.CommonName, "id", cert.Id)
 		certErr := caControllers.CreateCACertRSA(&cert, db)
 		if certErr != nil {
-			log.Printf("RecreateCerts: Ошибка генерации сертификата: %v", certErr)
+			slog.Error("RecreateCerts: Certificate generation error", "error", certErr)
 			continue
 		}
 	}
-	log.Println("RecreateCerts: Проверка на пересоздание CA сертификатов завершена")
+	slog.Info("RecreateCerts: CA certificate recreation check completed")
 
 	// Сереверные сертификаты
 	for _, cert := range certificates {
@@ -93,16 +93,16 @@ func checkRecreateCerts() {
 			var onlineServerExists bool
 			err = db.Get(&onlineServerExists, "SELECT EXISTS(SELECT 1 FROM server WHERE id = ? AND server_status = ?)", cert.ServerId, "online")
 			if err != nil {
-				log.Println("RecreateCerts: Ошибка запроса сервера:", err)
+				slog.Error("RecreateCerts: Server query error", "error", err)
 				continue
 			}
 			// Проверяем, доступен ли сервер
 			if !onlineServerExists {
-				log.Printf("RecreateCerts: Сервер для сертификата %s (ID: %d) недоступен, пересоздание невозможно", cert.Domain, cert.Id)
+				slog.Warn("RecreateCerts: Server for certificate is unavailable, recreation is impossible", "domain", cert.Domain, "id", cert.Id)
 				continue
 			}
 
-			log.Printf("RecreateCerts: Сертификат %s (ID: %d, алгоритм: %s) просрочен и будет перевыпущен с сохранением на сервер", cert.Domain, cert.Id, cert.Algorithm)
+			slog.Info("RecreateCerts: Certificate expired and will be reissued with saving to server", "domain", cert.Domain, "id", cert.Id, "algorithm", cert.Algorithm)
 
 			// Выбираем функцию пересоздания в зависимости от алгоритма
 			var certPEM, keyPEM []byte
@@ -113,23 +113,23 @@ func checkRecreateCerts() {
 			case "ED25519":
 				certPEM, keyPEM, certErr = crypts.RecreateED25519Certificate(&cert, db)
 			default:
-				log.Printf("RecreateCerts: Неподдерживаемый алгоритм %s для сертификата %s (ID: %d)", cert.Algorithm, cert.Domain, cert.Id)
+				slog.Error("RecreateCerts: Unsupported algorithm for certificate", "algorithm", cert.Algorithm, "domain", cert.Domain, "id", cert.Id)
 				continue
 			}
 
 			if certErr != nil {
-				log.Printf("RecreateCerts: Ошибка генерации сертификата: %v", certErr)
+				slog.Error("RecreateCerts: Certificate generation error", "error", certErr)
 				continue
 			}
 			saveOnServerUtil := crypts.NewSaveOnServer()
 			err = saveOnServerUtil.SaveOnServer(&cert, db, certPEM, keyPEM)
 			if err != nil {
-				log.Printf("RecreateCerts: Ошибка сохранения сертификата на сервер: %v", err)
+				slog.Error("RecreateCerts: Error saving certificate to server", "error", err)
 				continue
 			}
 		} else {
 			// если сертификат не сохраняется на сервере, то пересоздаем его без копирования на сервер
-			log.Printf("RecreateCerts: Сертификат %s (ID: %d, алгоритм: %s) просрочен и будет перевыпущен без сохранения на сервер", cert.Domain, cert.Id, cert.Algorithm)
+			slog.Info("RecreateCerts: Certificate expired and will be reissued without saving to server", "domain", cert.Domain, "id", cert.Id, "algorithm", cert.Algorithm)
 
 			// Выбираем функцию пересоздания в зависимости от алгоритма
 			var certErr error
@@ -139,21 +139,21 @@ func checkRecreateCerts() {
 			case "ED25519":
 				_, _, certErr = crypts.RecreateED25519Certificate(&cert, db)
 			default:
-				log.Printf("RecreateCerts: Неподдерживаемый алгоритм %s для сертификата %s (ID: %d)", cert.Algorithm, cert.Domain, cert.Id)
+				slog.Error("RecreateCerts: Unsupported algorithm for certificate", "algorithm", cert.Algorithm, "domain", cert.Domain, "id", cert.Id)
 				continue
 			}
 
 			if certErr != nil {
-				log.Printf("RecreateCerts: Ошибка генерации сертификата: %v", certErr)
+				slog.Error("RecreateCerts: Certificate generation error", "error", certErr)
 				continue
 			}
 		}
 	}
-	log.Println("RecreateCerts: Проверка на пересоздание серверных сертификатов завершена")
+	slog.Info("RecreateCerts: Server certificate recreation check completed")
 
 	// Сертификаты пользователей
 	for _, userCert := range userCertificate {
-		log.Printf("RecreateCerts: Пользовательский сертификат %s (ID: %d, алгоритм: %s) просрочен и будет перевыпущен", userCert.CommonName, userCert.Id, userCert.Algorithm)
+		slog.Info("RecreateCerts: User certificate expired and will be reissued", "common_name", userCert.CommonName, "id", userCert.Id, "algorithm", userCert.Algorithm)
 
 		// Выбираем функцию пересоздания в зависимости от алгоритма
 		var certErr error
@@ -163,15 +163,15 @@ func checkRecreateCerts() {
 		case "ED25519":
 			certErr = crypts.RecreateUserED25519Certificate(&userCert, db)
 		default:
-			log.Printf("RecreateCerts: Неподдерживаемый алгоритм %s для пользовательского сертификата %s (ID: %d)", userCert.Algorithm, userCert.CommonName, userCert.Id)
+			slog.Error("RecreateCerts: Unsupported algorithm for user certificate", "algorithm", userCert.Algorithm, "common_name", userCert.CommonName, "id", userCert.Id)
 			continue
 		}
 
 		if certErr != nil {
-			log.Printf("RecreateCerts: Ошибка генерации пользовательского сертификата: %v", certErr)
+			slog.Error("RecreateCerts: User certificate generation error", "error", certErr)
 			continue
 		}
 	}
-	log.Println("RecreateCerts: Проверка на пересоздание пользовательских сертификатов завершена")
+	slog.Info("RecreateCerts: User certificate recreation check completed")
 	Monitors.RecreateCerts = time.Now()
 }

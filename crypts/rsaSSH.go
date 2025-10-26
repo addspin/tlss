@@ -104,7 +104,7 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 
 	var key models.SSHKey
 	if sshKeyName != "" {
-		err := db.Get(&key, "SELECT * FROM ssh_key WHERE server_name = ?", sshKeyName)
+		err := db.Get(&key, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", sshKeyName)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve certificates: %w", err)
 		}
@@ -141,7 +141,7 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 		}
 	}
 	if password != "" {
-		err := db.Get(&key, "SELECT * FROM ssh_key WHERE server_name = ?", "Default")
+		err := db.Get(&key, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", "Default")
 		if err != nil {
 			return fmt.Errorf("failed to retrieve certificates: %w", err)
 		}

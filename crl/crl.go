@@ -167,7 +167,7 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	if err == sql.ErrNoRows {
 		// Создаем новую информацию о CRL
 		SubCAcrlInfo = models.CRLInfo{
-			Version:            viper.GetInt("CAcrl.version"),
+			Version:            2,
 			SignatureAlgorithm: "SHA256-RSA",
 			IssuerName:         subCACert.Subject.String(),
 			LastUpdate:         time.Now().Format(time.RFC3339),
@@ -371,7 +371,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 	if err == sql.ErrNoRows {
 		// Создаем новую информацию о Root CA CRL
 		rootCACrlInfo = models.CRLInfo{
-			Version:            viper.GetInt("CAcrl.version"),
+			Version:            2,
 			SignatureAlgorithm: "SHA256-RSA",
 			IssuerName:         rootCert.Subject.String(),
 			LastUpdate:         time.Now().Format(time.RFC3339),

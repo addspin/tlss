@@ -40,7 +40,6 @@ CAcrl:
   crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/pem # der или pem большинство прокси работают с pem / der or pem (most proxies work with pem)
   unit: hours # minutes, seconds, hours
   updateInterval: 24 # minutes 12 hours / интервал обновления: 12 часов
-  version: 2
 
 ################################## Настройки CA / CA Settings
 CApath:

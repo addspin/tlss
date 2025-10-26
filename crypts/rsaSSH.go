@@ -17,15 +17,15 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// generatePrivateKey creates a RSA Private Key of specified byte size
+// Генерирует приватный ключ RSA
 func GeneratePrivateKeyForSSH(bitSize int) (*rsa.PrivateKey, error) {
-	// Private Key generation
+	// Генерируем приватный ключ
 	privateKey, err := rsa.GenerateKey(rand.Reader, bitSize)
 	if err != nil {
 		return nil, err
 	}
 
-	// Validate Private Key
+	// Проверяем приватный ключ
 	err = privateKey.Validate()
 	if err != nil {
 		return nil, err
@@ -34,25 +34,25 @@ func GeneratePrivateKeyForSSH(bitSize int) (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-// encodePrivateKeyToPEM encodes Private Key from RSA to PEM format
+// Кодирует приватный ключ RSA в PEM формат
 func EncodePrivateKeyToPEMForSSH(privateKey *rsa.PrivateKey) []byte {
-	// Get ASN.1 DER format
+	// Получаем ASN.1 DER формат
 	privDER := x509.MarshalPKCS1PrivateKey(privateKey)
 
-	// pem.Block
+	// pem.Block - блок PEM
 	privBlock := pem.Block{
 		Type:    "RSA PRIVATE KEY",
 		Headers: nil,
 		Bytes:   privDER,
 	}
 
-	// Private key in PEM format
+	// Приватный ключ в PEM формате
 	privatePEM := pem.EncodeToMemory(&privBlock)
 
 	return privatePEM
 }
 
-// generatePublicKey take a rsa.PublicKey and return bytes suitable for writing to .pub file
+// Генерирует публичный ключ RSA
 func GeneratePublicKeyForSSH(privatekey *rsa.PublicKey) ([]byte, error) {
 	publicRsaKey, err := ssh.NewPublicKey(privatekey)
 	if err != nil {
@@ -64,7 +64,7 @@ func GeneratePublicKeyForSSH(privatekey *rsa.PublicKey) ([]byte, error) {
 	return pubKeyBytes, nil
 }
 
-// GenerateED25519SSHKeyPair генерирует пару ключей ED25519 для SSH
+// Генерирует пару ключей ED25519 для SSH
 func GenerateED25519SSHKeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) {
 	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -73,7 +73,7 @@ func GenerateED25519SSHKeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) 
 	return publicKey, privateKey, nil
 }
 
-// EncodeED25519PrivateKeyToPEMForSSH кодирует приватный ключ ED25519 в PEM формат для SSH
+// Кодирует приватный ключ ED25519 в PEM формат для SSH
 func EncodeED25519PrivateKeyToPEMForSSH(privateKey ed25519.PrivateKey) ([]byte, error) {
 	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 	if err != nil {
@@ -88,7 +88,7 @@ func EncodeED25519PrivateKeyToPEMForSSH(privateKey ed25519.PrivateKey) ([]byte, 
 	return privateKeyPEM, nil
 }
 
-// GenerateED25519PublicKeyForSSH генерирует публичный ключ ED25519 в SSH формате
+// Генерирует публичный ключ ED25519 в SSH формате
 func GenerateED25519PublicKeyForSSH(publicKey ed25519.PublicKey) ([]byte, error) {
 	sshPublicKey, err := ssh.NewPublicKey(publicKey)
 	if err != nil {
@@ -99,7 +99,7 @@ func GenerateED25519PublicKeyForSSH(publicKey ed25519.PublicKey) ([]byte, error)
 	return pubKeyBytes, nil
 }
 
-// error: an error if there was a problem adding the public key or connecting to the remote server.
+// Добавление ключа доступа на удаленный сервер, через пароль или ключ
 func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, path, sshKeyName string) error {
 
 	var key models.SSHKey
@@ -113,18 +113,18 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 		if err != nil {
 			slog.Error("rsaSSH: Private key decryption error", "error", err)
 		}
-		// slog.Debug("decryptPrivKey", "key", string(decryptPrivKey))
+
 		signer, err := ssh.ParsePrivateKey(decryptPrivKey)
 		if err != nil {
 			slog.Error("rsaSSH: Unable to get private key", "error", err)
 		}
-		// slog.Debug("signer", "signer", signer)
+		// Используем ключ для подключения к серверу
 		keyConfig := &ssh.ClientConfig{
 			User: username,
 			Auth: []ssh.AuthMethod{
 				ssh.PublicKeys(signer),
 			},
-			// HostKeyCallback: ssh.FixedHostKey(parsedPubKey),
+
 			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			Timeout:         utils.SelectTime(viper.GetString("add_server.unit"), viper.GetInt("add_server.waitingToConnect")),
 		}
@@ -150,7 +150,7 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 			Auth: []ssh.AuthMethod{
 				ssh.Password(password),
 			},
-			// HostKeyCallback: ssh.FixedHostKey(parsedPubKey),
+
 			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 			Timeout:         utils.SelectTime(viper.GetString("add_server.unit"), viper.GetInt("add_server.waitingToConnect")),
 		}
@@ -189,9 +189,9 @@ func testEndCopy(client *ssh.Client, hostname, path string, key models.SSHKey) e
 	}
 	defer sessionTestCert.Close()
 
-	// add cert to authorized_keys
+	// Добавляем ключ в authorized_keys
 	cmdAddCert := "echo '" + string(key.PublicKey) + "' >> ~/.ssh/authorized_keys"
-	// test folder and certs
+	// Тестируем директорию и ключи
 	pubKey := strings.TrimSpace(string(key.PublicKey))
 	// Извлекаем основную часть ключа (тип и ключ без комментария) - первые два поля
 	keyParts := strings.Fields(pubKey)

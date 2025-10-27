@@ -1,10 +1,19 @@
 {{define "serverList-tpl"}}
-            <table class="table">
+            <table class="table" id="serverTable">
               <thead>
               <tr>
-                <th scope="col">Hostname</th>
-                <th scope="col">Path certs</th>
-                <th scope="col">Status</th>
+                <th scope="col" class="sortable-header" onclick="sortTable(0, 'serverTable')">
+                  Hostname
+                  <span class="sort-arrow" id="arrow-0">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(1, 'serverTable')">
+                  Path certs
+                  <span class="sort-arrow" id="arrow-1">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(2, 'serverTable')">
+                  Status
+                  <span class="sort-arrow" id="arrow-2">▼</span>
+                </th>
                 <th scope="col" class="th-text-center">Remove</th>
               </tr>
             </thead>

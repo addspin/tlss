@@ -1,10 +1,16 @@
 {{define "serversOnlineList-tpl"}}
 
-            <table class="table">
+            <table class="table" id="serversOnlineListTable">
               <thead>
               <tr>
-                <th scope="col">Hostname</th>
-                <th scope="col">Status</th>
+                <th scope="col" class="sortable-header" onclick="sortTable(0, 'serversOnlineListTable')">
+                  Hostname
+                  <span class="sort-arrow" id="arrow-0">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(1, 'serversOnlineListTable')">
+                  Status
+                  <span class="sort-arrow" id="arrow-1">▼</span>
+                </th>
               </tr>
             </thead>
             <tbody>

@@ -22,11 +22,16 @@ func RevokeUserCertsController(c fiber.Ctx) error {
 	defer db.Close()
 
 	if c.Method() == "GET" {
+		// Получаем список entity (пользователей), у которых есть отозванные сертификаты (cert_status = 2)
 		entityList := []models.EntityData{}
-		err := db.Select(&entityList, "SELECT id, entity_name, entity_description FROM entity")
+		err := db.Select(&entityList,
+			`SELECT id, entity_name, entity_description 
+			 FROM entity 
+			 WHERE id IN (SELECT DISTINCT entity_id FROM user_certs WHERE cert_status = 2)`)
 		if err != nil {
-			slog.Error("Fatal error", "error", err)
+			slog.Error("Error getting entities with revoked user certs", "error", err)
 		}
+		slog.Info("Entities with revoked user certs found", "count", len(entityList))
 
 		return c.Render("user_revoke_certs/revokeUserCerts", fiber.Map{
 			"Title":      "Revoke clients certs",

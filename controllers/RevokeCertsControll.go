@@ -22,11 +22,16 @@ func RevokeCertsController(c fiber.Ctx) error {
 	defer db.Close()
 
 	if c.Method() == "GET" {
+		// Получаем список серверов, у которых есть отозванные сертификаты (cert_status = 2)
 		serverList := []models.Server{}
-		err := db.Select(&serverList, "SELECT id, hostname, server_status, COALESCE(cert_config_path, '') as cert_config_path FROM server")
+		err = db.Select(&serverList,
+			`SELECT id, hostname, server_status, COALESCE(cert_config_path, '') as cert_config_path 
+			 FROM server 
+			 WHERE id IN (SELECT DISTINCT server_id FROM certs WHERE cert_status = 2)`)
 		if err != nil {
 			slog.Error("Fatal error", "error", err)
 		}
+		slog.Info("Servers with revoked certs found", "count", len(serverList))
 
 		return c.Render("revoke_certs/revokeCerts", fiber.Map{
 			"Title":      "Revoke certs",

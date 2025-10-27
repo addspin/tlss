@@ -1,14 +1,35 @@
 {{define "certUserRevokeList-tpl"}}
-            <table class="table table-certs">
+            <table class="table table-certs" id="certUserRevokeListTable">
               <thead>
               <tr>
-                <th scope="col">Common name</th>
-                <th scope="col">Create date</th>
-                <th scope="col">Expire in</th>
-                <th scope="col">Revoke date</th>
-                <th scope="col" class="th-text-center">Algorithm</th>
-                <th scope="col">Key length</th>
-                <th scope="col">Reason</th>
+                <th scope="col" class="sortable-header" onclick="sortTable(0, 'certUserRevokeListTable')">
+                  Common name
+                  <span class="sort-arrow" id="arrow-0">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(1, 'certUserRevokeListTable')">
+                  Create date
+                  <span class="sort-arrow" id="arrow-1">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(2, 'certUserRevokeListTable')">
+                  Expire in
+                  <span class="sort-arrow" id="arrow-2">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(3, 'certUserRevokeListTable')">
+                  Revoke date
+                  <span class="sort-arrow" id="arrow-3">▼</span>
+                </th>
+                <th scope="col" class="sortable-header th-text-center" onclick="sortTable(4, 'certUserRevokeListTable')">
+                  Algorithm
+                  <span class="sort-arrow" id="arrow-4">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(5, 'certUserRevokeListTable')">
+                  Key length
+                  <span class="sort-arrow" id="arrow-5">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(6, 'certUserRevokeListTable')">
+                  Reason
+                  <span class="sort-arrow" id="arrow-6">▼</span>
+                </th>
                 <th scope="col">Rollback</th>
                 <th scope="col" class="th-text-center">Remove</th>
               </tr>

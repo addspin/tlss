@@ -1,10 +1,16 @@
 {{define "serversObjectActiveList-tpl"}}
 
-            <table class="table">
+            <table class="table" id="serversObjectActiveListTable">
               <thead>
               <tr>
-                <th scope="col">Object name</th>
-                <th scope="col">Status</th>
+                <th scope="col" class="sortable-header" onclick="sortTable(0, 'serversObjectActiveListTable')">
+                  Object name
+                  <span class="sort-arrow" id="arrow-0">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(1, 'serversObjectActiveListTable')">
+                  Status
+                  <span class="sort-arrow" id="arrow-1">▼</span>
+                </th>
               </tr>
             </thead>
             <tbody>

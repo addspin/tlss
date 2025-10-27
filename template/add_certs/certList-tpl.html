@@ -1,14 +1,35 @@
 {{define "certList-tpl"}}
-            <table class="table table-certs">
+            <table class="table table-certs" id="certListTable">
               <thead>
               <tr>
-                <th scope="col">Domain</th>
-                <th scope="col">Create date</th>
-                <th scope="col">Expire date</th>
-                <th scope="col">Expire in</th>
-                <th scope="col" class="th-text-center">Algorithm</th>
-                <th scope="col">Key size</th>
-                <th scope="col">Status</th>
+                <th scope="col" class="sortable-header" onclick="sortTable(0, 'certListTable')">
+                  Domain
+                  <span class="sort-arrow" id="arrow-0">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(1, 'certListTable')">
+                  Create date
+                  <span class="sort-arrow" id="arrow-1">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(2, 'certListTable')">
+                  Expire date
+                  <span class="sort-arrow" id="arrow-2">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(3, 'certListTable')">
+                  Expire in
+                  <span class="sort-arrow" id="arrow-3">▼</span>
+                </th>
+                <th scope="col" class="sortable-header th-text-center" onclick="sortTable(4, 'certListTable')">
+                  Algorithm
+                  <span class="sort-arrow" id="arrow-4">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(5, 'certListTable')">
+                  Key size
+                  <span class="sort-arrow" id="arrow-5">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(6, 'certListTable')">
+                  Status
+                  <span class="sort-arrow" id="arrow-6">▼</span>
+                </th>
                 <th scope="col" class="th-text-center">Recreate</th>
                 <th scope="col" class="th-text-center">On Server</th>
                 <th scope="col">Revoke</th>

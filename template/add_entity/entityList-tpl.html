@@ -1,16 +1,22 @@
 <!-- USER ENTITIES -->
 {{define "entityList-tpl"}}
 
-            <table class="table">
+            <table class="table" id="entityTable">
               <thead>
               <tr>
-                <th scope="col">Entity name</th>
-                <th scope="col">Entity description</th>
+                <th scope="col" class="sortable-header" onclick="sortTable(0, 'entityTable')">
+                  Entity name
+                  <span class="sort-arrow" id="arrow-0">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(1, 'entityTable')">
+                  Entity description
+                  <span class="sort-arrow" id="arrow-1">▼</span>
+                </th>
                 <th scope="col"></th>
                 <th scope="col" class="th-text-center">Remove</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="entityTableBody">
               {{ range .entityList }}
               <tr class="entity_id_{{ .Id }}">
                   <td>{{ .EntityName }}</td>

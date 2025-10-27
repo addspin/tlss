@@ -1,73 +1,73 @@
-// Функция инициализации для работы с Key Length
+// Функция для управления селектами Key Length
 function initKeyLengthControl() {
-    const algorithmSelect = document.getElementById('select-type');
-    const keyLengthSelect = document.getElementById('select-key-length');
-    
-    // Проверяем, что элементы существуют (для страниц, где их нет)
-    if (!algorithmSelect || !keyLengthSelect) {
-      return;
-    }
-    
-    // Функция для обновления состояния поля Key Length
-    function updateKeyLengthState() {
-      const algorithm = algorithmSelect.value;
-      
-      if (algorithm === 'ED25519') {
-        // Блокируем выбор и устанавливаем 256
-        // НЕ используем disabled, чтобы значение отправлялось в форме
-        keyLengthSelect.style.pointerEvents = 'none';
-        keyLengthSelect.value = '256';
-        keyLengthSelect.style.opacity = '0.6';
-        keyLengthSelect.style.cursor = 'not-allowed';
-        keyLengthSelect.setAttribute('readonly', true);
-        
-        // Показываем опцию 256 и скрываем остальные
-        Array.from(keyLengthSelect.options).forEach(option => {
-          if (option.value === '256') {
-            option.style.display = 'block';
-            option.selected = true;
-          } else {
-            option.style.display = 'none';
-          }
-        });
-      } else {
-        // Разблокируем для RSA
-        keyLengthSelect.style.pointerEvents = 'auto';
-        keyLengthSelect.style.opacity = '1';
-        keyLengthSelect.style.cursor = 'pointer';
-        keyLengthSelect.removeAttribute('readonly');
-        
-        // Скрываем опцию 256 и показываем RSA опции
-        Array.from(keyLengthSelect.options).forEach(option => {
-          if (option.value === '256') {
-            option.style.display = 'none';
-          } else {
-            option.style.display = 'block';
-          }
-        });
-        
-        // Восстанавливаем значение по умолчанию (4096)
-        if (keyLengthSelect.value === '256') {
-          keyLengthSelect.value = '4096';
-        }
-      }
-    }
-    
-    // Удаляем старый обработчик, если он был (чтобы избежать дублей)
-    algorithmSelect.removeEventListener('change', updateKeyLengthState);
-    
-    // Слушаем изменение алгоритма
-    algorithmSelect.addEventListener('change', updateKeyLengthState);
-    
-    // Инициализируем состояние
-    updateKeyLengthState();
+  const algorithmSelect = document.getElementById('select-type');
+  const keyLengthHiddenInput = document.getElementById('key-length-value');
+  
+  // Проверяем, что элементы существуют
+  if (!algorithmSelect || !keyLengthHiddenInput) {
+    return;
   }
   
-  // Запускаем при первой загрузке страницы
-  document.addEventListener('DOMContentLoaded', initKeyLengthControl);
+  // Получаем все селекты для key length
+  const rsaSelect = document.getElementById('select-key-length-rsa');
+  const ecdsaSelect = document.getElementById('select-key-length-ecdsa');
+  const ed25519Select = document.getElementById('select-key-length-ed25519');
   
-  // Запускаем после каждой загрузки контента через HTMX
-  document.addEventListener('htmx:afterSwap', initKeyLengthControl);
+  // Функция обновления видимости селектов
+  function updateKeyLengthSelects() {
+    const algorithm = algorithmSelect.value;
+    
+    console.log('Выбран алгоритм:', algorithm);
+    
+    // Скрываем все селекты
+    if (rsaSelect) rsaSelect.style.display = 'none';
+    if (ecdsaSelect) ecdsaSelect.style.display = 'none';
+    if (ed25519Select) ed25519Select.style.display = 'none';
+    
+    // Показываем нужный селект и обновляем hidden input
+    if (algorithm === 'RSA' && rsaSelect) {
+      rsaSelect.style.display = '';
+      keyLengthHiddenInput.value = rsaSelect.value;
+    } else if (algorithm === 'ECDSA' && ecdsaSelect) {
+      ecdsaSelect.style.display = '';
+      keyLengthHiddenInput.value = ecdsaSelect.value;
+    } else if (algorithm === 'ED25519' && ed25519Select) {
+      ed25519Select.style.display = '';
+      keyLengthHiddenInput.value = ed25519Select.value;
+    }
+    
+    console.log('Key Length:', keyLengthHiddenInput.value);
+  }
   
-  // Альтернативно/дополнительно - когда HTMX полностью обработал новый контент
-  document.addEventListener('htmx:load', initKeyLengthControl);
+  // Обновляем hidden input при изменении любого селекта
+  if (rsaSelect) {
+    rsaSelect.addEventListener('change', function() {
+      keyLengthHiddenInput.value = this.value;
+    });
+  }
+  if (ecdsaSelect) {
+    ecdsaSelect.addEventListener('change', function() {
+      keyLengthHiddenInput.value = this.value;
+    });
+  }
+  if (ed25519Select) {
+    ed25519Select.addEventListener('change', function() {
+      keyLengthHiddenInput.value = this.value;
+    });
+  }
+  
+  // Слушаем изменение алгоритма
+  algorithmSelect.addEventListener('change', updateKeyLengthSelects);
+  
+  // Инициализируем состояние
+  updateKeyLengthSelects();
+}
+
+// Запускаем при первой загрузке страницы
+document.addEventListener('DOMContentLoaded', initKeyLengthControl);
+
+// Запускаем после каждой загрузки контента через HTMX
+document.addEventListener('htmx:afterSwap', initKeyLengthControl);
+
+// Запускаем когда HTMX полностью обработал новый контент
+document.addEventListener('htmx:load', initKeyLengthControl);

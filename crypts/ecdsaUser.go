@@ -1,7 +1,8 @@
 package crypts
 
 import (
-	"crypto/ed25519"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -18,35 +19,49 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Генерирует ED25519 ключевую пару для пользовательских сертификатов
-func GenerateUserED25519KeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) {
-	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to generate ED25519 key pair: %w", err)
+// Генерирует ECDSA ключевую пару для пользовательских сертификатов
+func GenerateUserECDSAKeyPair(keyLength int) (*ecdsa.PrivateKey, error) {
+	var curve elliptic.Curve
+	switch keyLength {
+	case 224:
+		curve = elliptic.P224()
+	case 256:
+		curve = elliptic.P256()
+	case 384:
+		curve = elliptic.P384()
+	case 521:
+		curve = elliptic.P521()
+	default:
+		curve = elliptic.P256() // По умолчанию P-256
 	}
-	return publicKey, privateKey, nil
+
+	privateKey, err := ecdsa.GenerateKey(curve, rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate ECDSA key pair: %w", err)
+	}
+	return privateKey, nil
 }
 
-// Кодирует приватный ключ ED25519 в формат PEM (PKCS8)
-func EncodeUserED25519PrivateKeyToPEM(privateKey ed25519.PrivateKey) ([]byte, error) {
-	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+// Кодирует приватный ключ ECDSA в формат PEM
+func EncodeUserECDSAPrivateKeyToPEM(privateKey *ecdsa.PrivateKey) ([]byte, error) {
+	privateKeyBytes, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encode ED25519 private key: %w", err)
+		return nil, fmt.Errorf("failed to marshal ECDSA private key: %w", err)
 	}
 	privateKeyPEM := pem.EncodeToMemory(
 		&pem.Block{
-			Type:  "PRIVATE KEY",
+			Type:  "EC PRIVATE KEY",
 			Bytes: privateKeyBytes,
 		},
 	)
 	return privateKeyPEM, nil
 }
 
-// Кодирует публичный ключ ED25519 в формат PEM
-func EncodeUserED25519PublicKeyToPEM(publicKey ed25519.PublicKey) []byte {
+// Кодирует публичный ключ ECDSA в формат PEM
+func EncodeUserECDSAPublicKeyToPEM(publicKey *ecdsa.PublicKey) []byte {
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
 	if err != nil {
-		slog.Error("Failed to encode ED25519 public key", slog.Any("error", err))
+		slog.Error("Failed to encode ECDSA public key", slog.Any("error", err))
 	}
 	publicKeyPEM := pem.EncodeToMemory(
 		&pem.Block{
@@ -58,19 +73,19 @@ func EncodeUserED25519PublicKeyToPEM(publicKey ed25519.PublicKey) []byte {
 }
 
 // standardizeSerialNumber возвращает серийный номер в стандартизированном формате
-func UserStandardizeSerialNumberED25519(serialNumber *big.Int) string {
+func UserStandardizeSerialNumberECDSA(serialNumber *big.Int) string {
 	hexStr := serialNumber.Text(16)
 	return strings.ToUpper(hexStr)
 }
 
-// Генерирует ED25519 сертификат для пользователей, подписанный промежуточным CA,
+// Генерирует ECDSA сертификат для пользователей, подписанный промежуточным CA,
 // и сохраняет его в базу данных
-func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (certPem, keyPem []byte, err error) {
+func GenerateUserECDSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPem, keyPem []byte, err error) {
 
-	// Генерируем новую ED25519 ключевую пару для сертификата
-	publicKey, privateKey, err := GenerateUserED25519KeyPair()
+	// Генерируем новую ECDSA ключевую пару для сертификата
+	privateKey, err := GenerateUserECDSAKeyPair(data.KeyLength)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to generate ECDSA key pair: %w", err)
 	}
 
 	// Генерируем случайный серийный номер
@@ -80,8 +95,8 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 	}
 
 	// Стандартизируем серийный номер и сохраняем
-	data.SerialNumber = UserStandardizeSerialNumberED25519(serialNumber)
-	slog.Info("Generated serial number for ED25519 user certificate", slog.String("common_name", data.CommonName), slog.String("serial_number", data.SerialNumber))
+	data.SerialNumber = UserStandardizeSerialNumberECDSA(serialNumber)
+	slog.Info("Generated serial number for ECDSA user certificate", slog.String("common_name", data.CommonName), slog.String("serial_number", data.SerialNumber))
 
 	extraNames := []pkix.AttributeTypeAndValue{}
 
@@ -151,9 +166,8 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 			OrganizationalUnit: []string{data.OrganizationUnit},
 			ExtraNames:         extraNames,
 		},
-		NotBefore: now,
-		NotAfter:  expiry,
-		// ED25519 поддерживает только цифровую подпись, НЕ поддерживает шифрование
+		NotBefore:             now,
+		NotAfter:              expiry,
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
@@ -168,7 +182,7 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
 		err = ExtractCA.ExtractSubCA(db)
 		if err != nil {
-			return nil, nil, fmt.Errorf("GenerateUserED25519Certificate: failed to extract intermediate CA certificate and key: %w", err)
+			return nil, nil, fmt.Errorf("GenerateUserECDSACertificate: failed to extract intermediate CA certificate and key: %w", err)
 		}
 	}
 	// Получаем промежуточный CA сертификат и ключ
@@ -177,7 +191,7 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 	aes := Aes{}
 
 	// Создаем сертификат
-	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, publicKey, subCAKey)
+	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, &privateKey.PublicKey, subCAKey)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
 	}
@@ -188,8 +202,8 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 		Bytes: certDER,
 	})
 
-	// Кодируем приватный ключ в PEM (PKCS8 для ED25519)
-	keyPEM, err := EncodeUserED25519PrivateKeyToPEM(privateKey)
+	// Кодируем приватный ключ в PEM
+	keyPEM, err := EncodeUserECDSAPrivateKeyToPEM(privateKey)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to encode private key: %w", err)
 	}
@@ -204,7 +218,7 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 	} else {
 		// Если AesSecretKey.Key не доступен, сохраняем ключ без шифрования
 		// Это потенциальная проблема безопасности
-		slog.Warn("Private ED25519 key is being saved without encryption for", slog.String("common_name", data.CommonName), slog.String("reason", "AesSecretKey.Key not set"))
+		slog.Warn("Private ECDSA key is being saved without encryption for", slog.String("common_name", data.CommonName), slog.String("reason", "AesSecretKey.Key not set"))
 		encryptedKey = keyPEM
 	}
 
@@ -239,7 +253,6 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 
 	if exists {
 		// Если запись существует, обновляем её
-		// Для ED25519 key_length всегда 256
 		_, err = tx.Exec(`UPDATE user_certs SET 
                 algorithm = ?, key_length = ?, ttl = ?, recreate = ?,
                 common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
@@ -247,7 +260,7 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
                 public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
                 serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?, oid = ?, oid_values = ?
             WHERE common_name = ? AND entity_id = ?`,
-			data.Algorithm, 256, data.TTL, data.Recreate,
+			data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 			data.Organization, data.OrganizationUnit, data.Email, data.Password,
 			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
@@ -255,12 +268,11 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 			data.CommonName, data.EntityId)
 		if err != nil {
 			tx.Rollback()
-			return nil, nil, fmt.Errorf("failed to update existing ED25519 certificate in database: %w", err)
+			return nil, nil, fmt.Errorf("failed to update existing ECDSA certificate in database: %w", err)
 		}
-		slog.Info("ED25519 certificate for common_name updated in database", slog.String("common_name", data.CommonName), slog.Int("id", data.Id))
+		slog.Info("ECDSA certificate for common_name updated in database", slog.String("common_name", data.CommonName), slog.Int("id", data.Id))
 	} else {
 		// Сертификат не существует, добавляем новый
-		// Для ED25519 key_length всегда 256
 		_, err = tx.Exec(`INSERT INTO user_certs (
                 entity_id, algorithm, key_length, ttl, recreate,
                 common_name, country_name, state_province, locality_name,
@@ -268,16 +280,16 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
                 public_key, private_key, cert_create_time, cert_expire_time,
                 serial_number, data_revoke, reason_revoke, cert_status, days_left, san, oid, oid_values
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			data.EntityId, data.Algorithm, 256, data.TTL, data.Recreate,
+			data.EntityId, data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 			data.Organization, data.OrganizationUnit, data.Email, data.Password,
 			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
 			data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues)
 		if err != nil {
 			tx.Rollback()
-			return nil, nil, fmt.Errorf("failed to add new ED25519 certificate to database: %w", err)
+			return nil, nil, fmt.Errorf("failed to add new ECDSA certificate to database: %w", err)
 		}
-		slog.Info("New ED25519 certificate for common_name added to database", slog.String("common_name", data.CommonName))
+		slog.Info("New ECDSA certificate for common_name added to database", slog.String("common_name", data.CommonName))
 	}
 
 	// Если все операции прошли успешно, фиксируем транзакцию
@@ -287,17 +299,17 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 	txCommitted = true
 
 	if exists {
-		slog.Info("Successfully updated ED25519 certificate for common_name", slog.String("common_name", data.CommonName))
+		slog.Info("Successfully updated ECDSA certificate for common_name", slog.String("common_name", data.CommonName))
 	} else {
-		slog.Info("Successfully generated new ED25519 certificate for common_name", slog.String("common_name", data.CommonName))
+		slog.Info("Successfully generated new ECDSA certificate for common_name", slog.String("common_name", data.CommonName))
 	}
 	return certPEM, keyPEM, nil
 }
 
-// Пересоздает ED25519 пользовательский сертификат
-func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) error {
-	// Генерируем новую ED25519 ключевую пару для сертификата
-	publicKey, privateKey, err := GenerateUserED25519KeyPair()
+// Пересоздает ECDSA пользовательский сертификат
+func RecreateUserECDSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
+	// Генерируем новую ECDSA ключевую пару для сертификата
+	privateKey, err := GenerateUserECDSAKeyPair(data.KeyLength)
 	if err != nil {
 		return err
 	}
@@ -309,8 +321,8 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 	}
 
 	// Стандартизируем серийный номер и сохраняем
-	data.SerialNumber = UserStandardizeSerialNumberED25519(serialNumber)
-	slog.Info("Generated serial number for ED25519 certificate", slog.String("common_name", data.CommonName), slog.String("serial_number", data.SerialNumber))
+	data.SerialNumber = UserStandardizeSerialNumberECDSA(serialNumber)
+	slog.Info("Generated serial number for ECDSA certificate", slog.String("common_name", data.CommonName), slog.String("serial_number", data.SerialNumber))
 
 	dnsNames := []string{data.CommonName}
 
@@ -380,9 +392,8 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 			OrganizationalUnit: []string{data.OrganizationUnit},
 			ExtraNames:         extraNames,
 		},
-		NotBefore: now,
-		NotAfter:  expiry,
-		// ED25519 поддерживает только цифровую подпись
+		NotBefore:             now,
+		NotAfter:              expiry,
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
@@ -397,7 +408,7 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
 		err = ExtractCA.ExtractSubCA(db)
 		if err != nil {
-			return fmt.Errorf("RecreateUserED25519Certificate: failed to extract intermediate CA certificate and key: %w", err)
+			return fmt.Errorf("RecreateUserECDSACertificate: failed to extract intermediate CA certificate and key: %w", err)
 		}
 	}
 	// Получаем промежуточный CA сертификат и ключ
@@ -406,7 +417,7 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 	aes := Aes{}
 
 	// Создаем сертификат
-	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, publicKey, subCAKey)
+	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, &privateKey.PublicKey, subCAKey)
 	if err != nil {
 		return fmt.Errorf("failed to create certificate: %w", err)
 	}
@@ -417,8 +428,8 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 		Bytes: certDER,
 	})
 
-	// Кодируем приватный ключ в PEM (PKCS8 для ED25519)
-	keyPEM, err := EncodeUserED25519PrivateKeyToPEM(privateKey)
+	// Кодируем приватный ключ в PEM
+	keyPEM, err := EncodeUserECDSAPrivateKeyToPEM(privateKey)
 	if err != nil {
 		return fmt.Errorf("failed to encode private key: %w", err)
 	}
@@ -433,7 +444,7 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 	} else {
 		// Если AesSecretKey.Key не доступен, сохраняем ключ без шифрования
 		// Это потенциальная проблема безопасности
-		slog.Warn("Private ED25519 key is being saved without encryption for", slog.String("common_name", data.CommonName), slog.String("reason", "AesSecretKey.Key not set"))
+		slog.Warn("Private ECDSA key is being saved without encryption for", slog.String("common_name", data.CommonName), slog.String("reason", "AesSecretKey.Key not set"))
 		encryptedKey = keyPEM
 	}
 
@@ -454,11 +465,10 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 		// Если произошла паника или транзакция не была зафиксирована, выполняем откат
 		if !txCommitted && tx != nil {
 			tx.Rollback()
-			slog.Error("Transaction cancelled due to error for", slog.String("common_name", data.CommonName))
+			slog.Error("Транзакция отменена из-за ошибки для", slog.String("common_name", data.CommonName))
 		}
 	}()
 
-	// Для ED25519 key_length всегда 256
 	_, err = tx.Exec(`UPDATE user_certs SET 
                 algorithm = ?, key_length = ?, ttl = ?, recreate = ?,
                 common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
@@ -466,7 +476,7 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
                 public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
                 serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?, oid = ?, oid_values = ?
             WHERE id = ?`,
-		data.Algorithm, 256, data.TTL, data.Recreate,
+		data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
 		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
 		data.Organization, data.OrganizationUnit, data.Email, data.Password,
 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
@@ -474,9 +484,9 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 		data.Id)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("failed to update ED25519 certificate in database: %w", err)
+		return fmt.Errorf("failed to update ECDSA certificate in database: %w", err)
 	}
-	slog.Info("ED25519 certificate for common_name updated in database", slog.String("common_name", data.CommonName), slog.Int("id", data.Id))
+	slog.Info("ECDSA certificate for common_name updated in database", slog.String("common_name", data.CommonName), slog.Int("id", data.Id))
 
 	// Если все операции прошли успешно, фиксируем транзакцию
 	if err = tx.Commit(); err != nil {
@@ -484,6 +494,6 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 	}
 	txCommitted = true
 
-	slog.Info("Successfully updated ED25519 certificate for common_name", slog.String("common_name", data.CommonName), slog.Int("id", data.Id))
+	slog.Info("Successfully updated ECDSA certificate for common_name", slog.String("common_name", data.CommonName), slog.Int("id", data.Id))
 	return nil
 }

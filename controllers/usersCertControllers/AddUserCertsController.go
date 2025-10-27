@@ -53,6 +53,14 @@ func AddUserCertsController(c fiber.Ctx) error {
 				})
 			}
 		}
+		if data.Algorithm == "ECDSA" {
+			if data.KeyLength != 224 && data.KeyLength != 256 && data.KeyLength != 384 && data.KeyLength != 521 {
+				return c.Status(400).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Invalid key length for ECDSA",
+				})
+			}
+		}
 
 		if data.TTL == 0 || // TTL
 			data.EntityId == 0 || // EntityId
@@ -89,6 +97,15 @@ func AddUserCertsController(c fiber.Ctx) error {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
 					"message": "Failed to generate ED25519 certificate: " + certErr.Error(),
+				})
+			}
+		case "ECDSA":
+			_, _, certErr = crypts.GenerateUserECDSACertificate(data, db)
+			if certErr != nil {
+				slog.Error("ECDSA certificate generation error", "error", certErr)
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Failed to generate ECDSA certificate: " + certErr.Error(),
 				})
 			}
 		default:

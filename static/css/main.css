@@ -109,6 +109,44 @@
     z-index: 20;
 }
 
+.domain-list {
+    padding-left: 3%;
+    padding-right: 10%;
+    align-content: center;
+    /* padding-top: 3%; */
+    font-size: 14px;
+    font-family: Inter;
+    font-weight: 100;
+    max-height: 40vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    /* Скрываем скроллбар */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE и Edge */
+}
+
+/* Скрываем скроллбар для Webkit браузеров */
+.domain-list::-webkit-scrollbar {
+    display: none;
+}
+
+/* Градиент затухания внизу списка сертификатов - появляется когда есть overflow */
+.domain-list::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    background: linear-gradient(to bottom, transparent, #212529);
+    pointer-events: none;
+    z-index: 5;
+    display: block;
+    margin-top: auto;
+}
+
+
 .certs_revoke_table {
     align-content: center;
     /* padding-top: 3%; */
@@ -453,4 +491,17 @@ color: #ffffff;
 
 .menu-valid-cert {
     color: #2ba03d;
+}
+
+.domain_status_border {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 2%;
+    padding-right: 2%;
+    text-align: left;
+    border: 1px solid #a99ee8;
+    border-color: rgb(128, 119, 176);
+    border-radius: 5px;
+    background-color: transparent;
+    width: 100%;
 }

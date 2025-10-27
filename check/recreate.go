@@ -112,6 +112,8 @@ func checkRecreateCerts() {
 				certPEM, keyPEM, certErr = crypts.RecreateRSACertificate(&cert, db)
 			case "ED25519":
 				certPEM, keyPEM, certErr = crypts.RecreateED25519Certificate(&cert, db)
+			case "ECDSA":
+				certPEM, keyPEM, certErr = crypts.RecreateECDSACertificate(&cert, db)
 			default:
 				slog.Error("RecreateCerts: Unsupported algorithm for certificate", "algorithm", cert.Algorithm, "domain", cert.Domain, "id", cert.Id)
 				continue
@@ -138,6 +140,8 @@ func checkRecreateCerts() {
 				_, _, certErr = crypts.RecreateRSACertificate(&cert, db)
 			case "ED25519":
 				_, _, certErr = crypts.RecreateED25519Certificate(&cert, db)
+			case "ECDSA":
+				_, _, certErr = crypts.RecreateECDSACertificate(&cert, db)
 			default:
 				slog.Error("RecreateCerts: Unsupported algorithm for certificate", "algorithm", cert.Algorithm, "domain", cert.Domain, "id", cert.Id)
 				continue
@@ -162,6 +166,8 @@ func checkRecreateCerts() {
 			certErr = crypts.RecreateUserRSACertificate(&userCert, db)
 		case "ED25519":
 			certErr = crypts.RecreateUserED25519Certificate(&userCert, db)
+		case "ECDSA":
+			certErr = crypts.RecreateUserECDSACertificate(&userCert, db)
 		default:
 			slog.Error("RecreateCerts: Unsupported algorithm for user certificate", "algorithm", userCert.Algorithm, "common_name", userCert.CommonName, "id", userCert.Id)
 			continue

@@ -58,6 +58,14 @@ func AddCertsControll(c fiber.Ctx) error {
 				})
 			}
 		}
+		if data.Algorithm == "ECDSA" {
+			if data.KeyLength != 224 && data.KeyLength != 256 && data.KeyLength != 384 && data.KeyLength != 521 {
+				return c.Status(400).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Invalid key length for ECDSA (supported: 224, 256, 384, 521)",
+				})
+			}
+		}
 		if data.AppType != "haproxy" && data.AppType != "nginx" {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
@@ -92,6 +100,24 @@ func AddCertsControll(c fiber.Ctx) error {
 				return c.Status(500).JSON(fiber.Map{
 					"status":  "error",
 					"message": "Error generating RSA certificate: " + certErr.Error(),
+				})
+			}
+			if data.SaveOnServer {
+				saveOnServer := crypts.NewSaveOnServer()
+				err = saveOnServer.SaveOnServer(data, db, certPEM, keyPEM)
+				if err != nil {
+					return c.Status(400).JSON(fiber.Map{
+						"status":  "error",
+						"message": "Error saving certificate to server: " + err.Error(),
+					})
+				}
+			}
+		case "ECDSA":
+			certPEM, keyPEM, certErr = crypts.GenerateECDSACertificate(data, db)
+			if certErr != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Error generating ECDSA certificate: " + certErr.Error(),
 				})
 			}
 			if data.SaveOnServer {

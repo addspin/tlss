@@ -91,18 +91,29 @@
                   <label class="select_title">Algorithm</label>
                     <select id="select-type" name="Algorithm" class="select">
                       <option value="RSA" selected>RSA</option>
-                      <!-- <option value="ECDSA">ECDSA</option> -->
+                      <option value="ECDSA">ECDSA</option>
                       <option value="ED25519">ED25519</option>
                     </select>
                 </div>
                 <div class="col-md-3">
                   <label class="select_title">Key Length</label>
-                    <select id="select-key-length" name="KeyLength" class="select" type="number">  
-                      <option value="1024">1024</option>
+                    <!-- RSA -->
+                    <select id="select-key-length-rsa" class="select key-length-selector" data-algorithm="RSA" type="number">  
                       <option value="2048">2048</option>
                       <option value="4096" selected>4096</option>
-                      <option value="256" style="display:none;">256</option>
                     </select>
+                    <!-- ECDSA -->
+                    <select id="select-key-length-ecdsa" class="select key-length-selector" data-algorithm="ECDSA" type="number" style="display:none;">  
+                      <option value="256" selected>P-256 (256 bit)</option>
+                      <option value="384">P-384 (384 bit)</option>
+                      <option value="521">P-521 (521 bit)</option>
+                    </select>
+                    <!-- ED25519 -->
+                    <select id="select-key-length-ed25519" class="select key-length-selector" data-algorithm="ED25519" type="number" style="display:none; pointer-events:none; opacity:0.6;">  
+                      <option value="256" selected>256</option>
+                    </select>
+                    <!-- Скрытое поле для отправки значения -->
+                    <input type="hidden" name="KeyLength" id="key-length-value" value="4096">
                 </div>
                 <div class="col-md-3">
                   <label class="select_title">TTL</label>

@@ -431,6 +431,24 @@ func processServerCertificates(certList []models.CertsData, db *sqlx.DB, numWork
 						}
 					}
 					serverResultsErrors <- nil
+				case "ECDSA":
+					// dbMutex.Lock()
+					certPEM, keyPEM, certErr = crypts.RecreateECDSACertificate(&cert, db)
+					// dbMutex.Unlock()
+
+					if certErr != nil {
+						serverResultsErrors <- fmt.Errorf("error generating ECDSA certificates: %w", certErr)
+						continue
+					}
+					if cert.SaveOnServer {
+						saveOnServer := crypts.NewSaveOnServer()
+						// dbMutex.Lock()
+						err := saveOnServer.SaveOnServer(&cert, db, certPEM, keyPEM)
+						// dbMutex.Unlock()
+						if err != nil {
+							slog.Error("Error saving certificate to server", "error", err)
+						}
+					}
 				default:
 					serverResultsErrors <- fmt.Errorf("unsupported algorithm: %s", cert.Algorithm)
 				}
@@ -495,6 +513,11 @@ func processUserCertificates(userCertList []models.UserCertsData, db *sqlx.DB, n
 				case "ED25519":
 					dbMutex.Lock()
 					certErr = crypts.RecreateUserED25519Certificate(&userCert, db)
+					dbMutex.Unlock()
+					userResultsErrors <- certErr
+				case "ECDSA":
+					dbMutex.Lock()
+					certErr = crypts.RecreateUserECDSACertificate(&userCert, db)
 					dbMutex.Unlock()
 					userResultsErrors <- certErr
 				default:

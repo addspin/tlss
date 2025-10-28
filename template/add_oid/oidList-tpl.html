@@ -41,16 +41,16 @@
                     },
                     customClass: 'custom-alert',
                     input: 'text',
-                    title: 'Вы уверены, что хотите удалить OID - {{ .OIDName }}?', 
-                    text: 'Для подтверждения введите {{ .OIDName }}', 
+                    title: 'Are you sure you want to delete OID - {{ .OIDName }}?', 
+                    text: 'To confirm, enter {{ .OIDName }}', 
                     showCancelButton: true,
                     confirmButtonColor: '#983636',
                     cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!',
+                    confirmButtonText: 'Yes, delete!',
                     
                     inputValidator: (value) => {
                     if (value != '{{ .OIDName }}') {
-                      return 'Вы ввели не верное имя OID, введите {{ .OIDName }}';
+                      return 'You entered an invalid OID name, enter {{ .OIDName }}';
                     }
                   }
                   }).then((result) => {

@@ -90,9 +90,9 @@
                 <div class="col-md-3">
                   <label class="select_title">Lenght</label>
                     <select id="select-key-length" name="KeyLength" class="select" type="number">  
-                      <option value="1024">1024</option>
-                      <option value="2048">2048</option>
-                      <option value="4096" selected>4096</option>
+                      <option value="2048">2048 bits</option>
+                      <option value="4096" selected>4096 bits</option>
+                      <option value="8192">8192 bits</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -170,8 +170,8 @@
                       const randomId = generateRandomId();
                       const typeCA = document.getElementById('select-type-ca').value;
                       const titleText = typeCA === 'Root' ? 
-                        'Вы создаете Root CA, все сертификаты подписанные этим CA будут пересозданы!' : 
-                        'Вы создаете Sub CA, все сертификаты подписанные этим Sub CA будут пересозданы!';
+                        'You are creating Root CA, all certificates signed by this CA will be recreated!' : 
+                        'You are creating Sub CA, all certificates signed by this Sub CA will be recreated!';
                       
                       Swal.fire({
                         showClass: {
@@ -183,14 +183,14 @@
                         customClass: 'custom-alert',
                         input: 'text',
                         title: titleText,
-                        text: `Для подтверждения введите: ${randomId}`, 
+                        text: `To confirm, enter: ${randomId}`, 
                         showCancelButton: true,
                         confirmButtonColor: '#983636',
                         cancelButtonColor: '#3085d6',
                         confirmButtonText: 'Yes, approve',
                         inputValidator: (value) => {
                             if (value !== randomId) {
-                                return `Вы ввели не верный идентификатор, введите: ${randomId}`;
+                                return `You entered an invalid identifier, enter: ${randomId}`;
                             }
                         }
                       }).then((result) => {

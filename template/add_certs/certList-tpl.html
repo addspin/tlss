@@ -104,14 +104,14 @@
                         },
                         customClass: 'custom-alert',
                         input: 'text',
-                        title: 'Вы уверены, что хотите отозвать сертификат - {{ .Domain }}?', 
-                        text: 'Для подтверждения введите {{ .Domain }}', 
+                        title: 'Are you sure you want to revoke certificate - {{ .Domain }}?', 
+                        text: 'To confirm, enter {{ .Domain }}', 
                         showCancelButton: true,
                         confirmButtonText: 'Yes, revoke!',
                         
                         inputValidator: (value) => {
                         if (value != '{{ .Domain }}') {
-                          return 'Вы ввели не верное имя сертификата, введите {{ .Domain }}';
+                          return 'You entered an invalid certificate name, enter {{ .Domain }}';
                         }
                       }
                       }).then((result) => {
@@ -155,14 +155,14 @@
                         },
                         customClass: 'custom-alert',
                         input: 'text',
-                        title: 'Вы уверены, что хотите удалить сертификат - {{ .Domain }}?', 
-                        text: 'Для подтверждения введите {{ .Domain }}', 
+                        title: 'Are you sure you want to delete certificate - {{ .Domain }}?', 
+                        text: 'To confirm, enter {{ .Domain }}', 
                         showCancelButton: true,
                         confirmButtonText: 'Yes, delete!',
                         
                         inputValidator: (value) => {
                         if (value != '{{ .Domain }}') {
-                          return 'Вы ввели не верное имя сертификата, введите {{ .Domain }}';
+                          return 'You entered an invalid certificate name, enter {{ .Domain }}';
                         }
                       }
                       }).then((result) => {

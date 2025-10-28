@@ -77,8 +77,8 @@
                         },
                         customClass: 'custom-alert',
                         input: 'text',
-                        title: 'Вы уверены, что хотите отменить отзыв сертификата? - {{ .CommonName }}?', 
-                        text: 'Для подтверждения введите {{ .CommonName }}', 
+                        title: 'Are you sure you want to rollback certificate - {{ .CommonName }}?', 
+                        text: 'To confirm, enter {{ .CommonName }}', 
                         showCancelButton: true,
                         confirmButtonColor: '#983636',
                         cancelButtonColor: '#3085d6',
@@ -86,7 +86,7 @@
                         
                         inputValidator: (value) => {
                         if (value != {{ .CommonName }}) {
-                          return 'Вы ввели не верное имя сертификата, введите {{ .CommonName }}';
+                          return 'You entered an invalid certificate name, enter {{ .CommonName }}';
                         }
                       }
                       }).then((result) => {
@@ -115,8 +115,8 @@
                         },
                         customClass: 'custom-alert',
                         input: 'text',
-                        title: 'Вы уверены, что хотите удалить сертификат - {{ .CommonName }}?', 
-                        text: 'Для подтверждения введите {{ .CommonName }}', 
+                        title: 'Are you sure you want to delete certificate - {{ .CommonName }}?', 
+                        text: 'To confirm, enter {{ .CommonName }}', 
                         showCancelButton: true,
                         confirmButtonColor: '#983636',
                         cancelButtonColor: '#3085d6',
@@ -124,7 +124,7 @@
                         
                         inputValidator: (value) => {
                         if (value != {{ .CommonName }}) {
-                          return 'Вы ввели не верное имя сертификата, введите {{ .CommonName }}';
+                          return 'You entered an invalid certificate name, enter {{ .CommonName }}';
                         }
                       }
                       }).then((result) => {

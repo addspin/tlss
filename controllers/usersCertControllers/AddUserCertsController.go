@@ -46,10 +46,10 @@ func AddUserCertsController(c fiber.Ctx) error {
 			})
 		}
 		if data.Algorithm == "RSA" {
-			if data.KeyLength != 1024 && data.KeyLength != 2048 && data.KeyLength != 4096 {
+			if data.KeyLength != 1024 && data.KeyLength != 2048 && data.KeyLength != 4096 && data.KeyLength != 8192 {
 				return c.Status(400).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Invalid key length",
+					"message": "Invalid key length for RSA (supported: 2048, 4096, 8192)",
 				})
 			}
 		}
@@ -57,7 +57,7 @@ func AddUserCertsController(c fiber.Ctx) error {
 			if data.KeyLength != 224 && data.KeyLength != 256 && data.KeyLength != 384 && data.KeyLength != 521 {
 				return c.Status(400).JSON(fiber.Map{
 					"status":  "error",
-					"message": "Invalid key length for ECDSA",
+					"message": "Invalid key length for ECDSA (supported: 256, 384, 521)",
 				})
 			}
 		}

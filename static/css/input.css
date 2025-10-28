@@ -79,6 +79,8 @@ html, body {
 .container-fluid {
     max-width: 100%;
     overflow-x: hidden;
+    overflow-y: hidden;
+    max-height: 100vh;
 }
 
 .row {

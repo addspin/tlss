@@ -56,16 +56,16 @@
                     },
                     customClass: 'custom-alert',
                     input: 'text',
-                    title: 'Вы уверены, что хотите удалить ssh key - {{ .NameSSHKey }}?', 
-                    text: 'Для подтверждения введите {{ .NameSSHKey }}', 
+                    title: 'Are you sure you want to delete ssh key - {{ .NameSSHKey }}?', 
+                    text: 'To confirm, enter {{ .NameSSHKey }}', 
                     showCancelButton: true,
                     confirmButtonColor: '#983636',
                     cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!',
+                    confirmButtonText: 'Yes, delete!',
                     
                     inputValidator: (value) => {
                     if (value != '{{ .NameSSHKey }}') {
-                      return 'Вы ввели не верное имя ssh key, введите {{ .NameSSHKey }}';
+                      return 'You entered an invalid ssh key name, enter {{ .NameSSHKey }}';
                     }
                   }
                   }).then((result) => {

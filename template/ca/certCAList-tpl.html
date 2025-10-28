@@ -98,15 +98,15 @@
                             },
                             customClass: 'custom-alert',
                             input: 'text',
-                            title: '{{ if eq .TypeCA "Root" }}Вы отзываете Root CA, все сертификаты подписанные этим CA будут отозваны, а отозванные сертификаты будут удалены!{{ else }}Вы отзываете Sub CA, все сертификаты подписанные этим Sub CA будут отозваны, а отозванные сертификаты будут удалены!{{ end }}', 
-                            text: 'Для подтверждения введите {{ .CommonName }}', 
+                            title: '{{ if eq .TypeCA "Root" }}You are revoking Root CA, all certificates signed by this CA will be revoked, and revoked certificates will be deleted!{{ else }}You are revoking Sub CA, all certificates signed by this Sub CA will be revoked, and revoked certificates will be deleted!{{ end }}', 
+                            text: 'To confirm, enter {{ .CommonName }}', 
                             showCancelButton: true,
                             confirmButtonColor: '#983636',
                             cancelButtonColor: '#3085d6',
                             confirmButtonText: 'Yes, revoke!',
                             inputValidator: (value) => {
                                 if (value != '{{ .CommonName }}') {
-                                    return 'Вы ввели не верное имя сертификата, введите {{ .CommonName }}';
+                                    return 'You entered an invalid certificate name, enter {{ .CommonName }}';
                                 }
                             }
                         }).then((result) => {

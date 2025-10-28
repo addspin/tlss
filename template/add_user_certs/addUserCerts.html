@@ -99,8 +99,9 @@
                   <label class="select_title">Key Length</label>
                     <!-- RSA -->
                     <select id="select-key-length-rsa" class="select key-length-selector" data-algorithm="RSA" type="number">  
-                      <option value="2048">2048</option>
-                      <option value="4096" selected>4096</option>
+                      <option value="2048">2048 bits</option>
+                      <option value="4096" selected>4096 bits</option>
+                      <option value="8192">8192 bits</option>
                     </select>
                     <!-- ECDSA -->
                     <select id="select-key-length-ecdsa" class="select key-length-selector" data-algorithm="ECDSA" type="number" style="display:none;">  
@@ -110,9 +111,9 @@
                     </select>
                     <!-- ED25519 -->
                     <select id="select-key-length-ed25519" class="select key-length-selector" data-algorithm="ED25519" type="number" style="display:none; pointer-events:none; opacity:0.6;">  
-                      <option value="256" selected>256</option>
+                      <option value="256" selected>256 bits</option>
                     </select>
-                    <!-- Скрытое поле для отправки значения -->
+                    <!-- Скрытое поле для отправки значения длины ключа-->
                     <input type="hidden" name="KeyLength" id="key-length-value" value="4096">
                 </div>
                 <div class="col-md-3">

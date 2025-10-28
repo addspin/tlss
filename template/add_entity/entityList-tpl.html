@@ -41,16 +41,16 @@
                     },
                     customClass: 'custom-alert',
                     input: 'text',
-                    title: 'Вы уверены, что хотите удалить сущность - {{ .EntityName }}?', 
-                    text: 'Для подтверждения введите {{ .EntityName }}', 
+                    title: 'Are you sure you want to delete entity - {{ .EntityName }}?', 
+                    text: 'To confirm, enter {{ .EntityName }}', 
                     showCancelButton: true,
                     confirmButtonColor: '#983636',
                     cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!',
+                    confirmButtonText: 'Yes, delete!',
                     
                     inputValidator: (value) => {
                     if (value != '{{ .EntityName }}') {
-                      return 'Вы ввели не верное имя сущности, введите {{ .EntityName }}';
+                      return 'You entered an invalid entity name, enter {{ .EntityName }}';
                     }
                   }
                   }).then((result) => {

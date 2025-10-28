@@ -47,7 +47,7 @@
                   hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
                   customClass: 'custom-alert',
                   icon: 'error',
-                  title: 'Ошибка',
+                  title: 'Error',
                   text: response.message,
                 });
               } else if (response.status === 'success') {
@@ -56,7 +56,7 @@
                   hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
                   customClass: 'custom-alert',
                   icon: 'success',
-                  title: 'Успешно',
+                  title: 'Success',
                   text: response.message,
                 }).then(() => {
                   // Обновляем список серверов

@@ -15,7 +15,7 @@ import (
 // Используем явные настройки для совместимости со всеми браузерами, особенно Safari
 var Store = session.New(session.Config{
 	CookieSameSite:    "Lax",            // Для совместимости с Safari используем Lax
-	CookieSecure:      false,            // В production должно быть true если используется HTTPS
+	CookieSecure:      true,             // В production должно быть true если используется HTTPS
 	CookieHTTPOnly:    true,             // Важно для безопасности, куки только для HTTP запросов
 	Expiration:        30 * time.Minute, // Время жизни сессии
 	CookiePath:        "/",              // Доступность куки на всех путях
@@ -39,7 +39,7 @@ var publicRoutes = []string{
 
 // Расширения статических файлов, которые должны быть доступны всем
 var staticExtensions = []string{
-	".css", ".js", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico", ".woff", ".woff2", ".ttf", ".eot",
+	".css", ".js", ".svg", ".ico", ".woff", ".woff2", ".ttf",
 }
 
 // AuthMiddleware checks if the user is authenticated

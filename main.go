@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/addspin/tlss/check"
 	"github.com/addspin/tlss/crl"
@@ -25,21 +26,40 @@ import (
 	"github.com/spf13/viper"
 )
 
-//go:embed template/*
+//go:embed template
 var templateFS embed.FS
 
 //go:embed static
 var staticFS embed.FS
 
+//go:embed configInit.yaml
+var defaultConfigInit []byte
+
 const bitSize int = 4096
 
 func main() {
+	//  Создаем первичный конфигурационный файл config.yaml из configInit.yaml
+	execPath, err := os.Executable()
+	if err != nil {
+		slog.Error("Cannot determine executable path", "error", err)
+		os.Exit(1)
+	}
+	execDir := filepath.Dir(execPath)
+	configPath := filepath.Join(execDir, "config.yaml")
+	if _, statErr := os.Stat(configPath); os.IsNotExist(statErr) {
+		if writeErr := os.WriteFile(configPath, defaultConfigInit, 0644); writeErr != nil {
+			slog.Error("Cannot write default config.yaml", "path", configPath, "error", writeErr)
+			os.Exit(1)
+		}
+		slog.Info("Default config.yaml created", "path", configPath)
+	}
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+	// Читаем конфиг из директории бинарника
+	viper.AddConfigPath(execDir)
 
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		slog.Error("Error reading config file", "error", err)
 		os.Exit(1)
@@ -147,112 +167,53 @@ func main() {
 		slog.Error("Error creating user certs table", "error", err)
 	}
 	var password, salt []byte
-	// Получаем логин, пароль и соль из конфигурации для отладки
-	if viper.GetBool("login.authConfig") {
-		login := viper.GetString("login.username")
-		if login == "" {
-			slog.Error("Login cannot be empty")
-			os.Exit(1)
-		}
-		password = []byte(viper.GetString("login.password"))
-		if len(password) == 0 {
-			slog.Error("Password cannot be empty")
-			os.Exit(1)
-		}
-		salt = []byte(viper.GetString("login.salt"))
-		if len(salt) == 0 {
-			slog.Error("Salt cannot be empty")
-			os.Exit(1)
-		}
-	}
-	// Если не используем конфигурацию, то запрашиваем логин, пароль и соль вручную
-	if !viper.GetBool("login.authConfig") {
-		var login, user string
-		fmt.Print("Enter login: ")
-		_, err = fmt.Scanln(&login)
-		if err != nil {
-			slog.Error("Error reading login", "error", err)
-			os.Exit(1)
-		}
+	var login string
 
-		if len(login) == 0 {
-			slog.Error("Login cannot be empty")
-			os.Exit(1)
-		}
-		err = db.Get(&user, "SELECT username FROM users WHERE username = ?", login)
-		if err != nil {
-			slog.Error("Login not found", "error", err)
-			os.Exit(1)
-		}
-
-		fmt.Print("Enter password: ")
-		_, err = fmt.Scanln(&password)
-		if err != nil {
-			slog.Error("Error reading password", "error", err)
-			os.Exit(1)
-		}
-		if len(password) == 0 {
-			slog.Error("Password cannot be empty")
-			os.Exit(1)
-		}
-
-		fmt.Print("Enter salt: ")
-		_, err = fmt.Scanln(&salt)
-		if err != nil {
-			slog.Error("Error reading salt", "error", err)
-			os.Exit(1)
-		}
-		if len(salt) == 0 {
-			slog.Error("Salt cannot be empty")
-			os.Exit(1)
-		}
-
-	}
-	// Генерируем итоговый пароль через PBKDF2
-	p := crypts.PWD{}
-	pwd := p.CreatePWDKeyFromUserInput(password, salt)
-
-	//проверяем, есть ли в таблице хотя-бы одно значение key
+	//проверяем, есть ли в таблице хотя-бы одно значение ключа
 	var exists bool
 	err = db.Get(&exists, "SELECT EXISTS (SELECT 1 FROM secret_key)")
 	if err != nil {
 		slog.Error("Error checking if secret key exists", "error", err)
 		os.Exit(1)
 	}
-	//если нет, то просим ввести ключ
+	//если в базе нет ключа, то просим ввести ключ
 	aes := crypts.Aes{}
 	if !exists {
-		// запрос на ввод логина
-		var login string
-		fmt.Print("Enter login: ")
-		_, err = fmt.Scanln(&login)
-		if err != nil {
-			slog.Error("Error reading login", "error", err)
-			os.Exit(1)
-		}
-
-		// запрос ввода пароля
-		var password []byte
-		fmt.Print("Enter password: ")
-		_, err = fmt.Scanln(&password)
-		if err != nil {
-			slog.Error("Error reading password", "error", err)
-			os.Exit(1)
-		}
-
-		// запрос ввода соли
-		var salt []byte
-		fmt.Print("Enter salt: ")
-		_, err = fmt.Scanln(&salt)
-		if err != nil {
-			slog.Error("Error reading salt", "error", err)
-			os.Exit(1)
-		}
-
-		// Проверяем, что пароль и соль не пустые
-		if len(password) == 0 || len(salt) == 0 {
-			slog.Error("Password and salt cannot be empty")
-			os.Exit(1)
+		// если данные авторизации берутся из конфига, то проверяем, что они не пустые
+		if viper.GetBool("login.authConfig") {
+			login = viper.GetString("login.username")
+			if login == "" {
+				slog.Error("Login cannot be empty")
+				os.Exit(1)
+			}
+			if len(password) == 0 || len(salt) == 0 {
+				slog.Error("Password and salt cannot be empty")
+				os.Exit(1)
+			}
+		} else {
+			// Init-ввод при первом старте
+			fmt.Print("Init Login: ")
+			_, err = fmt.Scanln(&login)
+			if err != nil {
+				slog.Error("Error reading login", "error", err)
+				os.Exit(1)
+			}
+			fmt.Print("Init password: ")
+			_, err = fmt.Scanln(&password)
+			if err != nil {
+				slog.Error("Error reading password", "error", err)
+				os.Exit(1)
+			}
+			fmt.Print("Init salt: ")
+			_, err = fmt.Scanln(&salt)
+			if err != nil {
+				slog.Error("Error reading salt", "error", err)
+				os.Exit(1)
+			}
+			if len(password) == 0 || len(salt) == 0 {
+				slog.Error("Password and salt cannot be empty")
+				os.Exit(1)
+			}
 		}
 
 		// Генерируем итоговый пароль через PBKDF2
@@ -280,8 +241,8 @@ func main() {
 			slog.Error("Error inserting secret key", "error", err)
 			os.Exit(1)
 		}
-		// записываем в таблицу login владельца
-		loginInsert := `INSERT INTO users (username) VALUES ($1)`
+		// записываем в таблицу login владельца (избегаем дубликатов)
+		loginInsert := `INSERT OR IGNORE INTO users (username) VALUES ($1)`
 		_, err = tx.Exec(loginInsert, login)
 		if err != nil {
 			slog.Error("Error inserting user", "error", err)
@@ -308,7 +269,80 @@ func main() {
 			crypts.AesSecretKey.Key = decryptKey
 		}
 	}
-	// если в базе есть ключ, то расшифровываем и передаем в переменную
+
+	// если в базе есть ключ, то получаем логин/пароль/соль для расшифровки ключа
+	if exists {
+		// если данные авторизации берутся из конфига, то проверяем, что они не пустые
+		if viper.GetBool("login.authConfig") {
+			login = viper.GetString("login.username")
+			if login == "" {
+				slog.Error("Login cannot be empty")
+				os.Exit(1)
+			}
+			// проверяем, что пользователь существует в БД
+			var userCount int
+			err = db.Get(&userCount, "SELECT COUNT(1) FROM users WHERE username = ?", login)
+			if err != nil {
+				slog.Error("Error checking user existence", "error", err)
+				os.Exit(1)
+			}
+			if userCount == 0 {
+				slog.Error("Login not found")
+				os.Exit(1)
+			}
+			if len(password) == 0 || len(salt) == 0 {
+				slog.Error("Password and salt cannot be empty")
+				os.Exit(1)
+			}
+		} else {
+			fmt.Print("Enter Login: ")
+			_, err = fmt.Scanln(&login)
+			if err != nil {
+				slog.Error("Error reading login", "error", err)
+				os.Exit(1)
+			}
+			if len(login) == 0 {
+				slog.Error("Login cannot be empty")
+				os.Exit(1)
+			}
+			// проверяем, что пользователь существует в БД
+			var userCount int
+			err = db.Get(&userCount, "SELECT COUNT(1) FROM users WHERE username = ?", login)
+			if err != nil {
+				slog.Error("Error checking user existence", "error", err)
+				os.Exit(1)
+			}
+			if userCount == 0 {
+				slog.Error("Login not found")
+				os.Exit(1)
+			}
+			fmt.Print("Enter password: ")
+			_, err = fmt.Scanln(&password)
+			if err != nil {
+				slog.Error("Error reading password", "error", err)
+				os.Exit(1)
+			}
+			if len(password) == 0 {
+				slog.Error("Password cannot be empty")
+				os.Exit(1)
+			}
+			fmt.Print("Enter salt: ")
+			_, err = fmt.Scanln(&salt)
+			if err != nil {
+				slog.Error("Error reading salt", "error", err)
+				os.Exit(1)
+			}
+			if len(salt) == 0 {
+				slog.Error("Salt cannot be empty")
+				os.Exit(1)
+			}
+		}
+	}
+
+	// Генерируем итоговый пароль через PBKDF2
+	p := crypts.PWD{}
+	pwd := p.CreatePWDKeyFromUserInput(password, salt)
+
 	var keyData []models.Key
 	err = db.Select(&keyData, "SELECT key_data FROM secret_key WHERE id = 1")
 	if err != nil {

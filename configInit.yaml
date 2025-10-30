@@ -1,9 +1,9 @@
 ################################## Настройки приложения / Application Settings
 app:
   port: 43000
-  hostname: tlss.lv.local
-  # hostname: localhost
-  protocol: https # http или https / http or https
+  # hostname: tlss.lv.local
+  hostname: localhost
+  protocol: http # http или https / http or https
   certFile: https/tlss.lv.local.pem
   keyFile: https/tlss.lv.local.key
 
@@ -13,13 +13,10 @@ logging:
   format: text # json, text
   output: stdout # file, stdout, both
   file: logs/tlss.log
-  # maxSize: 100 # MB
-  # maxBackups: 3
-  # maxAge: 28 # days / дней
 
 ################################## Настройки авторизации при старте приложения / Authorization Settings for application start
 login:
-  authConfig: true # true - использовать конфигурацию из config.yaml, false - использовать ручной ввод / true - use config.yaml settings, false - use manual input
+  authConfig: false # true - использовать конфигурацию из config.yaml, false - использовать ручной ввод / true - use config.yaml settings, false - use manual input
   username: admin
   password: 1gd5hfg5jdgsyrtf
   salt: mysecuresalt123

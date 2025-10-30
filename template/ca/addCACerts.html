@@ -157,6 +157,10 @@
                   <button type="button" class="btn-custom btn-custom-certs" id="create-cert-btn"
                     hx-indicator="#time-svg"
                     onClick="
+                      // Валидируем форму до подтверждения
+                      const formEl = document.querySelector('form');
+                      if (!formEl.reportValidity()) { return; }
+
                       // Генерируем случайный идентификатор
                       function generateRandomId() {
                         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';

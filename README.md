@@ -20,6 +20,14 @@
 7) Генерация CRL
 8) Превыпуск CA с пересозданием всех заисимых объектов 
 
+## Начало использования
+
+1) Первый запуск создает все каталоги и генерирует конфиграционный файл `config.yaml`, вероятно вам захочется отредактировать следующие поля:
+   - hostname
+   - protocol
+   - authConfig
+2) После первой авторизации в UI, вы попадете на страницу генерации CA\SubCA, сгененируйте их или дальнейшее создание сертификатов будет невозможно 
+
 ## Возможные баги 🎃
 Я не в силах проверить все сразу, возможно найдется не один баг, прошу прощения 🥺
 
@@ -48,6 +56,14 @@ Hello, TLSS is a small project aimed at the simplest possible work with certific
 6) Control of recreation, validity
 7) CRL generation
 8) Reissuance of CA with recreation of all dependent objects
+
+## Getting started
+
+1) The first launch will create all necessary directories and generate a configuration file `config.yaml`. You will probably want to edit the following fields:
+   - hostname
+   - protocol
+   - authConfig
+2) After your first login via the UI, you will be redirected to the page to generate CA/SubCA. Please generate them, otherwise creation of certificates will be impossible.
 
 ## Possible bugs 🎃
 

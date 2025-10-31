@@ -56,7 +56,8 @@ func main() {
 
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	// Читаем конфиг из директории бинарника
+	// Читаем конфиг
+	viper.AddConfigPath(".")
 	viper.AddConfigPath(execDir)
 
 	err = viper.ReadInConfig()
@@ -186,8 +187,14 @@ func main() {
 				slog.Error("Login cannot be empty")
 				os.Exit(1)
 			}
-			if len(password) == 0 || len(salt) == 0 {
-				slog.Error("Password and salt cannot be empty")
+			password = []byte(viper.GetString("login.password"))
+			if len(password) == 0 {
+				slog.Error("Password cannot be empty")
+				os.Exit(1)
+			}
+			salt = []byte(viper.GetString("login.salt"))
+			if len(salt) == 0 {
+				slog.Error("Salt cannot be empty")
 				os.Exit(1)
 			}
 		} else {
@@ -279,6 +286,16 @@ func main() {
 				slog.Error("Login cannot be empty")
 				os.Exit(1)
 			}
+			password = []byte(viper.GetString("login.password"))
+			if len(password) == 0 {
+				slog.Error("Password cannot be empty")
+				os.Exit(1)
+			}
+			salt = []byte(viper.GetString("login.salt"))
+			if len(salt) == 0 {
+				slog.Error("Salt cannot be empty")
+				os.Exit(1)
+			}
 			// проверяем, что пользователь существует в БД
 			var userCount int
 			err = db.Get(&userCount, "SELECT COUNT(1) FROM users WHERE username = ?", login)
@@ -288,10 +305,6 @@ func main() {
 			}
 			if userCount == 0 {
 				slog.Error("Login not found")
-				os.Exit(1)
-			}
-			if len(password) == 0 || len(salt) == 0 {
-				slog.Error("Password and salt cannot be empty")
 				os.Exit(1)
 			}
 		} else {

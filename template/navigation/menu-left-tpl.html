@@ -69,5 +69,12 @@
             hx-target="#body" 
             hx-swap="innerHTML transition:true" 
             hx-push-url="true">CA configuration</a></li>
+        <hr>
+        <li class="title-menu-left">Tools</li>
+        <li><a class="link-menu-left {{if eq .Title "Certificate Info"}}active{{else}}{{end}}" 
+            hx-get="/cert_info" 
+            hx-target="#body" 
+            hx-swap="innerHTML transition:true" 
+            hx-push-url="true">Certificate Info</a></li>
     </ul>
 {{end}}

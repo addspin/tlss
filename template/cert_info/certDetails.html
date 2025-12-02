@@ -1,0 +1,187 @@
+<!-- Три колонки с информацией -->
+<div class="col-md-4">
+  <label class="form_lable">Certificate details</label>
+  <div class="input_border color-form-certs info-container">
+    <!-- Type -->
+    <div class="info-item">
+      <label class="info-label">Type:</label>
+      <span class="info-value">{{.Type}}</span>
+    </div>
+
+    <!-- Length -->
+    <div class="info-item">
+      <label class="info-label">Length:</label>
+      <span class="info-value">{{.KeyLength}}</span>
+    </div>
+
+    <!-- Time to live -->
+    <div class="info-item">
+      <label class="info-label">Time to live:</label>
+      <span class="info-value">{{.TimeToLive}}</span>
+    </div>
+
+    <!-- Time create -->
+    <div class="info-item">
+      <label class="info-label">Time create:</label>
+      <span class="info-value">{{.TimeCreate}}</span>
+    </div>
+
+    <!-- Expires -->
+    <div class="info-item">
+      <label class="info-label">Expires:</label>
+      <span class="info-value">{{.Expires}}</span>
+    </div>
+
+    <!-- Expires in -->
+    <div class="info-item">
+      <label class="info-label">Expires in:</label>
+      <span class="info-value">{{.ExpiresIn}}</span>
+    </div>
+
+    <!-- Domain type -->
+    <div class="info-item">
+      <label class="info-label">Domain type:</label>
+      <span class="info-value">{{.DomainType}}</span>
+    </div>
+
+    <!-- Function -->
+    <div class="info-item">
+      <label class="info-label">Function:</label>
+      <span class="info-value">{{.Function}}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Subject Information -->
+<div class="col-md-4">
+  <label class="form_lable">Subject Information</label>
+  <div class="input_border color-form-certs info-container">
+    <!-- Common Name -->
+    {{if .CommonName}}
+    <div class="info-item">
+      <label class="info-label">Common Name:</label>
+      <span class="info-value">{{.CommonName}}</span>
+    </div>
+    {{end}}
+
+    <!-- Organization -->
+    {{if .Organization}}
+    <div class="info-item">
+      <label class="info-label">Organization:</label>
+      <span class="info-value">{{.Organization}}</span>
+    </div>
+    {{end}}
+
+    <!-- Organizational Unit -->
+    {{if .OrgUnit}}
+    <div class="info-item">
+      <label class="info-label">Organizational Unit:</label>
+      <span class="info-value">{{.OrgUnit}}</span>
+    </div>
+    {{end}}
+
+    <!-- Locality -->
+    {{if .Locality}}
+    <div class="info-item">
+      <label class="info-label">Locality:</label>
+      <span class="info-value">{{.Locality}}</span>
+    </div>
+    {{end}}
+
+    <!-- State -->
+    {{if .State}}
+    <div class="info-item">
+      <label class="info-label">State/Province:</label>
+      <span class="info-value">{{.State}}</span>
+    </div>
+    {{end}}
+
+    <!-- Country -->
+    {{if .Country}}
+    <div class="info-item">
+      <label class="info-label">Country:</label>
+      <span class="info-value">{{.Country}}</span>
+    </div>
+    {{end}}
+
+    <!-- Email -->
+    {{if .Email}}
+    <div class="info-item">
+      <label class="info-label">Email:</label>
+      <span class="info-value">{{.Email}}</span>
+    </div>
+    {{end}}
+
+    <!-- Subject Alternative Names -->
+    {{if .SANs}}
+    <div class="info-item">
+      <label class="info-label-tags">Subject Alternative Names:</label>
+      <div class="info-tag-container">
+        {{range .SANs}}
+        <span class="info-tag-blue">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+
+<!-- Technical Details -->
+<div class="col-md-4">
+  <label class="form_lable">Technical Details</label>
+  <div class="input_border color-form-certs info-container">
+    <!-- Issuer -->
+    {{if .Issuer}}
+    <div class="info-item">
+      <label class="info-label">Issuer:</label>
+      <span class="info-value">{{.Issuer}}</span>
+    </div>
+    {{end}}
+
+    <!-- Serial Number -->
+    {{if .SerialNumber}}  
+    <div class="info-item">
+      <label class="info-label">Serial Number:</label>
+      <span class="info-value-small">{{.SerialNumber}}</span>
+    </div>
+    {{end}}
+
+    <!-- Signature Algorithm -->
+    {{if .SignatureAlgo}}
+    <div class="info-item">
+      <label class="info-label">Signature Algorithm:</label>
+      <span class="info-value">{{.SignatureAlgo}}</span>
+    </div>
+    {{end}}
+
+    <!-- Version -->
+    <div class="info-item">
+      <label class="info-label">Version:</label>
+      <span class="info-value">{{.Version}}</span>
+    </div>
+
+    <!-- Key Usage -->
+    {{if .KeyUsage}}
+    <div class="info-item">
+      <label class="info-label-tags">Key Usage:</label>
+      <div class="info-tag-container">
+        {{range .KeyUsage}}
+        <span class="info-tag-green">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+
+    <!-- Extended Key Usage -->
+    {{if .ExtKeyUsage}}
+    <div class="info-item">
+      <label class="info-label-tags">Extended Key Usage:</label>
+      <div class="info-tag-container">
+        {{range .ExtKeyUsage}}
+        <span class="info-tag-purple">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>

@@ -32,6 +32,7 @@
     margin-top: 6px;
     padding-left: 0%;
     padding-right: 0%;
+    padding-bottom: 10px;
     font-family: Inter;
     font-weight: 100;
     flex: 1;
@@ -561,7 +562,7 @@ select:focus {
 /* Стиль для поля ввода тегов */
 .tag-input {
     border: 1px solid #a99ee8;
-    border-color: rgb(128, 119, 176);
+    border-color: #8077b0;
     color: #ffffff;
     border-top: none;
     border-left: none;
@@ -572,4 +573,141 @@ select:focus {
 .tag-input:focus {
     outline: none;
     border-color: #bcb0ff;
+}
+
+/* Certificate Info Styles */
+.info-upload-container {
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-drop-zone {
+    border: 2px dashed #4A5568;
+    border-radius: 8px;
+    padding: 60px 40px;
+    text-align: center;
+    cursor: pointer;
+    background: #4a55681a;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.info-drop-zone-icon {
+    margin: 0 auto 16px;
+    display: block;
+    color: #4A5568;
+}
+
+.info-drop-zone-text {
+    margin: 0;
+    font-size: 16px;
+    color: #CBD5E0;
+}
+
+.info-drop-zone-subtext {
+    margin: 8px 0 0;
+    font-size: 14px;
+    color: #718096;
+}
+
+.info-container {
+    padding: 20px;
+    padding-bottom: 10px;
+    font-family: Inter;
+    font-weight: 100;
+    max-height: 50vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    /* Скрываем скроллбар */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE и Edge */
+}
+
+/* Скрываем скроллбар для Chrome/Safari */
+.info-container::-webkit-scrollbar {
+    display: none;
+}
+
+.info-item {
+    margin-bottom: 16px;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #FFFFFF;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 4px;
+    font-family: Inter;
+}
+
+.info-value {
+    background: #5078b3;
+    padding: 3px 10px;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 14px;
+    font-family: Inter;
+    font-weight: 100;
+}
+
+.info-value-small {
+    background: #5078b3;
+    padding: 3px 10px;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 14px;
+    font-family: Inter;
+    font-weight: 100;
+    word-break: break-all;
+    display: inline-block;
+}
+
+.info-tag-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.info-tag-blue {
+    background: #3182ce33;
+    color: #90CDF4;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: Inter;
+    font-weight: 100;
+}
+
+.info-tag-green {
+    background: #48bb7833;
+    color: #9AE6B4;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: Inter;
+    font-weight: 100;
+}
+
+.info-tag-purple {
+    background: #9f7aea33;
+    color: #D6BCFA;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: Inter;
+    font-weight: 100;
+}
+
+.info-label-tags {
+    font-weight: bold;
+    color: #FFFFFF;
+    font-size: 14px;
+    display: block;
+    margin-bottom: 8px;
+    font-family: Inter;
 }

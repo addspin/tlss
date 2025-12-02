@@ -1,0 +1,139 @@
+{{define "overview-content"}}
+<div class="row">
+        <div class="core-overview">
+          <form class="" 
+            hx-post="/add_certs" 
+            hx-swap="none"
+            hx-ext="json-enc-custom" 
+            parse-types="true"
+            hx-on::after-request="
+              if (event.detail.xhr.responseText) {
+                try {
+                  const response = JSON.parse(event.detail.xhr.responseText);
+                  if (response.status === 'error') {
+                    Swal.fire({
+                      showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                      hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                      customClass: 'custom-alert',
+                      icon: 'error',
+                      title: 'Error',
+                      text: response.message,
+                      confirmButtonColor: '#3085d6'
+                    });
+                  } else if (response.status === 'success') {
+                    Swal.fire({
+                      showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                      hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                      customClass: 'custom-alert',
+                      icon: 'success',
+                      title: 'Success',
+                      text: `Certificate for domain ${response.domain} was successfully created`,
+                      confirmButtonColor: '#3085d6'
+                    }).then(() => {
+                      htmx.ajax('GET', '/cert_list', {
+                        target: '#response', 
+                        swap: 'innerHTML',  
+                        values: {
+                          serverId: document.getElementById('serverId').value
+                        } 
+                      });
+                    });
+                  }
+                } catch (e) {
+                  console.error('Error processing response:', e);
+                }
+              }
+            ">
+            <label id= "" class="form_lable" >Certs Overview</label>
+            <div class="input_border color-form-certs">
+              <div class="row g-3 form_center">
+                <div class="col-6 col-md-3 th-text-center">
+                  <label class="select_title">Root CA expire in</label>
+                  <div class="th-text-center menu-item">
+                    {{range .caCertList}}
+                      {{if eq .TypeCA "Root"}}
+                        {{ .DaysLeft }}
+                      {{end}}
+                    {{end}}
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 th-text-center">
+                    <label class="select_title">Servers certs valid</label>
+                  <div class="th-text-center menu-item menu-valid-cert">
+                    {{ .serverCertCount }}
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 th-text-center">
+                  <label class="select_title">Servers certs expired</label>
+                  <div class="th-text-center menu-item menu-expired-cert">
+                    {{ .serverCertExpired }}
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 th-text-center">
+                  <label class="select_title">Servers certs revoked</label>
+                  <div class="th-text-center menu-item menu-revoked-cert">
+                    {{ .serverCertRevoked }}
+                  </div>
+                </div>
+              </div>
+              
+              <div class="indent-5"></div>
+
+              <div class="row g-3 form_center">
+                <div class="col-6 col-md-3 th-text-center">
+                  <label class="select_title">Sub CA expire in</label>
+                  <div class="th-text-center menu-item">
+                    {{range .caCertList}}
+                      {{if eq .TypeCA "Sub"}}
+                          {{ .DaysLeft }}
+                      {{end}}
+                    {{end}}
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 th-text-center">
+                  <label class="select_title">Clients certs valid</label>
+                  <div class="th-text-center menu-item menu-valid-cert">
+                    {{ .userCertCount }}
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 th-text-center">
+                  <label class="select_title">Clients certs expired</label>
+                  <div class="th-text-center menu-item menu-expired-cert">
+                    {{ .userCertExpired }}
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 th-text-center">
+                  <label class="select_title">Clients certs revoked</label>
+                  <div class="th-text-center menu-item menu-revoked-cert">
+                    {{ .userCertRevoked }}
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+          </form>
+        <div class="core-overview table-certs">
+            <div class="row g-3">
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <label id= "" class="form_lable" >Tasks check</label>
+                    <div class="input_border color-form-certs">
+                        {{template "taskList-tpl" .}}
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <label id= "" class="form_lable" >Servers status</label>
+                    <div class="input_border color-form-certs">
+                        {{template "serversOnlineList-tpl" .}}
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <label id= "" class="form_lable" >Domain status</label>
+                    <div class="color-form-certs domain_status_border domain-list">
+                        {{template "serversObjectActiveList-tpl" .}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

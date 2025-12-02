@@ -133,11 +133,23 @@ func AddUserCertsController(c fiber.Ctx) error {
 			slog.Error("AddUserCertsController: Error occurred", "error", err)
 		}
 
-		return c.Render("add_user_certs/addUserCerts", fiber.Map{
+		data := fiber.Map{
 			"Title":      "Add clients certs",
 			"entityList": entityList,
 			"oidList":    oidList,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("addUserCerts-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering addUserCerts-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("add_user_certs/addUserCerts", data)
 	}
 	return c.Status(405).JSON(fiber.Map{
 		"status":  "error",

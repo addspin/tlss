@@ -33,10 +33,22 @@ func RevokeUserCertsController(c fiber.Ctx) error {
 		}
 		slog.Info("Entities with revoked user certs found", "count", len(entityList))
 
-		return c.Render("user_revoke_certs/revokeUserCerts", fiber.Map{
+		data := fiber.Map{
 			"Title":      "Revoke clients certs",
 			"entityList": entityList,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("revokeUserCerts-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering revokeUserCerts-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("user_revoke_certs/revokeUserCerts", data)
 	}
 	return c.Status(405).JSON(fiber.Map{
 		"status":  "error",

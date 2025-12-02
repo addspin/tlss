@@ -115,11 +115,24 @@ func AddServerControll(c fiber.Ctx) error {
 		if err != nil {
 			slog.Error("Fatal error", "error", err)
 		}
-		return c.Render("add_server/addServer", fiber.Map{
+
+		data := fiber.Map{
 			"Title":      "Add server",
 			"serverList": &serverList,
 			"sshKeyList": &sshKeyList,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("addServer-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering addServer-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("add_server/addServer", data)
 	}
 
 	return c.Status(400).JSON(fiber.Map{

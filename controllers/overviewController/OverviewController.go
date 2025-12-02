@@ -94,7 +94,7 @@ func Overview(c fiber.Ctx) error {
 		tcpCheck := check.Monitors.CheckTCPStatus
 		taskList := map[string]bool{"Recreate certs": recreateCertCheck, "Valid certs": validCertsCheck, "Server check": tcpCheck}
 
-		return c.Render("overview/overview", fiber.Map{
+		data := fiber.Map{
 			"Title":             "Overview",
 			"serverList":        &serverList,
 			"taskList":          &taskList,
@@ -107,8 +107,22 @@ func Overview(c fiber.Ctx) error {
 			"serverCertExpired": serverCertExpired,
 			"serverCertRevoked": serverCertRevoked,
 			"serverCertList":    &serverCertList,
-			// "serverHostname":    serverHostname,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			// Используем имя шаблона из {{define "overview-content"}} напрямую
+			err := c.Render("overview-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering overview-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		// Возвращаем полную страницу с layout
+		slog.Info("Regular request - rendering full page")
+		return c.Render("overview/overview", data)
 	}
 
 	return c.Status(400).JSON(fiber.Map{

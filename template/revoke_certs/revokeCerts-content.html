@@ -1,0 +1,51 @@
+{{define "revokeCerts-content"}}
+<div class="row">
+  <div class="col-2">
+    <div class="left-core">
+      <!-- Левая панель с серверами -->
+      <div id="search-server" class="search-input-container-server">
+        <input type="text" class="search-input" name="search-server" placeholder="Search object">
+      </div>
+      {{template "serverListRevokeCerts-tpl" .}}
+    </div>
+  </div>
+
+  <div class="col-7">
+    <!-- Правая панель с формой для создания сертификата -->
+    <div><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" hx-get="/overview" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Overview</a></li>   
+      <li class="breadcrumb-item"><a href="#" hx-get="/add_server_entity" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Add entities</a></li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/add_server" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Add servers</a></li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/add_certs" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Add servers certs</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Revoke servers certs</li>
+    </ol></div>
+
+    <!-- Поиск и список сертификатов -->
+    <div class="row mt-2">
+      <div class="col-12">
+      <div class="core-certs-revoke">
+        <div id="search-certs" class="search-input-container-revoke">
+          <input type="text" class="search-input" name="search-certs" placeholder="Search certs">
+        </div>
+        <div id="response" class="certs_revoke_table">
+          {{template "certRevokeList-tpl" .}}
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+

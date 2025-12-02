@@ -33,10 +33,22 @@ func RevokeCertsController(c fiber.Ctx) error {
 		}
 		slog.Info("Servers with revoked certs found", "count", len(serverList))
 
-		return c.Render("revoke_certs/revokeCerts", fiber.Map{
+		data := fiber.Map{
 			"Title":      "Revoke certs",
 			"serverList": serverList,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("revokeCerts-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering revokeCerts-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("revoke_certs/revokeCerts", data)
 	}
 	return c.Status(405).JSON(fiber.Map{
 		"status":  "error",

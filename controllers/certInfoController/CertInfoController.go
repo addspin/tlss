@@ -45,9 +45,21 @@ type CertInfo struct {
 
 func CertInfoController(c fiber.Ctx) error {
 	if c.Method() == "GET" {
-		return c.Render("cert_info/certInfo", fiber.Map{
+		data := fiber.Map{
 			"Title": "Certificate Info",
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("certInfo-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering certInfo-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("cert_info/certInfo", data)
 	}
 
 	if c.Method() == "POST" {

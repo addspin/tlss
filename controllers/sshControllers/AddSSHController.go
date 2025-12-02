@@ -187,10 +187,24 @@ func AddSSHControll(c fiber.Ctx) error {
 		if err != nil {
 			slog.Error("Fatal error", "error", err)
 		}
-		return c.Render("add_ssh/addSSHKey", fiber.Map{
+
+		data := fiber.Map{
 			"Title":      "Add ssh key",
 			"sshKeyList": &sshKeyList,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			// Возвращаем только контент без layout
+			err := c.Render("addSSHKey-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering addSSHKey-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("add_ssh/addSSHKey", data)
 	}
 
 	return c.Status(400).JSON(fiber.Map{

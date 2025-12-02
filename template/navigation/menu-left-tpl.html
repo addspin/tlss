@@ -1,80 +1,169 @@
 {{define "menu-left-tpl"}}
     <ul class="nav flex-column left-menu">
-        <li class="title-menu-left">Home</li>
-        <li><a class="link-menu-left {{if eq .Title "Overview"}}active{{else}}{{end}}" 
-            hx-get="/overview" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Overview</a></li>
+        <!-- Home Section -->
+        <li class="title-menu-left" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#homeCollapse" 
+            aria-expanded="true" 
+            aria-controls="homeCollapse">
+            <span class="menu-icon-text">
+                <img src="/static/svg/home.svg" alt="Home" class="menu-icon">
+                <span>Home</span>
+            </span>
+        </li>
+        <div class="collapse show" id="homeCollapse">
+            <ul class="list-unstyled">
+                <li><a class="link-menu-left {{if eq .Title "Overview"}}active{{else}}{{end}}" 
+                    hx-get="/overview" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Overview</a></li>
+            </ul>
+        </div>
         <hr>
-        <li class="title-menu-left">Servers certs</li>
-        <li><a class="link-menu-left {{if eq .Title "Add ssh key"}}active{{else}}{{end}}" 
-            hx-get="/add_ssh_key" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Add ssh key</a></li>
-        <li><a class="link-menu-left {{if eq .Title "Add server entity"}}active{{else}}{{end}}" 
-            hx-get="/add_server_entity" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Add entities</a></li>
-        <li><a class="link-menu-left {{if eq .Title "Add server"}}active{{else}}{{end}}" 
-            hx-get="/add_server" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Add servers</a></li>
-        <li><a class="link-menu-left {{if eq .Title "Add certs"}}active{{else}}{{end}}" 
-            hx-get="/add_certs" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Add servers certs</a></li>
-        <li><a class="link-menu-left {{if eq .Title "Revoke certs"}}active{{else}}{{end}}" 
-            hx-get="/revoke_certs" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Revoke servers certs</a></li>
+        
+        <!-- Servers certs Section -->
+        <li class="title-menu-left collapsed" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#serversCollapse" 
+            aria-expanded="false" 
+            aria-controls="serversCollapse">
+            <span class="menu-icon-text">
+                <img src="/static/svg/server.svg" alt="Server" class="menu-icon">
+                <span>Servers certs</span>
+            </span>
+        </li>
+        <div class="collapse" id="serversCollapse">
+            <ul class="list-unstyled">
+                <li><a class="link-menu-left {{if eq .Title "Add ssh key"}}active{{else}}{{end}}" 
+                    hx-get="/add_ssh_key" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Add ssh key</a></li>
+                <li><a class="link-menu-left {{if eq .Title "Add server entity"}}active{{else}}{{end}}" 
+                    hx-get="/add_server_entity" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Add entities</a></li>
+                <li><a class="link-menu-left {{if eq .Title "Add server"}}active{{else}}{{end}}" 
+                    hx-get="/add_server" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Add servers</a></li>
+                <li><a class="link-menu-left {{if eq .Title "Add certs"}}active{{else}}{{end}}" 
+                    hx-get="/add_certs" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Add servers certs</a></li>
+                <li><a class="link-menu-left {{if eq .Title "Revoke certs"}}active{{else}}{{end}}" 
+                    hx-get="/revoke_certs" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Revoke servers certs</a></li>
+            </ul>
+        </div>
         <hr>
-        <li class="title-menu-left">Clients certs</li>
-        <li><a class="link-menu-left {{if eq .Title "Add entity"}}active{{else}}{{end}}" 
-            hx-get="/add_entity" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Add entities</a></li>
-        <li><a class="link-menu-left {{if eq .Title "Add OID"}}active{{else}}{{end}}" 
-            hx-get="/add_oid" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Add OIDs</a></li>
-        <li><a class="link-menu-left {{if eq .Title "Add clients certs"}}active{{else}}{{end}}" 
-            hx-get="/add_users_certs" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Add clients certs</a></li>
-        <li><a class="link-menu-left {{if eq .Title "Revoke clients certs"}}active{{else}}{{end}}" 
-            hx-get="/revoke_users_certs" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Revoke clients certs</a></li>
+        
+        <!-- Clients certs Section -->
+        <li class="title-menu-left collapsed" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#clientsCollapse" 
+            aria-expanded="false" 
+            aria-controls="clientsCollapse">
+            <span class="menu-icon-text">
+                <img src="/static/svg/users.svg" alt="Users" class="menu-icon">
+                <span>Clients certs</span>
+            </span>
+        </li>
+        <div class="collapse" id="clientsCollapse">
+            <ul class="list-unstyled">
+                <li><a class="link-menu-left {{if eq .Title "Add entity"}}active{{else}}{{end}}" 
+                    hx-get="/add_entity" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Add entities</a></li>
+                <li><a class="link-menu-left {{if eq .Title "Add OID"}}active{{else}}{{end}}" 
+                    hx-get="/add_oid" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Add OIDs</a></li>
+                <li><a class="link-menu-left {{if eq .Title "Add clients certs"}}active{{else}}{{end}}" 
+                    hx-get="/add_users_certs" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Add clients certs</a></li>
+                <li><a class="link-menu-left {{if eq .Title "Revoke clients certs"}}active{{else}}{{end}}" 
+                    hx-get="/revoke_users_certs" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Revoke clients certs</a></li>
+            </ul>
+        </div>
         <hr>
-        <li class="title-menu-left">API</li>
-        <!-- <li><a class="link-menu-left disabled" aria-disabled="true"
-            hx-get="" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">API lists</a></li> -->
+        
+        <!-- API Section -->
+        <li class="title-menu-left collapsed" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#apiCollapse" 
+            aria-expanded="false" 
+            aria-controls="apiCollapse">
+            <span class="menu-icon-text">
+                <img src="/static/svg/api.svg" alt="API" class="menu-icon">
+                <span>API</span>
+            </span>
+        </li>
+        <div class="collapse" id="apiCollapse">
+            <ul class="list-unstyled">
+                <!-- <li><a class="link-menu-left disabled" aria-disabled="true"
+                    hx-get="" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">API lists</a></li> -->
+            </ul>
+        </div>
         <hr>
-        <li class="title-menu-left">CA</li>
-        <li><a class="link-menu-left {{if eq .Title "Add CA"}}active{{else}}{{end}}" 
-            hx-get="/add_ca" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">CA configuration</a></li>
+        
+        <!-- CA Section -->
+        <li class="title-menu-left collapsed" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#caCollapse" 
+            aria-expanded="false" 
+            aria-controls="caCollapse">
+            <span class="menu-icon-text">
+                <img src="/static/svg/lock.svg" alt="CA" class="menu-icon">
+                <span>CA</span>
+            </span>
+        </li>
+        <div class="collapse" id="caCollapse">
+            <ul class="list-unstyled">
+                <li><a class="link-menu-left {{if eq .Title "Add CA"}}active{{else}}{{end}}" 
+                    hx-get="/add_ca" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">CA configuration</a></li>
+            </ul>
+        </div>
         <hr>
-        <li class="title-menu-left">Tools</li>
-        <li><a class="link-menu-left {{if eq .Title "Certificate Info"}}active{{else}}{{end}}" 
-            hx-get="/cert_info" 
-            hx-target="#body" 
-            hx-swap="innerHTML transition:true" 
-            hx-push-url="true">Certificate Info</a></li>
+        
+        <!-- Tools Section -->
+        <li class="title-menu-left collapsed" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#toolsCollapse" 
+            aria-expanded="false" 
+            aria-controls="toolsCollapse">
+            <span class="menu-icon-text">
+                <img src="/static/svg/tool.svg" alt="Tools" class="menu-icon">
+                <span>Tools</span>
+            </span>
+        </li>
+        <div class="collapse" id="toolsCollapse">
+            <ul class="list-unstyled">
+                <li><a class="link-menu-left {{if eq .Title "Certificate Info"}}active{{else}}{{end}}" 
+                    hx-get="/cert_info" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Certificate Info</a></li>
+            </ul>
+        </div>
     </ul>
 {{end}}

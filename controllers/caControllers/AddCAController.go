@@ -89,10 +89,22 @@ func AddCAController(c fiber.Ctx) error {
 	}
 
 	if c.Method() == "GET" {
-		return c.Render("ca/addCACerts", fiber.Map{
+		data := fiber.Map{
 			"Title":    "Add CA",
 			"certList": []models.CAData{}, // Передаем пустой список для корректного отображения шаблона
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("addCACerts-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering addCACerts-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("ca/addCACerts", data)
 	}
 	return c.Status(405).JSON(fiber.Map{
 		"status":  "error",

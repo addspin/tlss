@@ -1,0 +1,78 @@
+{{define "addEntity-content"}}
+<div class="row">
+  <div class="col-2"></div>
+  <div class="col-7">
+    <div><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" hx-get="/overview" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Overview</a></li>   
+      <li class="breadcrumb-item active" aria-current="page">Add entities</li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/add_users_certs" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Add clients certs</a></li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/revoke_users_certs" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Revoke clients certs</a></li>
+    </ol></div>
+  <div class="core-servers">
+    <form class="" 
+      hx-post="/add_entity" 
+      hx-target="#body" 
+      hx-ext="json-enc-custom" 
+      parse-types="true"
+      hx-on::after-request="
+        if (event.detail.xhr.responseText) {
+          try {
+            const response = JSON.parse(event.detail.xhr.responseText);
+            if (response.status === 'error') {
+              Swal.fire({
+                showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                customClass: 'custom-alert',
+                icon: 'error',
+                title: 'Error',
+                text: response.message,
+                confirmButtonColor: '#3085d6'
+              });
+            }
+          } catch (e) {}
+        }
+      ">
+      <label for="inputUser" id= "" class="form_lable" >Add new entity</label>
+      <div class="input_border color-form-servers">
+        <div class="row g-3 form_center_entity">
+          <div class="col ">
+              <input type="text" class="c_input" id="entity_name" name="EntityName" placeholder="Entity name" required>
+          </div>
+        </div>
+        <div class="row g-3 form_center_entity">
+          <div class="col ">
+            <input type="text" class="c_input " id="entity_description" name="EntityDescription" placeholder="Entity description" required>
+          </div>
+        </div>
+        <div class="row g-3 form_center">
+          <div class="col">
+            <button type="submit" class="btn-custom btn-custom-servers mt-2">Add entity</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+  <div class="row mt-2">
+    <div class="col-12">
+      <div id="search-servers" class="search-input-container">
+        <input type="text" class="search-input" name="search-servers" placeholder="Search entities">
+      </div>
+      <div id="response" class="servers_table">
+        {{template "entityList-tpl" .}}
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{{end}}
+

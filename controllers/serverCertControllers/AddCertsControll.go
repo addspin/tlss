@@ -168,10 +168,22 @@ func AddCertsControll(c fiber.Ctx) error {
 			slog.Error("Fatal error", "error", err)
 		}
 
-		return c.Render("add_certs/addCerts", fiber.Map{
+		data := fiber.Map{
 			"Title":      "Add certs",
 			"serverList": serverList,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("addCerts-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering addCerts-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("add_certs/addCerts", data)
 	}
 	return c.Status(405).JSON(fiber.Map{
 		"status":  "error",

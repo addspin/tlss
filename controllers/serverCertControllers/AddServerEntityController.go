@@ -98,10 +98,22 @@ func AddServerEntityController(c fiber.Ctx) error {
 			slog.Error("Fatal error", "error", err)
 		}
 
-		return c.Render("add_server/addServerEntity", fiber.Map{
+		data := fiber.Map{
 			"Title":            "Add server entity",
 			"serverEntityList": &serverEntityList,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("addServerEntity-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering addServerEntity-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("add_server/addServerEntity", data)
 	}
 	return c.Status(400).JSON(fiber.Map{
 		"status":  "error",

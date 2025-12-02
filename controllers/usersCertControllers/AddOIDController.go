@@ -97,10 +97,22 @@ func AddOIDController(c fiber.Ctx) error {
 			slog.Error("Fatal error", "error", err)
 		}
 
-		return c.Render("add_oid/addOID", fiber.Map{
+		data := fiber.Map{
 			"Title":   "Add OID",
 			"oidList": &oidList,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("addOID-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering addOID-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("add_oid/addOID", data)
 	}
 	return c.Status(400).JSON(fiber.Map{
 		"status":  "error",

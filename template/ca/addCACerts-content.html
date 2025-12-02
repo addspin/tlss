@@ -1,0 +1,221 @@
+{{define "addCACerts-content"}}
+<div class="row">
+  <div class="col-2">
+    <div class="left-core">
+      <!-- Левая панель с сущьностями -->
+      <div id="search-server" class="search-input-container-server">
+       
+      </div>
+        
+    </div>
+  </div>
+
+  <!-- Правая панель с формой для создания сертификата -->
+  <div class="col-7">
+    <div><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" hx-get="/overview" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Overview</a></li>    
+      <li class="breadcrumb-item active" aria-current="page">Add CA certs</li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/revoke_ca_certs" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Revoke CA certs</a></li>
+    </ol></div>
+
+    <div class="core-certs">
+      <form class="" 
+        hx-post="/add_ca" 
+        hx-swap="none"
+        hx-ext="json-enc-custom" 
+        parse-types="true"
+        hx-trigger="confirmed"
+        hx-on::after-request="
+          if (event.detail.xhr.responseText) {
+            try {
+              const response = JSON.parse(event.detail.xhr.responseText);
+              if (response.status === 'error') {
+                Swal.fire({
+                  showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                  hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                  customClass: 'custom-alert',
+                  icon: 'error',
+                  title: 'Ошибка',
+                  text: response.message,
+                  confirmButtonColor: '#3085d6'
+                });
+              } else if (response.status === 'success') {
+                Swal.fire({
+                  showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                  hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                  customClass: 'custom-alert',
+                  icon: 'success',
+                  title: 'Успешно',
+                  text: `Сертификаты были успешно пересозданы`,
+                  confirmButtonColor: '#3085d6'
+                }).then(() => {
+                  htmx.ajax('GET', '/ca_list', {
+                    target: '#response', 
+                    swap: 'innerHTML'
+                  });
+                });
+              }
+            } catch (e) {
+              console.error('Ошибка при обработке ответа:', e);
+            }
+          }
+        ">
+        <label id= "" class="form_lable" >Create CA\Sub CA certificate</label>
+        <div class="input_border color-form-certs">
+          <div class="row g-3 form_center">
+            <div class="col-md-3">
+              <label class="select_title">Algorithm</label>
+                <select id="select-type" name="Algorithm" class="select">
+                  <option value="RSA" selected>RSA</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Lenght</label>
+                <select id="select-key-length" name="KeyLength" class="select" type="number">  
+                  <option value="2048">2048 bits</option>
+                  <option value="4096" selected>4096 bits</option>
+                  <option value="8192">8192 bits</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">TTL</label>
+              <input class="c_input" id="ttl" name="TTL" placeholder="TTL" value="365" required>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check form-switch">
+                <label class="form-check-label" for="SwitchRecreate">Recreate</label>
+                <input class="form-check-input" type="checkbox" role="switch" id="SwitchRecreate" name="recreate" checked>
+              </div>
+            </div>
+          </div>
+          <div class="indent-5"></div>
+          <div class="row g-3 form_center">
+            
+
+            <div class="col-md-3">
+              <label class="select_title">Type CA</label>
+                <select id="select-type-ca" name="TypeCA" class="select" type="number">  
+                  <option value="Root" selected>CA</option>
+                  <option value="Sub">Sub CA</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Common Name</label>
+              <input type="text" class="c_input" id="CommonName" name="CommonName" placeholder="TLSS Root\Sub CA" required>
+            </div>
+            
+            <div class="indent-5"></div>
+          </div>
+          <div class="row g-3 form_center">
+            <div class="col-md-3">
+              <label class="select_title">Country Name</label>
+              <input type="text" class="c_input" id="Country" name="CountryName" placeholder="RU" required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">State or Province</label>
+              <input type="text" class="c_input" id="State" name="StateProvince" placeholder="Udmurt Republic" required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Locality Name</label>
+              <input type="text" class="c_input" id="Locality" name="LocalityName" placeholder="Izhevsk" required>
+            </div>
+          </div>
+          <div class="indent-5"></div> 
+          <div class="row g-3 form_center">
+            <div class="col-md-3">
+              <label class="select_title">Organization Name</label>
+              <input type="text" class="c_input" id="Organization" name="Organization" placeholder="LV Inc." required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Organizational Unit</label>
+              <input type="text" class="c_input" id="Unit" name="OrganizationUnit" placeholder="IT" required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Email Address</label>
+              <input type="email" class="c_input" id="Email" name="Email" placeholder="tdv@test.ru" required>
+            </div>
+
+            <div class="btn-container btn-container-right">
+              <button type="button" class="btn-custom btn-custom-certs" id="create-cert-btn"
+                hx-indicator="#time-svg"
+                onClick="
+                  // Валидируем форму до подтверждения
+                  const formEl = document.querySelector('form');
+                  if (!formEl.reportValidity()) { return; }
+
+                  // Генерируем случайный идентификатор
+                  function generateRandomId() {
+                    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+                    let result = '';
+                    for (let i = 0; i < 16; i++) {
+                      result += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    return result;
+                  }
+                  
+                  const randomId = generateRandomId();
+                  const typeCA = document.getElementById('select-type-ca').value;
+                  const titleText = typeCA === 'Root' ? 
+                    'You are creating Root CA, all certificates signed by this CA will be recreated!' : 
+                    'You are creating Sub CA, all certificates signed by this Sub CA will be recreated!';
+                  
+                  Swal.fire({
+                    showClass: {
+                        popup: 'animate__animated animate__fadeInUp animate__fast'
+                    },
+                    hideClass: {
+                        popup: 'animate__animated animate__fadeOutDown animate__fast'
+                    },
+                    customClass: 'custom-alert',
+                    input: 'text',
+                    title: titleText,
+                    text: `To confirm, enter: ${randomId}`, 
+                    showCancelButton: true,
+                    confirmButtonColor: '#983636',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, approve',
+                    inputValidator: (value) => {
+                        if (value !== randomId) {
+                            return `You entered an invalid identifier, enter: ${randomId}`;
+                        }
+                    }
+                  }).then((result) => {
+                      if (result.isConfirmed) {
+                          // Отправляем форму через HTMX
+                          htmx.trigger(document.querySelector('form'), 'confirmed');
+                      }
+                  });"
+              >
+                <span class="btn-text">Create</span>
+                <img src="/static/svg/time.svg" class="time-svg htmx-indicator">
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Поиск и список сертификатов -->
+<div class="row mt-2">
+  <div class="col-12">
+    <div id="search-certs" class="search-input-container">
+      <input type="text" class="search-input" name="search-certs" placeholder="Search certs">
+    </div>
+    <div id="response" class="server-cert-tables" 
+        hx-get="/ca_list"
+        hx-trigger="load"
+        hx-swap="innerHTML">
+      {{template "certCAList-tpl" .}}
+    </div>
+  </div>
+</div>
+{{end}}
+

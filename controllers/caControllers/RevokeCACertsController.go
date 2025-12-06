@@ -43,10 +43,23 @@ func RevokeCACertsController(c fiber.Ctx) error {
 				certList[i].DataRevoke = revokeTime.Format("02.01.2006 15:04:05")
 			}
 		}
-		return c.Render("ca_revoke_certs/revokeCACerts", fiber.Map{
+
+		data := fiber.Map{
 			"Title":    "Revoke CA certs",
 			"certList": certList,
-		})
+		}
+
+		// Проверяем, является ли запрос HTMX запросом
+		if c.Get("HX-Request") != "" {
+			err := c.Render("revokeCACerts-content", data, "")
+			if err != nil {
+				slog.Error("Error rendering revokeCACerts-content", "error", err)
+				return err
+			}
+			return nil
+		}
+
+		return c.Render("ca_revoke_certs/revokeCACerts", data)
 	}
 	return c.Status(405).JSON(fiber.Map{
 		"status":  "error",

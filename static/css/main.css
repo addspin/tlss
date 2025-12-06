@@ -211,7 +211,8 @@
 
 
 .state-online {
-    background: #2ba03d;
+    background: #48bb7833;
+    color: #9AE6B4;
     border-radius: 30px;
     text-align: center;
     width: 4em;
@@ -246,7 +247,8 @@
 }
 
 .state-valid-certs {
-    background: #2ba03d;
+    background: #48bb7833;
+    color: #9AE6B4;
     border-radius: 30px;
     text-align: center;
     width: 4em;
@@ -255,7 +257,8 @@
 }
 
 .state-revoked-certs     {
-    background-color: #983636;
+    background: #98363633;
+    color: #f27474;
     border-radius: 30px;
     text-align: center;
     width: 4em;
@@ -263,7 +266,8 @@
 }
 
 .state-expired-certs {
-    background: #efa70c;
+    background: #efa70c33;
+    color: #f9c449;
     border-radius: 30px;
     text-align: center;
     width: 4em;
@@ -280,7 +284,8 @@
     }
 }
 .state-offline {
-    background: #983636;
+    background: #98363633;
+    color: #f27474;
     border-radius: 30px;
     text-align: center;
     width: 4em;

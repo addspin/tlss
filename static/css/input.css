@@ -474,6 +474,11 @@ select:focus {
     font-weight: 100;
     font-size: 0.8rem;
 }
+[class^="ssh_key_id_"] {
+    font-family: Inter;
+    font-weight: 100;
+    font-size: 0.8rem;
+}
 [class^="entity_id_"] {
     font-family: Inter;
     font-weight: 100;

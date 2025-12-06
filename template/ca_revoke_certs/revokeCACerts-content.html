@@ -1,0 +1,44 @@
+{{define "revokeCACerts-content"}}
+<div class="row">
+  <div class="col-2">
+    <div class="left-ca-core">
+      <!-- Левая панель с серверами -->
+      <div id="search-server" class="search-input-container-server">
+        
+      </div>
+        
+    </div>
+  </div>
+
+  <div class="col-7">
+    <!-- Правая панель с формой для создания сертификата -->
+    <div><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" hx-get="/overview" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Overview</a></li>  
+      <li class="breadcrumb-item"><a href="#" hx-get="/add_ca" 
+        hx-target="#main-content" 
+        hx-swap="innerHTML" 
+        hx-push-url="true">Add CA certs</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Revoke CA certs</li>
+    </ol></div>
+
+   
+  </div>
+   <!-- Поиск и список сертификатов -->
+   <div class="row mt-2">
+    <div class="col-12">
+    <div class="core-ca-certs">
+      <div id="search-certs" class="search-input-container-revoke">
+        <input type="text" class="search-input" name="search-certs" placeholder="Search certs">
+      </div>
+      <div id="response" class="certs_revoke_table">
+        {{template "certCARevokeList-tpl" .}}
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+{{end}}
+

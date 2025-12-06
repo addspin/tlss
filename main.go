@@ -156,6 +156,12 @@ func main() {
 		slog.Error("Error creating entity table", "error", err)
 	}
 
+	// create SchemaEntityCA tables in db (хранит данные сущностей для внешних CA)
+	_, err = db.Exec(models.SchemaEntityCA)
+	if err != nil {
+		slog.Error("Error creating entity CA table", "error", err)
+	}
+
 	// create SchemaOID tables in db (хранит данные OID)
 	_, err = db.Exec(models.SchemaOID)
 	if err != nil {

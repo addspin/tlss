@@ -95,6 +95,10 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Post("/revoke_ca_certs", caControllers.RevokeCACert)           // Отзыв CA
 	app.Post("/remove_ca_cert", caControllers.RemoveCACert)            // Удаление CA
 	app.Get("/revoke_ca_certs", caControllers.RevokeCACertsController) // Получение списка CA для отзыва
+	app.Get("/add_entity_ca", caControllers.AddEntityCAController)     // Получение списка сущностей для внешних CA
+	app.Post("/add_entity_ca", caControllers.AddEntityCAController)    // Добавление сущности для внешних CA
+	app.Get("/entity_ca_list", caControllers.EntityCAListController)   // Получение списка сущностей для внешних CA
+	app.Post("/remove_entity_ca", caControllers.RemoveEntityCA)        // Удаление сущности для внешних CA
 
 	app.Get("/add_ssh_key", sshControllers.AddSSHControll)         // Получение списка ssh ключей
 	app.Post("/add_ssh_key", sshControllers.AddSSHControll)        // Добавление ssh ключа

@@ -1,0 +1,19 @@
+{{template "header-tpl" .}}
+{{template "body-tpl" .}}
+
+<div class="container-fluid">
+  <div class="row">
+    <!-- Левое меню -->
+    <div class="col-auto left-menu-core">
+      {{template "menu-left-public-tpl" .}}
+    </div>
+    <!-- Правая часть -->
+    <div class="col p-1" id="main-content">
+      {{template "overview-content" .}}
+    </div>
+  </div>
+</div>
+
+<!-- index end template -->
+{{template "footer-tpl" .}}
+

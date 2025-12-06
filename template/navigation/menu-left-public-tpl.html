@@ -1,0 +1,48 @@
+{{define "menu-left-public-tpl"}}
+    <ul class="nav flex-column left-menu">
+        <!-- Home Section -->
+        <li class="title-menu-left-public" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#homeCollapse" 
+            aria-expanded="true" 
+            aria-controls="homeCollapse">
+            <span class="menu-icon-text">
+                <img src="/static/svg/home.svg" alt="Home" class="menu-icon">
+                <span>Home</span>
+            </span>
+        </li>
+        <div class="collapse show" id="homeCollapse">
+            <ul class="list-unstyled">
+                <li><a class="link-menu-left {{if eq .Title "Overview"}}active{{else}}{{end}}" 
+                    hx-get="/overview" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Overview</a></li>
+                <li><a class="link-menu-left" href="/login">Login</a></li>
+            </ul>
+        </div>
+        <hr>
+        
+        <!-- Tools Section -->
+        <li class="title-menu-left-public" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#toolsCollapse" 
+            aria-expanded="true" 
+            aria-controls="toolsCollapse">
+            <span class="menu-icon-text">
+                <img src="/static/svg/tool.svg" alt="Tools" class="menu-icon">
+                <span>Tools</span>
+            </span>
+        </li>
+        <div class="collapse show" id="toolsCollapse">
+            <ul class="list-unstyled">
+                <li><a class="link-menu-left {{if eq .Title "Certificate Info"}}active{{else}}{{end}}" 
+                    hx-get="/cert_info" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">Certificate Info</a></li>
+            </ul>
+        </div>
+    </ul>
+{{end}}
+

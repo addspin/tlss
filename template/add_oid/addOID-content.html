@@ -22,9 +22,9 @@
         hx-push-url="true">Revoke clients certs</a></li>
     </ol></div>
   <div class="core-servers">
-    <form class="" 
+    <form class="" id="add-oid-form"
       hx-post="/add_oid" 
-      hx-target="#body" 
+      hx-swap="none"
       hx-ext="json-enc-custom" 
       parse-types="true"
       hx-on::after-request="
@@ -40,6 +40,25 @@
                 title: 'Error',
                 text: response.message,
                 confirmButtonColor: '#3085d6'
+              });
+            } else if (response.status === 'success') {
+              Swal.fire({
+                showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                customClass: 'custom-alert',
+                icon: 'success',
+                title: 'Успешно',
+                text: response.message,
+                confirmButtonColor: '#3085d6'
+              }).then(() => {
+                // Обновляем список OID
+                htmx.ajax('GET', '/oid_list', {
+                  target: '#response', 
+                  swap: 'innerHTML'
+                });
+                
+                // Сбрасываем форму
+                document.getElementById('add-oid-form').reset();
               });
             }
           } catch (e) {}

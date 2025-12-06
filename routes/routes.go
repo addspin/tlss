@@ -52,11 +52,12 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Post("/api/v1/crl/bundleca/generate", serverCertControllers.GenerateCombinedCACRL) // Генерация бандла Root CA и Sub CA через API
 
 	// Protected routes (auth required)
-	app.Get("/add_server", serverCertControllers.AddServerControll)                 // Получение списка серверов
-	app.Post("/add_server", serverCertControllers.AddServerControll)                // Добавление сервера
-	app.Get("/server_list", serverCertControllers.ServerListController)             // Получение списка серверов
-	app.Get("/add_server_entity", serverCertControllers.AddServerEntityController)  // Получение списка сущностей для серверных сертификатов
-	app.Post("/add_server_entity", serverCertControllers.AddServerEntityController) // Добавление сущности для серверных сертификатов
+	app.Get("/add_server", serverCertControllers.AddServerControll)                  // Получение списка серверов
+	app.Post("/add_server", serverCertControllers.AddServerControll)                 // Добавление сервера
+	app.Get("/server_list", serverCertControllers.ServerListController)              // Получение списка серверов
+	app.Get("/add_server_entity", serverCertControllers.AddServerEntityController)   // Получение списка сущностей для серверных сертификатов
+	app.Post("/add_server_entity", serverCertControllers.AddServerEntityController)  // Добавление сущности для серверных сертификатов
+	app.Get("/entity_server_list", serverCertControllers.EntityServerListController) // Получение списка серверных сущностей
 	app.Post("/remove_server", serverCertControllers.RemoveServer)
 	app.Get("/add_certs", serverCertControllers.AddCertsControll)
 	app.Post("/add_certs", serverCertControllers.AddCertsControll)
@@ -72,8 +73,10 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 
 	app.Get("/add_entity", usersCertControllers.AddEntityController)               // Получение сущности
 	app.Post("/add_entity", usersCertControllers.AddEntityController)              // Добавление сущности
+	app.Get("/entity_list", usersCertControllers.EntityListController)             // Получение списка сущностей
 	app.Get("/add_oid", usersCertControllers.AddOIDController)                     // Получение списка OID
 	app.Post("/add_oid", usersCertControllers.AddOIDController)                    // Добавление OID
+	app.Get("/oid_list", usersCertControllers.OIDListController)                   // Получение списка OID
 	app.Post("/remove_oid", usersCertControllers.RemoveOID)                        // Удаление OID
 	app.Post("/remove_entity", usersCertControllers.RemoveEntity)                  // Удаление сущности
 	app.Get("/add_users_certs", usersCertControllers.AddUserCertsController)       // Получение списка сертификатов пользователей

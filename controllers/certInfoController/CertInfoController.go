@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/addspin/tlss/middleware"
 	"github.com/gofiber/fiber/v3"
 )
 
@@ -59,7 +60,16 @@ func CertInfoController(c fiber.Ctx) error {
 			return nil
 		}
 
-		return c.Render("cert_info/certInfo", data)
+		// Проверяем авторизацию и выбираем нужный шаблон
+		isAuthenticated := middleware.IsAuthenticated(c)
+
+		if isAuthenticated {
+			// Авторизованный пользователь - показываем полное меню
+			return c.Render("cert_info/certInfo", data)
+		} else {
+			// Неавторизованный пользователь - показываем публичное меню
+			return c.Render("cert_info/certInfo-public", data)
+		}
 	}
 
 	if c.Method() == "POST" {

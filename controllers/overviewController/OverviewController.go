@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/addspin/tlss/check"
+	"github.com/addspin/tlss/middleware"
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
@@ -120,9 +121,18 @@ func Overview(c fiber.Ctx) error {
 			return nil
 		}
 
-		// Возвращаем полную страницу с layout
-		slog.Info("Regular request - rendering full page")
-		return c.Render("overview/overview", data)
+		// Проверяем авторизацию и выбираем нужный шаблон
+		isAuthenticated := middleware.IsAuthenticated(c)
+
+		if isAuthenticated {
+			// Авторизованный пользователь - показываем полное меню
+			slog.Info("Authenticated user - rendering full page with auth menu")
+			return c.Render("overview/overview", data)
+		} else {
+			// Неавторизованный пользователь - показываем публичное меню
+			slog.Info("Public user - rendering page with public menu")
+			return c.Render("overview/overview-public", data)
+		}
 	}
 
 	return c.Status(400).JSON(fiber.Map{

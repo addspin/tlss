@@ -29,6 +29,7 @@ var publicRoutes = []string{
 	"/",
 	"/login",
 	"/overview",
+	"/cert_info",
 	"/api/v1/crl/subca/der",
 	"/api/v1/crl/rootca/der",
 	"/api/v1/crl/subca/pem",
@@ -88,4 +89,19 @@ func AuthMiddleware() fiber.Handler {
 
 		return c.Next()
 	}
+}
+
+// IsAuthenticated проверяет, авторизован ли пользователь
+func IsAuthenticated(c fiber.Ctx) bool {
+	sess, err := Store.Get(c)
+	if err != nil {
+		return false
+	}
+
+	auth := sess.Get("authenticated")
+	if auth == nil {
+		return false
+	}
+
+	return auth.(bool)
 }

@@ -521,6 +521,21 @@ color: #ffffff;
     background-color: rgba(169, 158, 232, 0.1);
 }
 
+/* Стили для заголовков публичного меню */
+.title-menu-left-public {
+    cursor: pointer;
+    user-select: none;
+    padding: 8px 10px;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    color: #ffffff;
+}
+
+.title-menu-left-public:hover {
+    color: #bcb0ff;
+    background-color: rgba(169, 158, 232, 0.1);
+}
+
 /* Контейнер для иконки и текста */
 .menu-icon-text {
     display: flex;
@@ -537,12 +552,16 @@ color: #ffffff;
     display: block;
 }
 
-/* Стили для Bootstrap Collapse контейнеров */
-.collapse ul.list-unstyled {
-    padding-left: 0;
+/* Расстояние между элементами меню через margin */
+.left-menu .list-unstyled li {
+    margin-bottom: 4px;
+}
+
+.left-menu .list-unstyled li:last-child {
     margin-bottom: 0;
 }
 
-.collapse ul.list-unstyled li {
-    list-style: none;
+/* Оптимизация анимации Bootstrap Collapse */
+.collapse {
+    will-change: height;
 }

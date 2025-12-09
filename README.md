@@ -37,6 +37,63 @@ I cannot check everything, there may be more than one bug found, I apologize ðŸ¥
 
 ## MIT License ðŸŽ‰
 
+## How it works
+
+### Application Launch
+
+On the first application start, the console will ask 3 questions:
+- login;
+- password;
+- salt.
+
+After that, all necessary folders will be created in the launch directory and an SSH key will be generated for connecting to servers.
+
+The initial launch uses the default configuration and starts on an unsecured port, you need to make appropriate adjustments to your taste.
+
+On the first login, you will land on the root certificate generation page, without this step certificate creation will be impossible.
+
+### Features
+
+The login window greets you with two options, Login or Overview.
+
+Without authorization, capabilities are limited to two sections:
+
+- Home with Overview subsection - serves as statistics and general information
+- Tools with Certificate Info subsection - allowing you to view certificate information, supporting selection through explorer or drop down.
+
+Certificate generation is divided into two sections performing the same-name tasks:
+
+- Servers certs
+- Clients certs
+
+The main differences between sections lie in additional capabilities and some certificate settings:
+
+Servers certs section:
+
+- Add ssh key subsection adds the ability to create your own ssh keys and use them to connect servers where generated certificates can be stored.
+- Certificates are generated with TLS Web Server Authentication type
+- Domain is automatically added to SAN section, even if it remains unfilled
+
+Clients certs section:
+
+- Add OIDs subsection adds the ability to create an additional custom field in the certificate
+- Certificates are generated with TLS Web Client Authentication type
+
+### CA Revocation
+
+Revoking a root or intermediate certificate triggers a chain reaction that leads to revocation of all certificates signed by this CA, and certificates that were already revoked will be deleted.
+
+### Creation/Revocation of Server or Client Certificates
+
+Certificate revocation options differ by type:
+
+Servers certs:
+- When revoking a server certificate and subsequent rollback, the certificate does not overwrite the existing one if it was generated, that is, each certificate is unique and exists autonomously. Creation behavior is similar.
+
+Clients certs:
+- If you revoke a client certificate, then issuing a new one will overwrite the existing one, regardless of whether it was revoked or remained active.
+- Client certificate creation is accompanied by the ability to set a password for subsequent container download and secure transfer.
+
 <br></br>
 
 # TLSS

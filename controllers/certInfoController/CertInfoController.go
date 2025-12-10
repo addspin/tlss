@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"crypto/dsa"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -52,6 +51,7 @@ func CertInfoController(c fiber.Ctx) error {
 
 		// Проверяем, является ли запрос HTMX запросом
 		if c.Get("HX-Request") != "" {
+			slog.Debug("Certificate Info: HTMX request received")
 			err := c.Render("certInfo-content", data, "")
 			if err != nil {
 				slog.Error("Error rendering certInfo-content", "error", err)
@@ -64,9 +64,11 @@ func CertInfoController(c fiber.Ctx) error {
 		isAuthenticated := middleware.IsAuthenticated(c)
 
 		if isAuthenticated {
+			slog.Debug("Certificate Info: authenticated user request")
 			// Авторизованный пользователь - показываем полное меню
 			return c.Render("cert_info/certInfo", data)
 		} else {
+			slog.Debug("Certificate Info: public user request")
 			// Неавторизованный пользователь - показываем публичное меню
 			return c.Render("cert_info/certInfo-public", data)
 		}
@@ -86,7 +88,7 @@ func CertInfoController(c fiber.Ctx) error {
 		// Открываем файл
 		fileContent, err := file.Open()
 		if err != nil {
-			slog.Error("Error opening file", "error", err)
+			slog.Error("Error opening file", "filename", file.Filename, "error", err)
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Failed to open file",
@@ -97,7 +99,7 @@ func CertInfoController(c fiber.Ctx) error {
 		// Читаем содержимое файла
 		certBytes, err := io.ReadAll(fileContent)
 		if err != nil {
-			slog.Error("Error reading file", "error", err)
+			slog.Error("Error reading file", "filename", file.Filename, "error", err)
 			return c.Status(500).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Failed to read file",
@@ -107,14 +109,13 @@ func CertInfoController(c fiber.Ctx) error {
 		// Парсим сертификат
 		certInfo, err := parseCertificate(certBytes)
 		if err != nil {
-			slog.Error("Error parsing certificate", "error", err)
+			slog.Error("Error parsing certificate", "filename", file.Filename, "error", err)
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
 				"message": "Failed to parse certificate: " + err.Error(),
 			})
 		}
 
-		// Возвращаем информацию о сертификате
 		return c.Render("cert_info/certDetails", fiber.Map{
 			"Type":          certInfo.Type,
 			"KeyLength":     certInfo.KeyLength,
@@ -148,18 +149,28 @@ func CertInfoController(c fiber.Ctx) error {
 	})
 }
 
-// parseCertificate парсит PEM-encoded сертификат и извлекает информацию
+// parseCertificate парсит PEM или DER-encoded сертификат и извлекает информацию
 func parseCertificate(certBytes []byte) (*CertInfo, error) {
-	// Декодируем PEM
-	block, _ := pem.Decode(certBytes)
-	if block == nil {
-		return nil, fmt.Errorf("failed to decode PEM block")
-	}
+	var cert *x509.Certificate
+	var err error
 
-	// Парсим X.509 сертификат
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse certificate: %w", err)
+	// Сначала пробуем декодировать как PEM
+	block, _ := pem.Decode(certBytes)
+	if block != nil {
+		// Это PEM формат
+		cert, err = x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			slog.Error("Failed to parse PEM certificate", "error", err)
+			return nil, fmt.Errorf("failed to parse PEM certificate: %w", err)
+		}
+
+	} else {
+		// Если не PEM, пробуем парсить как DER (бинарный формат)
+		cert, err = x509.ParseCertificate(certBytes)
+		if err != nil {
+			slog.Error("Failed to parse certificate PEM/DER formats", "error", err)
+			return nil, fmt.Errorf("failed to parse certificate PEM/DER formats): %w", err)
+		}
 	}
 
 	certInfo := &CertInfo{
@@ -282,9 +293,6 @@ func getKeyTypeAndLength(publicKey interface{}) (string, string) {
 	case ed25519.PublicKey:
 		// Ed25519 ключ
 		return "ED25519", "256 bits"
-	case *dsa.PublicKey:
-		// DSA ключ (редко используется)
-		return "DSA", fmt.Sprintf("%d bits", pub.Y.BitLen())
 	default:
 		// Неизвестный тип ключа
 		return "Unknown", "Unknown"

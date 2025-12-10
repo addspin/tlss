@@ -1,5 +1,6 @@
-
+<div align="center">
 <img width="862" height="248" alt="login_no" src="https://github.com/user-attachments/assets/c8141bae-aef7-40ff-a08e-57f769b96d66" />
+</div>
 
 # TLSS
 
@@ -23,20 +24,6 @@ Hello, TLSS is a small project aimed at the simplest possible work with certific
 7) CRL generation
 8) Reissuance of CA with recreation of all dependent objects
 
-## Getting started
-
-1) The first launch will create all necessary directories and generate a configuration file `config.yaml`. You will probably want to edit the following fields:
-   - hostname
-   - protocol
-   - authConfig
-2) After your first login via the UI, you will be redirected to the page to generate CA/SubCA. Please generate them, otherwise creation of certificates will be impossible.
-
-## Possible bugs 🎃
-
-I cannot check everything, there may be more than one bug found, I apologize 🥺
-
-## MIT License 🎉
-
 ## How it works
 
 ### Application Launch
@@ -46,26 +33,38 @@ On the first application start, the console will ask 3 questions:
 - password;
 - salt.
 
-After that, all necessary folders will be created in the launch directory and an SSH key will be generated for connecting to servers.
+After that, he first launch will create all necessary directories, generate a configuration file `config.yaml` and an SSH key will be generated for connecting to servers. 
 
 The initial launch uses the default configuration and starts on an unsecured port, you need to make appropriate adjustments to your taste.
 
-On the first login, you will land on the root certificate generation page, without this step certificate creation will be impossible.
+On the first login, you will land on the root/intermediate certificate generation page, without this step certificate creation will be impossible.
 
 ### Features
 
 The login window greets you with two options, Login or Overview.
 
+<div align="center">
+  <img width="25%" alt="Pasted image 20251209162049" src="https://github.com/user-attachments/assets/e0f8a570-8ad5-4d6e-9550-b7cf956cdfc4" />
+</div>
+
+
 Without authorization, capabilities are limited to two sections:
-
 - Home with Overview subsection - serves as statistics and general information
-- Tools with Certificate Info subsection - allowing you to view certificate information, supporting selection through explorer or drop down.
+<div align="center">
+<img width="85%" alt="Pasted image 20251209172533" src="https://github.com/user-attachments/assets/855d799b-4b11-47d9-b33b-d1de100652ec" />
+</div>
 
+- Tools with Certificate Info subsection - allowing you to view certificate information, supporting selection through explorer or drop down.
+<div align="center">
+<img width="85%" alt="Pasted image 20251209163440" src="https://github.com/user-attachments/assets/f8143cc4-f34e-4aa1-bb86-236bd77a94be" />
+</div>
 Certificate generation is divided into two sections performing the same-name tasks:
 
 - Servers certs
 - Clients certs
-
+<div align="center">
+<img width="20%" alt="Pasted image 20251209165549" src="https://github.com/user-attachments/assets/c3d13780-cfdc-46ff-8a9a-d6393dc895e3" />
+</div>
 The main differences between sections lie in additional capabilities and some certificate settings:
 
 Servers certs section:
@@ -73,11 +72,17 @@ Servers certs section:
 - Add ssh key subsection adds the ability to create your own ssh keys and use them to connect servers where generated certificates can be stored.
 - Certificates are generated with TLS Web Server Authentication type
 - Domain is automatically added to SAN section, even if it remains unfilled
+- Creating server certificates makes it possible to save them on remote servers. For this, a server is added in the Add servers subsection, after which, when creating, you can set the "Save to server" switch.
+<div align="center">
+<img width="90%"  alt="image" src="https://github.com/user-attachments/assets/78e5f833-3e9b-4d1c-a5c9-e279710a9a72" />
+</div>
 
 Clients certs section:
 
 - Add OIDs subsection adds the ability to create an additional custom field in the certificate
 - Certificates are generated with TLS Web Client Authentication type
+
+In both cases, setting the switch to "Recreate" will automatically recreate the certificate both locally and on the updated server if it was created with the Save on server switch.
 
 ### CA Revocation
 
@@ -93,6 +98,13 @@ Servers certs:
 Clients certs:
 - If you revoke a client certificate, then issuing a new one will overwrite the existing one, regardless of whether it was revoked or remained active.
 - Client certificate creation is accompanied by the ability to set a password for subsequent container download and secure transfer.
+
+## Possible bugs 🎃
+
+I cannot check everything, there may be more than one bug found, I apologize 🥺
+
+## MIT License 🎉
+https://github.com/user-attachments/assets/e5511d51-0105-4ce2-bbad-525856fa2239
 
 <br></br>
 
@@ -130,7 +142,6 @@ Clients certs:
 Я не в силах проверить все сразу, возможно найдется не один баг, прошу прощения 🥺
 
 ## Лицензия MIT 🎉
-https://github.com/user-attachments/assets/e5511d51-0105-4ce2-bbad-525856fa2239
 
 
 

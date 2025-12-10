@@ -15,6 +15,7 @@ import (
 	"github.com/addspin/tlss/check"
 	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/crypts"
+	"github.com/addspin/tlss/middleware"
 	"github.com/addspin/tlss/models"
 	"github.com/addspin/tlss/routes"
 	"github.com/addspin/tlss/utils"
@@ -458,6 +459,10 @@ func main() {
 	app.Use(compress.New(compress.Config{
 		Level: compress.LevelBestCompression,
 	}))
+
+	//---------------------------------------Initialize session store
+	// Инициализируем хранилище сессий на основе протокола из конфига
+	middleware.InitSessionStore()
 
 	// Настраиваем маршруты
 	routes.Setup(app, staticFS)

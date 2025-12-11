@@ -18,15 +18,15 @@ func InitSessionStore() {
 	// Автоматически определяем CookieSecure на основе протокола
 	isSecure := viper.GetString("app.protocol") == "https"
 
-	Store = session.New(session.Config{
+	Store = session.NewStore(session.Config{
 		CookieSameSite:    "Lax",            // Для совместимости с Safari используем Lax
 		CookieSecure:      isSecure,         // Автоматически true для HTTPS, false для HTTP
 		CookieHTTPOnly:    true,             // Важно для безопасности, куки только для HTTP запросов
-		Expiration:        30 * time.Minute, // Время жизни сессии
+		IdleTimeout:       30 * time.Minute, // Время жизни сессии (переименовано из Expiration в Fiber v3)
 		CookiePath:        "/",              // Доступность куки на всех путях
 		CookieDomain:      "",               // Пустой домен для локальной разработки
-		KeyLookup:         "cookie:session_id",
-		CookieSessionOnly: false, // Если true, куки будет удалена при закрытии браузера
+		CookieSessionOnly: false,            // Если true, куки будет удалена при закрытии браузера
+		// KeyLookup удален в Fiber v3 RC.3, по умолчанию используется cookie:session_id
 	})
 }
 

@@ -16,7 +16,7 @@ const (
 	rootCAPEM      = "root_ca_tlss.pem"
 	subCAPEM       = "sub_ca_tlss.pem"
 	bundleCAPEMcrl = "bundlecaPEM.crl"
-	bundleCADERcrl = "bundlecaDER.crl"
+	// bundleCADERcrl = "bundlecaDER.crl
 )
 
 type SaveOnServerInterface interface {

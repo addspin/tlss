@@ -18,29 +18,31 @@ import (
 
 // CertInfo содержит информацию о сертификате
 type CertInfo struct {
-	Type          string   // Тип алгоритма (RSA, ECDSA, ED25519)
-	KeyLength     string   // Длина ключа в битах
-	TimeToLive    string   // Оставшееся время жизни
-	TimeCreate    string   // Дата создания
-	Expires       string   // Дата истечения
-	ExpiresIn     string   // Истекает через (в днях)
-	DomainType    string   // Тип домена (Single, Wildcard, Multiple)
-	Function      string   // Функция (для каких целей используется)
-	CommonName    string   // Common Name
-	Organization  string   // Organization
-	OrgUnit       string   // Organizational Unit
-	Locality      string   // Locality
-	State         string   // State/Province
-	Country       string   // Country
-	Email         string   // Email
-	SANs          []string // Subject Alternative Names
-	Issuer        string   // Издатель
-	SerialNumber  string   // Серийный номер
-	SignatureAlgo string   // Алгоритм подписи
-	Version       int      // Версия сертификата
-	IsCA          bool     // Является ли CA
-	KeyUsage      []string // Использование ключа
-	ExtKeyUsage   []string // Расширенное использование ключа
+	Type                   string   // Тип алгоритма (RSA, ECDSA, ED25519)
+	KeyLength              string   // Длина ключа в битах
+	TimeToLive             string   // Оставшееся время жизни
+	TimeCreate             string   // Дата создания
+	Expires                string   // Дата истечения
+	ExpiresIn              string   // Истекает через (в днях)
+	DomainType             string   // Тип домена (Single, Wildcard, Multiple)
+	Function               string   // Функция (для каких целей используется)
+	CommonName             string   // Common Name
+	Organization           string   // Organization
+	OrgUnit                string   // Organizational Unit
+	Locality               string   // Locality
+	State                  string   // State/Province
+	Country                string   // Country
+	Email                  string   // Email
+	SANs                   []string // Subject Alternative Names
+	Issuer                 string   // Издатель
+	SerialNumber           string   // Серийный номер
+	SignatureAlgo          string   // Алгоритм подписи
+	Version                int      // Версия сертификата
+	IsCA                   bool     // Является ли CA
+	KeyUsage               []string // Использование ключа
+	ExtKeyUsage            []string // Расширенное использование ключа
+	CRLDistributionPoints  []string // CRL Distribution Points
+	OCSPDistributionPoints []string // OCSP Distribution Points
 }
 
 func CertInfoController(c fiber.Ctx) error {
@@ -117,29 +119,31 @@ func CertInfoController(c fiber.Ctx) error {
 		}
 
 		return c.Render("cert_info/certDetails", fiber.Map{
-			"Type":          certInfo.Type,
-			"KeyLength":     certInfo.KeyLength,
-			"TimeToLive":    certInfo.TimeToLive,
-			"TimeCreate":    certInfo.TimeCreate,
-			"Expires":       certInfo.Expires,
-			"ExpiresIn":     certInfo.ExpiresIn,
-			"DomainType":    certInfo.DomainType,
-			"Function":      certInfo.Function,
-			"CommonName":    certInfo.CommonName,
-			"Organization":  certInfo.Organization,
-			"OrgUnit":       certInfo.OrgUnit,
-			"Locality":      certInfo.Locality,
-			"State":         certInfo.State,
-			"Country":       certInfo.Country,
-			"Email":         certInfo.Email,
-			"SANs":          certInfo.SANs,
-			"Issuer":        certInfo.Issuer,
-			"SerialNumber":  certInfo.SerialNumber,
-			"SignatureAlgo": certInfo.SignatureAlgo,
-			"Version":       certInfo.Version,
-			"IsCA":          certInfo.IsCA,
-			"KeyUsage":      certInfo.KeyUsage,
-			"ExtKeyUsage":   certInfo.ExtKeyUsage,
+			"Type":                   certInfo.Type,
+			"KeyLength":              certInfo.KeyLength,
+			"TimeToLive":             certInfo.TimeToLive,
+			"TimeCreate":             certInfo.TimeCreate,
+			"Expires":                certInfo.Expires,
+			"ExpiresIn":              certInfo.ExpiresIn,
+			"DomainType":             certInfo.DomainType,
+			"Function":               certInfo.Function,
+			"CommonName":             certInfo.CommonName,
+			"Organization":           certInfo.Organization,
+			"OrgUnit":                certInfo.OrgUnit,
+			"Locality":               certInfo.Locality,
+			"State":                  certInfo.State,
+			"Country":                certInfo.Country,
+			"Email":                  certInfo.Email,
+			"SANs":                   certInfo.SANs,
+			"Issuer":                 certInfo.Issuer,
+			"SerialNumber":           certInfo.SerialNumber,
+			"SignatureAlgo":          certInfo.SignatureAlgo,
+			"Version":                certInfo.Version,
+			"IsCA":                   certInfo.IsCA,
+			"KeyUsage":               certInfo.KeyUsage,
+			"ExtKeyUsage":            certInfo.ExtKeyUsage,
+			"CRLDistributionPoints":  certInfo.CRLDistributionPoints,
+			"OCSPDistributionPoints": certInfo.OCSPDistributionPoints,
 		})
 	}
 
@@ -179,6 +183,12 @@ func parseCertificate(certBytes []byte) (*CertInfo, error) {
 		CommonName:   cert.Subject.CommonName,
 		Issuer:       cert.Issuer.CommonName,
 	}
+
+	certInfo.CRLDistributionPoints = cert.CRLDistributionPoints
+	certInfo.OCSPDistributionPoints = cert.OCSPServer
+	// if len(certInfo.OCSPDistributionPoints) == 0 {
+	// 	certInfo.OCSPDistributionPoints = []string{""}
+	// }
 
 	// Определяем тип алгоритма и длину ключа
 	certInfo.Type, certInfo.KeyLength = getKeyTypeAndLength(cert.PublicKey)

@@ -183,5 +183,29 @@
       </div>
     </div>
     {{end}}
+
+    <!-- CRL Distribution Points -->
+    {{if .CRLDistributionPoints}}
+    <div class="info-item">
+      <label class="info-label-tags">CRL Distribution Points:</label>
+      <div class="info-tag-container">
+        {{range .CRLDistributionPoints}}
+        <span class="info-tag-red">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+
+    <!-- OCSP Distribution Points -->
+    {{if .OCSPDistributionPoints}}
+    <div class="info-item">
+      <label class="info-label-tags">OCSP Distribution Points:</label>
+      <div class="info-tag-container">
+        {{range .OCSPDistributionPoints}}
+        <span class="info-tag-yellow">{{.}}</span>
+        {{end}}
+      </div>
+    </div>
+    {{end}}
   </div>
 </div>

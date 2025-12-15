@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -290,7 +291,7 @@ func parseCertificate(certBytes []byte) (*CertInfo, error) {
 }
 
 // getKeyTypeAndLength возвращает тип алгоритма и длину ключа
-func getKeyTypeAndLength(publicKey interface{}) (string, string) {
+func getKeyTypeAndLength(publicKey crypto.PublicKey) (string, string) {
 	switch pub := publicKey.(type) {
 	case *rsa.PublicKey:
 		// RSA ключ

@@ -1,0 +1,42 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Градиент замка -->
+    <linearGradient id="lockGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4FC3F7"/>
+      <stop offset="50%" stop-color="#5C6CFF"/>
+      <stop offset="100%" stop-color="#7C4DFF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Скруглённый фон (прозрачный) -->
+  <!-- <rect x="0" y="0" width="256" height="256" rx="56" fill="url(#bgGradient)"/> -->
+
+  <!-- Корпус замка как цельная заливка -->
+  <path
+    d="M70 112
+       H202
+       C213 112 222 121 222 132
+       V196
+       C222 207 213 216 202 216
+       H70
+       C59 216 50 207 50 196
+       V132
+       C50 121 59 112 70 112
+       Z"
+    fill="url(#lockGradient)"
+  />
+
+  <!-- Дужка замка, тоже залита градиентом -->
+  <path
+    d="M88 108V84C88 58 108 38 134 38C160 38 180 58 180 84V108"
+    fill="none"
+    stroke="url(#lockGradient)"
+    stroke-width="14"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Личинка, слегка светлее (можно убрать, если нужен совсем минимализм) -->
+  <!-- <circle cx="136" cy="160" r="12" fill="#E3F2FD" fill-opacity="0.85"/> -->
+</svg>
+    

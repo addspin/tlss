@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
-	"net"
 	"strings"
 	"time"
 
@@ -79,32 +78,7 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	data.SerialNumber = standardizeSerialNumberED25519(serialNumber)
 	slog.Info("Generated serial number for ED25519 certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
-	// Подготавливаем SAN: разделяем DNS-имена и IP-адреса
-	var dnsNames []string
-	var ipAddresses []net.IP
-
-	if ip := net.ParseIP(data.Domain); ip != nil {
-		ipAddresses = append(ipAddresses, ip)
-	} else {
-		dnsNames = append(dnsNames, data.Domain)
-		if data.Wildcard {
-			dnsNames = append(dnsNames, "*."+data.Domain)
-		}
-	}
-
-	if data.SAN != "" {
-		for _, san := range strings.Split(data.SAN, ",") {
-			san = strings.TrimSpace(san)
-			if san == "" || san == data.Domain || san == "*."+data.Domain {
-				continue
-			}
-			if ip := net.ParseIP(san); ip != nil {
-				ipAddresses = append(ipAddresses, ip)
-			} else {
-				dnsNames = append(dnsNames, san)
-			}
-		}
-	}
+	san := ParseSAN(data.Domain, data.SAN, data.Email, data.Wildcard)
 
 	now := time.Now()
 	expiry := now.AddDate(0, 0, data.TTL)
@@ -132,8 +106,9 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
-		DNSNames:              dnsNames,
-		IPAddresses:           ipAddresses,
+		DNSNames:              san.DNSNames,
+		IPAddresses:           san.IPAddresses,
+		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("CAcrl.crlURL"),
 		},
@@ -254,32 +229,7 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	data.SerialNumber = standardizeSerialNumberED25519(serialNumber)
 	slog.Info("Generated serial number for ED25519 certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
-	// Подготавливаем SAN: разделяем DNS-имена и IP-адреса
-	var dnsNames []string
-	var ipAddresses []net.IP
-
-	if ip := net.ParseIP(data.Domain); ip != nil {
-		ipAddresses = append(ipAddresses, ip)
-	} else {
-		dnsNames = append(dnsNames, data.Domain)
-		if data.Wildcard {
-			dnsNames = append(dnsNames, "*."+data.Domain)
-		}
-	}
-
-	if data.SAN != "" {
-		for _, san := range strings.Split(data.SAN, ",") {
-			san = strings.TrimSpace(san)
-			if san == "" || san == data.Domain || san == "*."+data.Domain {
-				continue
-			}
-			if ip := net.ParseIP(san); ip != nil {
-				ipAddresses = append(ipAddresses, ip)
-			} else {
-				dnsNames = append(dnsNames, san)
-			}
-		}
-	}
+	san := ParseSAN(data.Domain, data.SAN, data.Email, data.Wildcard)
 
 	now := time.Now()
 	expiry := now.AddDate(0, 0, data.TTL)
@@ -307,8 +257,9 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
-		DNSNames:              dnsNames,
-		IPAddresses:           ipAddresses,
+		DNSNames:              san.DNSNames,
+		IPAddresses:           san.IPAddresses,
+		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("SubCAcrl.crlURL"),
 		},

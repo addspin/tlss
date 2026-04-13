@@ -90,18 +90,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPe
 
 	extraNames := []pkix.AttributeTypeAndValue{}
 
-	// Добавляем SAN
-	dnsNames := []string{data.CommonName}
-	// Добавляем альтернативные имена из поля SAN, если они есть
-	if data.SAN != "" {
-		sanValues := strings.Split(data.SAN, ",")
-		for _, san := range sanValues {
-			san = strings.TrimSpace(san)
-			if san != "" && san != data.CommonName {
-				dnsNames = append(dnsNames, san)
-			}
-		}
-	}
+	san := ParseSAN(data.CommonName, data.SAN, data.Email, false)
 
 	// Добавляем custom OID
 	customOID := []int{}
@@ -165,7 +154,9 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPe
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
-		DNSNames:              dnsNames,
+		DNSNames:              san.DNSNames,
+		IPAddresses:           san.IPAddresses,
+		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("SubCAcrl.crlURL"),
 		},
@@ -321,18 +312,7 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 	// 	dnsNames = append(dnsNames, "*."+data.Domain)
 	// }
 
-	dnsNames := []string{data.CommonName}
-
-	// Добавляем альтернативные имена из поля SAN, если они есть
-	if data.SAN != "" {
-		sanValues := strings.Split(data.SAN, ",")
-		for _, san := range sanValues {
-			san = strings.TrimSpace(san)
-			if san != "" && san != data.CommonName {
-				dnsNames = append(dnsNames, san)
-			}
-		}
-	}
+	san := ParseSAN(data.CommonName, data.SAN, data.Email, false)
 
 	// Подготавливаем шаблон сертификата
 	extraNames := []pkix.AttributeTypeAndValue{}
@@ -395,7 +375,9 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
-		DNSNames:              dnsNames,
+		DNSNames:              san.DNSNames,
+		IPAddresses:           san.IPAddresses,
+		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("SubCAcrl.crlURL"),
 		},

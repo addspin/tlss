@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
-	"net"
 	"strings"
 	"time"
 
@@ -82,34 +81,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	data.SerialNumber = standardizeSerialNumber(serialNumber)
 	slog.Info("Generated serial number for certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
-	// Подготавливаем SAN: разделяем DNS-имена и IP-адреса
-	var dnsNames []string
-	var ipAddresses []net.IP
-
-	// Основной домен
-	if ip := net.ParseIP(data.Domain); ip != nil {
-		ipAddresses = append(ipAddresses, ip)
-	} else {
-		dnsNames = append(dnsNames, data.Domain)
-		if data.Wildcard {
-			dnsNames = append(dnsNames, "*."+data.Domain)
-		}
-	}
-
-	// Дополнительные SAN значения
-	if data.SAN != "" {
-		for _, san := range strings.Split(data.SAN, ",") {
-			san = strings.TrimSpace(san)
-			if san == "" || san == data.Domain || san == "*."+data.Domain {
-				continue
-			}
-			if ip := net.ParseIP(san); ip != nil {
-				ipAddresses = append(ipAddresses, ip)
-			} else {
-				dnsNames = append(dnsNames, san)
-			}
-		}
-	}
+	san := ParseSAN(data.Domain, data.SAN, data.Email, data.Wildcard)
 
 	now := time.Now()
 	expiry := now.AddDate(0, 0, data.TTL)
@@ -136,8 +108,9 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
-		DNSNames:              dnsNames,
-		IPAddresses:           ipAddresses,
+		DNSNames:              san.DNSNames,
+		IPAddresses:           san.IPAddresses,
+		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("CAcrl.crlURL"),
 		},
@@ -253,32 +226,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 	data.SerialNumber = standardizeSerialNumber(serialNumber)
 	slog.Info("Generated serial number for certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
-	// Build SAN: separate DNS names from IP addresses
-	var dnsNames []string
-	var ipAddresses []net.IP
-
-	if ip := net.ParseIP(data.Domain); ip != nil {
-		ipAddresses = append(ipAddresses, ip)
-	} else {
-		dnsNames = append(dnsNames, data.Domain)
-		if data.Wildcard {
-			dnsNames = append(dnsNames, "*."+data.Domain)
-		}
-	}
-
-	if data.SAN != "" {
-		for _, san := range strings.Split(data.SAN, ",") {
-			san = strings.TrimSpace(san)
-			if san == "" || san == data.Domain || san == "*."+data.Domain {
-				continue
-			}
-			if ip := net.ParseIP(san); ip != nil {
-				ipAddresses = append(ipAddresses, ip)
-			} else {
-				dnsNames = append(dnsNames, san)
-			}
-		}
-	}
+	san := ParseSAN(data.Domain, data.SAN, data.Email, data.Wildcard)
 
 	now := time.Now()
 	expiry := now.AddDate(0, 0, data.TTL)
@@ -305,8 +253,9 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
-		DNSNames:              dnsNames,
-		IPAddresses:           ipAddresses,
+		DNSNames:              san.DNSNames,
+		IPAddresses:           san.IPAddresses,
+		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("SubCAcrl.crlURL"),
 		},

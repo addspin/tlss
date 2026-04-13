@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/big"
+	"net"
 	"strings"
 	"time"
 
@@ -78,18 +79,28 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	data.SerialNumber = standardizeSerialNumberED25519(serialNumber)
 	slog.Info("Generated serial number for ED25519 certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
-	// Подготавливаем шаблон сертификата
-	dnsNames := []string{data.Domain}
-	if data.Wildcard {
-		dnsNames = append(dnsNames, "*."+data.Domain)
+	// Подготавливаем SAN: разделяем DNS-имена и IP-адреса
+	var dnsNames []string
+	var ipAddresses []net.IP
+
+	if ip := net.ParseIP(data.Domain); ip != nil {
+		ipAddresses = append(ipAddresses, ip)
+	} else {
+		dnsNames = append(dnsNames, data.Domain)
+		if data.Wildcard {
+			dnsNames = append(dnsNames, "*."+data.Domain)
+		}
 	}
 
-	// Добавляем альтернативные имена из поля SAN, если они есть
 	if data.SAN != "" {
-		sanValues := strings.Split(data.SAN, ",")
-		for _, san := range sanValues {
+		for _, san := range strings.Split(data.SAN, ",") {
 			san = strings.TrimSpace(san)
-			if san != "" && san != data.Domain && san != "*."+data.Domain {
+			if san == "" || san == data.Domain || san == "*."+data.Domain {
+				continue
+			}
+			if ip := net.ParseIP(san); ip != nil {
+				ipAddresses = append(ipAddresses, ip)
+			} else {
 				dnsNames = append(dnsNames, san)
 			}
 		}
@@ -116,12 +127,13 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		},
 		NotBefore: now,
 		NotAfter:  expiry,
-		// ED25519 поддерживает только цифровую подпись, НЕ поддерживает шифрование
+		// ED25519 supports digital signature only, no key encipherment
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
 		DNSNames:              dnsNames,
+		IPAddresses:           ipAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("CAcrl.crlURL"),
 		},
@@ -242,18 +254,28 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 	data.SerialNumber = standardizeSerialNumberED25519(serialNumber)
 	slog.Info("Generated serial number for ED25519 certificate", "domain", data.Domain, "serial_number", data.SerialNumber)
 
-	// Подготавливаем шаблон сертификата
-	dnsNames := []string{data.Domain}
-	if data.Wildcard {
-		dnsNames = append(dnsNames, "*."+data.Domain)
+	// Подготавливаем SAN: разделяем DNS-имена и IP-адреса
+	var dnsNames []string
+	var ipAddresses []net.IP
+
+	if ip := net.ParseIP(data.Domain); ip != nil {
+		ipAddresses = append(ipAddresses, ip)
+	} else {
+		dnsNames = append(dnsNames, data.Domain)
+		if data.Wildcard {
+			dnsNames = append(dnsNames, "*."+data.Domain)
+		}
 	}
 
-	// Добавляем альтернативные имена из поля SAN, если они есть
 	if data.SAN != "" {
-		sanValues := strings.Split(data.SAN, ",")
-		for _, san := range sanValues {
+		for _, san := range strings.Split(data.SAN, ",") {
 			san = strings.TrimSpace(san)
-			if san != "" && san != data.Domain && san != "*."+data.Domain {
+			if san == "" || san == data.Domain || san == "*."+data.Domain {
+				continue
+			}
+			if ip := net.ParseIP(san); ip != nil {
+				ipAddresses = append(ipAddresses, ip)
+			} else {
 				dnsNames = append(dnsNames, san)
 			}
 		}
@@ -280,12 +302,13 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		},
 		NotBefore: now,
 		NotAfter:  expiry,
-		// ED25519 поддерживает только цифровую подпись
+		// ED25519 supports digital signature only, no key encipherment
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
 		DNSNames:              dnsNames,
+		IPAddresses:           ipAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("SubCAcrl.crlURL"),
 		},

@@ -118,7 +118,7 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		NotAfter:  expiry,
 		// ED25519 поддерживает только цифровую подпись, НЕ поддерживает шифрование
 		KeyUsage:              x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
 		DNSNames:              dnsNames,

@@ -75,13 +75,13 @@ func (s *saveOnServer) SaveOnServer(data *models.CertsData, db *sqlx.DB, certPEM
 
 	// Получаем информацию о сервере для сохранения сертификата
 	var serverInfo models.Server
-	err := db.Get(&serverInfo, "SELECT id, hostname, port, username, cert_config_path, server_status FROM server WHERE id = ?", data.ServerId)
+	err := db.Get(&serverInfo, "SELECT id, hostname, port, username, cert_config_path, ssh_key, server_status FROM server WHERE id = ?", data.ServerId)
 	if err != nil {
 		return fmt.Errorf("failed to get server information: %w", err)
 	}
 	// получаем ssh ключ для подключения к серверу по имени сервера
 	var sshKey models.SSHKey
-	err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", serverInfo.Hostname)
+	err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", serverInfo.SSHKey)
 	if err != nil {
 		// Если не найден ключ для конкретного сервера, пробуем получить ключ по умолчанию
 		err = db.Get(&sshKey, "SELECT * FROM ssh_key WHERE name_ssh_key = ?", "Default")

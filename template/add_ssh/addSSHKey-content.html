@@ -104,6 +104,27 @@
             <!-- Скрытое поле для отправки значения длины ключа -->
             <input type="hidden" name="KeyLength" id="key-length-value" value="4096">
         </div>
+        <!-- Drop zone для загрузки пары SSH ключей из файлов -->
+        <div class="col-12 mt-2">
+          <div id="ssh-drop-zone" class="info-drop-zone ssh-drop-zone">
+            <div id="ssh-drop-zone-default">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-drop-zone-icon">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <p class="info-drop-zone-text" style="margin:4px 0 0 0; font-size:0.9rem;">Drop 2 files: private key + public key</p>
+              <p class="info-drop-zone-subtext" style="margin:0; font-size:0.75rem;">RSA or ED25519</p>
+            </div>
+            <div id="ssh-drop-zone-files" style="display:none;">
+              <div><span id="ssh-file1-name" style="font-weight:500;"></span></div>
+              <div><span id="ssh-file2-name" style="font-weight:500;"></span></div>
+              <button type="button" id="ssh-clear-files" class="btn btn-sm btn-outline-danger mt-1" style="font-size:0.75rem;">&#10005; Clear</button>
+            </div>
+            <input type="file" id="ssh-file-input" multiple style="display:none;">
+          </div>
+        </div>
+
         <div class="col-12">
           <button type="submit" class="btn-custom btn-custom-servers mt-2">
             <span class="btn-text">Add ssh key</span>

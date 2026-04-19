@@ -1,0 +1,79 @@
+<!-- USER ENTITIES -->
+{{define "entityCAList-tpl"}}
+
+            <table class="table" id="entityTable">
+              <thead>
+              <tr>
+                <th scope="col" class="sortable-header" onclick="sortTable(0, 'entityTable')">
+                  CA entity name
+                  <span class="sort-arrow" id="arrow-0">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(1, 'entityTable')">
+                  CA entity description
+                  <span class="sort-arrow" id="arrow-1">▼</span>
+                </th>
+                <th scope="col"></th>
+                <th scope="col" class="th-text-center">Remove</th>
+              </tr>
+            </thead>
+            <tbody id="entityTableBody">
+              {{ range .entityCAList }}
+              <tr class="entity_id_{{ .Id }}">
+                  <td>{{ .EntityCAName }}</td>
+                  <td>{{ .EntityCADescription }}</td>
+                  <td></td>
+                  <td class="th-text-center">
+                    <button class="btn-trash" name="id" value="{{ .Id }}" hx-trigger='remove' hx-post="/remove_entity_ca" hx-target=".entity_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true" 
+                    onClick="const { value: hostname } = Swal.fire({
+                    showClass: {
+                    popup: `
+                      animate__animated
+                      animate__fadeInUp
+                      animate__fast
+                    `
+                    },
+                    hideClass: {
+                      popup: `
+                        animate__animated
+                        animate__fadeOutDown
+                        animate__fast
+                      `
+                    },
+                    customClass: 'custom-alert',
+                    input: 'text',
+                    title: 'Are you sure you want to delete CA entity - {{ .EntityCAName }}?', 
+                    text: 'To confirm, enter {{ .EntityCAName }}', 
+                    showCancelButton: true,
+                    confirmButtonColor: '#983636',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete!',
+                    
+                    inputValidator: (value) => {
+                    if (value != '{{ .EntityCAName }}') {
+                      return 'You entered an invalid CA entity name, enter {{ .EntityCAName }}';
+                    }
+                  }
+                  }).then((result) => {
+                    if (result.isConfirmed) {
+                      htmx.trigger(this, 'remove'); 
+                    }
+                  });"
+                  >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="trash" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                      </svg>
+                  </button>
+                  </td>
+              </tr>
+              {{ end }}
+            </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+    
+
+
+{{end}}

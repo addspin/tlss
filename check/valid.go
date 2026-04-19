@@ -49,23 +49,23 @@ func checkCerts() {
 	}
 	defer db.Close()
 
-	// Получаем все действующие сертификаты с дополнительными полями для расчета days_left
+	// Получаем все сертификаты (включая истёкшие) для обновления days_left
 	certificates := []models.CertsData{}
-	err = db.Select(&certificates, `SELECT id, domain, cert_create_time, cert_expire_time FROM certs WHERE cert_status = 0`)
+	err = db.Select(&certificates, `SELECT id, domain, cert_create_time, cert_expire_time, cert_status FROM certs WHERE cert_status IN (0, 1)`)
 	if err != nil {
 		slog.Error("CheckValidCerts: Server certificate query error", "error", err)
 		return
 	}
 
 	userCertificates := []models.UserCertsData{}
-	err = db.Select(&userCertificates, "SELECT id, common_name, cert_create_time, cert_expire_time FROM user_certs WHERE cert_status = 0")
+	err = db.Select(&userCertificates, "SELECT id, common_name, cert_create_time, cert_expire_time, cert_status FROM user_certs WHERE cert_status IN (0, 1)")
 	if err != nil {
 		slog.Error("CheckValidCerts: Client certificate query error", "error", err)
 		return
 	}
 
 	caCertificates := []models.CAData{}
-	err = db.Select(&caCertificates, "SELECT id, common_name, cert_create_time, cert_expire_time FROM ca_certs WHERE cert_status = 0")
+	err = db.Select(&caCertificates, "SELECT id, common_name, cert_create_time, cert_expire_time, cert_status FROM ca_certs WHERE cert_status IN (0, 1)")
 	if err != nil {
 		slog.Error("CheckValidCerts: CA certificate query error", "error", err)
 		return
@@ -79,30 +79,22 @@ func checkCerts() {
 
 	expiredCount := 0
 
-	// обновляем статус и days_left у CA сертификатов
+	// Обновляем days_left у CA сертификатов; cert_status меняем только с 0 → 1
 	for _, cert := range caCertificates {
-		// Преобразуем строку времени истечения в объект time.Time
 		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
 		if err != nil {
 			slog.Error("CheckValidCerts: Expiration time parsing error for certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 			continue
 		}
 
-		// Вычисляем оставшиеся дни
 		daysLeft := calculateDaysLeft(expireTime)
 
-		slog.Info("CheckValidCerts: Certificate", "common_name", cert.CommonName, "id", cert.Id, "expires_at", expireTime.Format(time.RFC3339), "days_left", daysLeft)
-
-		// Обновляем days_left в любом случае
 		_, err = db.Exec("UPDATE ca_certs SET days_left = ? WHERE id = ?", daysLeft, cert.Id)
 		if err != nil {
 			slog.Error("CheckValidCerts: Error updating days_left for certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 		}
 
-		// Если сертификат истек
-		if currentTime.After(expireTime) {
-			slog.Info("CheckValidCerts: Certificate expired", "current_time", currentTime.Format(time.RFC3339), "expire_time", expireTime.Format(time.RFC3339))
-			// Обновляем статус на истекший (1)
+		if currentTime.After(expireTime) && cert.CertStatus == 0 {
 			_, err := db.Exec("UPDATE ca_certs SET cert_status = 1 WHERE id = ?", cert.Id)
 			if err != nil {
 				slog.Error("CheckValidCerts: Error updating certificate status", "common_name", cert.CommonName, "id", cert.Id, "error", err)
@@ -113,30 +105,22 @@ func checkCerts() {
 		}
 	}
 
-	// Обновляем статус и days_left у серверных сертфикатов
+	// Обновляем days_left у серверных сертификатов; cert_status меняем только с 0 → 1
 	for _, cert := range certificates {
-		// Преобразуем строку времени истечения в объект time.Time
 		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
 		if err != nil {
 			slog.Error("CheckValidCerts: Expiration time parsing error for certificate", "domain", cert.Domain, "id", cert.Id, "error", err)
 			continue
 		}
 
-		// Вычисляем оставшиеся дни
 		daysLeft := calculateDaysLeft(expireTime)
 
-		slog.Info("CheckValidCerts: Certificate", "domain", cert.Domain, "id", cert.Id, "expires_at", expireTime.Format(time.RFC3339), "days_left", daysLeft)
-
-		// Обновляем days_left в любом случае
 		_, err = db.Exec("UPDATE certs SET days_left = ? WHERE id = ?", daysLeft, cert.Id)
 		if err != nil {
 			slog.Error("CheckValidCerts: Error updating days_left for certificate", "domain", cert.Domain, "id", cert.Id, "error", err)
 		}
 
-		// Если сертификат истек
-		if currentTime.After(expireTime) {
-			slog.Info("CheckValidCerts: Certificate expired", "current_time", currentTime.Format(time.RFC3339), "expire_time", expireTime.Format(time.RFC3339))
-			// Обновляем статус на истекший (1)
+		if currentTime.After(expireTime) && cert.CertStatus == 0 {
 			_, err := db.Exec("UPDATE certs SET cert_status = 1 WHERE id = ?", cert.Id)
 			if err != nil {
 				slog.Error("CheckValidCerts: Error updating certificate status", "domain", cert.Domain, "id", cert.Id, "error", err)
@@ -147,30 +131,22 @@ func checkCerts() {
 		}
 	}
 
-	// Обновляем статус и days_left у клиентских сертификатов
+	// Обновляем days_left у клиентских сертификатов; cert_status меняем только с 0 → 1
 	for _, cert := range userCertificates {
-		// Преобразуем строку времени истечения в объект time.Time
 		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
 		if err != nil {
 			slog.Error("CheckValidCerts: Expiration time parsing error for certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 			continue
 		}
 
-		// Вычисляем оставшиеся дни
 		daysLeft := calculateDaysLeft(expireTime)
 
-		slog.Info("CheckValidCerts: Certificate", "common_name", cert.CommonName, "id", cert.Id, "expires_at", expireTime.Format(time.RFC3339), "days_left", daysLeft)
-
-		// Обновляем days_left в любом случае
 		_, err = db.Exec("UPDATE user_certs SET days_left = ? WHERE id = ?", daysLeft, cert.Id)
 		if err != nil {
 			slog.Error("CheckValidCerts: Error updating days_left for certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 		}
 
-		// Если сертификат истек
-		if currentTime.After(expireTime) {
-			slog.Info("CheckValidCerts: Certificate expired", "current_time", currentTime.Format(time.RFC3339), "expire_time", expireTime.Format(time.RFC3339))
-			// Обновляем статус на истекший (1)
+		if currentTime.After(expireTime) && cert.CertStatus == 0 {
 			_, err := db.Exec("UPDATE user_certs SET cert_status = 1 WHERE id = ?", cert.Id)
 			if err != nil {
 				slog.Error("CheckValidCerts: Error updating certificate status", "common_name", cert.CommonName, "id", cert.Id, "error", err)

@@ -85,18 +85,7 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 
 	extraNames := []pkix.AttributeTypeAndValue{}
 
-	// Добавляем SAN
-	dnsNames := []string{data.CommonName}
-	// Добавляем альтернативные имена из поля SAN, если они есть
-	if data.SAN != "" {
-		sanValues := strings.Split(data.SAN, ",")
-		for _, san := range sanValues {
-			san = strings.TrimSpace(san)
-			if san != "" && san != data.CommonName {
-				dnsNames = append(dnsNames, san)
-			}
-		}
-	}
+	san := ParseSAN(data.CommonName, data.SAN, data.Email, false)
 
 	// Добавляем custom OID
 	customOID := []int{}
@@ -158,7 +147,9 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
-		DNSNames:              dnsNames,
+		DNSNames:              san.DNSNames,
+		IPAddresses:           san.IPAddresses,
+		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("SubCAcrl.crlURL"),
 		},
@@ -312,18 +303,7 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 	data.SerialNumber = UserStandardizeSerialNumberED25519(serialNumber)
 	slog.Info("Generated serial number for ED25519 certificate", slog.String("common_name", data.CommonName), slog.String("serial_number", data.SerialNumber))
 
-	dnsNames := []string{data.CommonName}
-
-	// Добавляем альтернативные имена из поля SAN, если они есть
-	if data.SAN != "" {
-		sanValues := strings.Split(data.SAN, ",")
-		for _, san := range sanValues {
-			san = strings.TrimSpace(san)
-			if san != "" && san != data.CommonName {
-				dnsNames = append(dnsNames, san)
-			}
-		}
-	}
+	san := ParseSAN(data.CommonName, data.SAN, data.Email, false)
 
 	// Подготавливаем шаблон сертификата
 	extraNames := []pkix.AttributeTypeAndValue{}
@@ -387,7 +367,9 @@ func RecreateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) err
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,
-		DNSNames:              dnsNames,
+		DNSNames:              san.DNSNames,
+		IPAddresses:           san.IPAddresses,
+		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("SubCAcrl.crlURL"),
 		},

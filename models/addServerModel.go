@@ -7,6 +7,7 @@ type Server struct {
 	Username       string `db:"username"`
 	CertConfigPath string `db:"cert_config_path"`
 	ServerStatus   string `db:"server_status"`
+	SSHKey         string `db:"ssh_key"`
 	Description    string `db:"description"`
 }
 
@@ -30,5 +31,6 @@ CREATE TABLE IF NOT EXISTS server (
 	username TEXT,
 	cert_config_path TEXT,
 	server_status TEXT DEFAULT 'offline',
+	ssh_key TEXT,
 	description TEXT
 );`

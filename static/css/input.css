@@ -618,6 +618,10 @@ select:focus {
     color: #718096;
 }
 
+.ssh-drop-zone {
+    padding: 20px 40px;
+}
+
 .info-container {
     padding: 20px;
     padding-bottom: 10px;

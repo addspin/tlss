@@ -73,19 +73,13 @@ func GenerateED25519SSHKeyPair() (ed25519.PublicKey, ed25519.PrivateKey, error) 
 	return publicKey, privateKey, nil
 }
 
-// Кодирует приватный ключ ED25519 в PEM формат для SSH
+// Кодирует приватный ключ ED25519 в OpenSSH формат
 func EncodeED25519PrivateKeyToPEMForSSH(privateKey ed25519.PrivateKey) ([]byte, error) {
-	privateKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	pemBlock, err := ssh.MarshalPrivateKey(privateKey, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode ED25519 private key: %w", err)
 	}
-	privateKeyPEM := pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "PRIVATE KEY",
-			Bytes: privateKeyBytes,
-		},
-	)
-	return privateKeyPEM, nil
+	return pem.EncodeToMemory(pemBlock), nil
 }
 
 // Генерирует публичный ключ ED25519 в SSH формате

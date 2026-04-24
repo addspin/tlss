@@ -387,8 +387,11 @@ select:focus {
 .indent-5 {
     margin-top: 5%;
 }
+.indent-2 {
+    margin-top: 2%;
+}
 .switch_label {
-    margin-top: 5%;
+    margin-bottom: 10%;
 }
 .btn-container {
     display: flex;

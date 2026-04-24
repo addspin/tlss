@@ -58,6 +58,7 @@ type UserCertsData struct {
 	DataRevoke     string `json:"data_revoke" db:"data_revoke"`
 	ReasonRevoke   string `json:"ReasonRevoke" db:"reason_revoke"`
 	CertStatus     int    `json:"CertStatus" db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
+	SigningCAId    int    `json:"SigningCAId" db:"signing_ca_id"`
 }
 
 var SchemaUserCerts = `

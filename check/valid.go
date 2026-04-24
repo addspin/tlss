@@ -71,7 +71,13 @@ func checkCerts() {
 		return
 	}
 
-	slog.Info("CheckValidCerts: Found active certificates to check", "server_certs", len(certificates), "user_certs", len(userCertificates), "ca_certs", len(caCertificates), "total", len(certificates)+len(userCertificates)+len(caCertificates))
+	extCACertificates := []models.CAExtData{}
+	err = db.Select(&extCACertificates, "SELECT id, common_name, cert_create_time, cert_expire_time, cert_status FROM ca_certs_ext WHERE cert_status IN (0, 1)")
+	if err != nil {
+		slog.Error("CheckValidCerts: External CA certificate query error", "error", err)
+	}
+
+	slog.Info("CheckValidCerts: Found active certificates to check", "server_certs", len(certificates), "user_certs", len(userCertificates), "ca_certs", len(caCertificates), "ext_ca_certs", len(extCACertificates), "total", len(certificates)+len(userCertificates)+len(caCertificates)+len(extCACertificates))
 
 	// Текущее время для сравнения
 	currentTime := time.Now()
@@ -152,6 +158,32 @@ func checkCerts() {
 				slog.Error("CheckValidCerts: Error updating certificate status", "common_name", cert.CommonName, "id", cert.Id, "error", err)
 			} else {
 				slog.Warn("CheckValidCerts: Certificate expired and marked as invalid", "common_name", cert.CommonName, "id", cert.Id)
+				expiredCount++
+			}
+		}
+	}
+
+	// Обновляем days_left у внешних CA сертификатов; cert_status меняем только с 0 → 1
+	for _, cert := range extCACertificates {
+		expireTime, err := time.Parse(time.RFC3339, cert.CertExpireTime)
+		if err != nil {
+			slog.Error("CheckValidCerts: Expiration time parsing error for ext CA certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
+			continue
+		}
+
+		daysLeft := calculateDaysLeft(expireTime)
+
+		_, err = db.Exec("UPDATE ca_certs_ext SET days_left = ? WHERE id = ?", daysLeft, cert.Id)
+		if err != nil {
+			slog.Error("CheckValidCerts: Error updating days_left for ext CA certificate", "common_name", cert.CommonName, "id", cert.Id, "error", err)
+		}
+
+		if currentTime.After(expireTime) && cert.CertStatus == 0 {
+			_, err := db.Exec("UPDATE ca_certs_ext SET cert_status = 1 WHERE id = ?", cert.Id)
+			if err != nil {
+				slog.Error("CheckValidCerts: Error updating ext CA certificate status", "common_name", cert.CommonName, "id", cert.Id, "error", err)
+			} else {
+				slog.Warn("CheckValidCerts: Ext CA certificate expired and marked as invalid", "common_name", cert.CommonName, "id", cert.Id)
 				expiredCount++
 			}
 		}

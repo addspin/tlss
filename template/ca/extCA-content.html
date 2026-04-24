@@ -1,0 +1,73 @@
+{{define "extCA-content"}}
+<div class="row">
+  <div class="col-2"></div>
+  <div class="col-7">
+    <div><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" hx-get="/overview"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Overview</a></li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/add_entity_ca"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Add CA entities</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Add External CA</li>
+    </ol></div>
+
+    <div class="core-servers">
+      <form class="" id="ext-ca-form">
+        <label class="form_lable">Upload external CA certificates</label>
+        <div class="input_border color-form-servers">
+          <div class="row g-3 form_center" style="align-items: stretch;">
+            <div class="col-md-4" style="display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <label class="select_title">Entity CA</label>
+                <select id="ext-ca-entity" name="entity_ca_id" class="select" required>
+                  <option value="" disabled selected hidden>Select Entity CA</option>
+                  {{ range .entityCAList }}
+                  <option value="{{ .Id }}">{{ .EntityCAName }}</option>
+                  {{ end }}
+                </select>
+              </div>
+              <button type="submit" class="btn-custom btn-custom-servers mt-2" id="ext-ca-submit-btn" disabled>
+                <span class="btn-text">Upload</span>
+                <img src="/static/svg/time.svg" class="time-svg htmx-indicator">
+              </button>
+            </div>
+            <div class="col-md-8">
+              <label class="select_title">Drop CA files</label>
+              <div id="ext-ca-drop-zone" class="info-drop-zone ssh-drop-zone">
+                <div id="ext-ca-drop-zone-default">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="info-drop-zone-icon" style="margin:0 auto 8px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <p class="info-drop-zone-text" style="margin:0; font-size:0.85rem;">Drop files here or click to select</p>
+                  <p class="info-drop-zone-subtext" style="margin:0; font-size:0.75rem;">Certificates + private keys</p>
+                </div>
+                <div id="ext-ca-drop-zone-files" style="display:none;">
+                  <div id="ext-ca-file-list"></div>
+                  <button type="button" id="ext-ca-clear-btn" class="btn btn-sm btn-outline-danger mt-1" style="font-size:0.75rem;">&#10005; Clear</button>
+                </div>
+                <input type="file" id="ext-ca-file-input" multiple style="display: none;">
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-2">
+  <div class="col-12">
+    <div id="search-servers" class="search-input-container">
+      <input type="text" class="search-input" name="search-servers" placeholder="Search external CA certificates">
+    </div>
+    <div id="response" class="servers_table">
+      {{template "extCAList-tpl" .}}
+    </div>
+  </div>
+</div>
+{{end}}

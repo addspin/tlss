@@ -45,5 +45,6 @@ ca_tlss/*
 !/logs/.gitkeep
 Dockerfile
 remove_defaults.sh
+test_ca_gen.sh
 tlss
 /static/js/sort.md

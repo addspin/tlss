@@ -116,16 +116,24 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		},
 	}
 
-	// Проверяем промежуточный CA сертификат и ключ
-	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
-		err = ExtractCA.ExtractSubCA(db)
+	// Получаем подписывающий CA сертификат и ключ
+	var subCACert *x509.Certificate
+	var subCAKey interface{}
+	if data.SigningCAId > 0 {
+		subCACert, subCAKey, err = ExtractExtCA(db, data.SigningCAId)
 		if err != nil {
-			return nil, nil, fmt.Errorf("GenerateRSACertificate: failed to extract intermediate CA certificate and key: %w", err)
+			return nil, nil, fmt.Errorf("GenerateRSACertificate: failed to extract external CA: %w", err)
 		}
+	} else {
+		if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
+			err = ExtractCA.ExtractSubCA(db)
+			if err != nil {
+				return nil, nil, fmt.Errorf("GenerateRSACertificate: failed to extract intermediate CA certificate and key: %w", err)
+			}
+		}
+		subCACert = ExtractCA.SubCAcert
+		subCAKey = ExtractCA.SubCAKey
 	}
-	// Получаем промежуточный CA сертификат и ключ
-	subCACert := ExtractCA.SubCAcert
-	subCAKey := ExtractCA.SubCAKey
 
 	// Создаем сертификат
 	certDER, err := x509.CreateCertificate(rand.Reader, template, subCACert, &privateKey.PublicKey, subCAKey)
@@ -260,16 +268,24 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 			viper.GetString("SubCAcrl.crlURL"),
 		},
 	}
-	// Проверяем промежуточный CA сертификат и ключ
-	if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
-		err = ExtractCA.ExtractSubCA(db)
+	// Получаем подписывающий CA сертификат и ключ
+	var subCACert *x509.Certificate
+	var subCAKey interface{}
+	if data.SigningCAId > 0 {
+		subCACert, subCAKey, err = ExtractExtCA(db, data.SigningCAId)
 		if err != nil {
-			return nil, nil, fmt.Errorf("RecreateRSACertificate: failed to extract intermediate CA certificate and key: %w", err)
+			return nil, nil, fmt.Errorf("RecreateRSACertificate: failed to extract external CA: %w", err)
 		}
+	} else {
+		if ExtractCA.SubCAcert == nil || ExtractCA.SubCAKey == nil {
+			err = ExtractCA.ExtractSubCA(db)
+			if err != nil {
+				return nil, nil, fmt.Errorf("RecreateRSACertificate: failed to extract intermediate CA certificate and key: %w", err)
+			}
+		}
+		subCACert = ExtractCA.SubCAcert
+		subCAKey = ExtractCA.SubCAKey
 	}
-	// Получаем промежуточный CA сертификат и ключ
-	subCACert := ExtractCA.SubCAcert
-	subCAKey := ExtractCA.SubCAKey
 	aes := Aes{}
 
 	// Создаем сертификат

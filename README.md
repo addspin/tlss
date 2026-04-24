@@ -11,7 +11,9 @@ Hello, TLSS is a small project aimed at the simplest possible work with certific
 1) Everything is stored in small and fast SQLite 💾
 2) All keys in the database are encrypted 🔑
 3) Your certificates are always at hand, wherever you are, just take the database file with you and you're good to go 🚀
-4) Controlled via WEB UI
+4) Create or add your ssh keys for connecting to servers
+5) Add your external CA certificates for signing server certificates and client certificates ****
+6) Controlled via WEB UI
 
 ## Supported
 
@@ -22,49 +24,44 @@ Hello, TLSS is a small project aimed at the simplest possible work with certific
 5) Creation of objects not linked to servers
 6) Control of recreation, validity
 7) CRL generation
-8) Reissuance of CA with recreation of all dependent objects
+8) Reissuance of CA with recreation of all dependent objects (for core CA only)
 
 ## How it works
 
 ### Application Launch
 
-On the first application start, the console will ask 3 questions:
+1) On the first application start, the console will ask 3 questions:
 - login;
 - password;
 - salt.
 
-After that, he first launch will create all necessary directories, generate a configuration file `config.yaml` and an SSH key will be generated for connecting to servers. 
+2) After that, he first launch will create all necessary directories, generate a configuration file `config.yaml` and an SSH key will be generated for connecting to servers. 
 
-The initial launch uses the default configuration and starts on an unsecured port, you need to make appropriate adjustments to your taste.
+3) The initial launch uses the default configuration and starts on an unsecured port, you need to make appropriate adjustments to your taste.
 
-On the first login, you will land on the root/intermediate certificate generation page, without this step certificate creation will be impossible.
+4) On the first login, you will land on the root/intermediate certificate generation page, without this step certificate creation will be impossible.
 
-### Features
+## Features
 
 The login window greets you with two options, Login or Overview.
 
-<div align="center">
-  <img width="25%" alt="Pasted image 20251209162049" src="https://github.com/user-attachments/assets/e0f8a570-8ad5-4d6e-9550-b7cf956cdfc4" />
-</div>
 
 
 Without authorization, capabilities are limited to two sections:
-- Home with Overview subsection - serves as statistics and general information
+1) Home with Overview subsection - serves as statistics and general information
 <div align="center">
 <img width="85%" alt="Pasted image 20251209172533" src="https://github.com/user-attachments/assets/855d799b-4b11-47d9-b33b-d1de100652ec" />
 </div>
 
-- Tools with Certificate Info subsection - allowing you to view certificate information, supporting selection through explorer or drop down.
+  2) Tools with Certificate Info subsection - allowing you to view certificate information, supporting selection through explorer or drop down.
 <div align="center">
 <img width="85%" alt="Pasted image 20251209163440" src="https://github.com/user-attachments/assets/f8143cc4-f34e-4aa1-bb86-236bd77a94be" />
 </div>
 Certificate generation is divided into two sections performing the same-name tasks:
 
-- Servers certs
-- Clients certs
-<div align="center">
-<img width="20%" alt="Pasted image 20251209165549" src="https://github.com/user-attachments/assets/c3d13780-cfdc-46ff-8a9a-d6393dc895e3" />
-</div>
+1) Servers certs
+2) Clients certs
+
 The main differences between sections lie in additional capabilities and some certificate settings:
 
 Servers certs section:
@@ -86,7 +83,7 @@ In both cases, setting the switch to "Recreate" will automatically recreate the 
 
 ### CA Revocation
 
-Revoking a root or intermediate certificate triggers a chain reaction that leads to revocation of all certificates signed by this CA, and certificates that were already revoked will be deleted.
+Revoking a root or intermediate certificate triggers a chain reaction that leads to revocation of all certificates signed by this CA, and certificates that were already revoked will be deleted. Certificate save on server will be recreated.
 
 ### Creation/Revocation of Server or Client Certificates
 

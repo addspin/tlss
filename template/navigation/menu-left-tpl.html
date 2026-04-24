@@ -137,11 +137,20 @@
         </li>
         <div class="collapse" id="caCollapse">
             <ul class="list-unstyled">
-                <li><a class="link-menu-left {{if eq .Title "Add CA"}}active{{else}}{{end}}" 
+                <li><a class="link-menu-left {{if eq .Title "Core CA"}}active{{else}}{{end}}" 
                     hx-get="/add_ca" 
                     hx-target="#main-content" 
                     hx-swap="innerHTML" 
-                    hx-push-url="true">CA configuration</a></li>
+                    hx-push-url="true">Core CA</a></li>
+            </ul>
+        </div>
+        <div class="collapse" id="caCollapse">
+            <ul class="list-unstyled">
+                <li><a class="link-menu-left {{if eq .Title "External CA"}}active{{else}}{{end}}" 
+                    hx-get="/add_entity_ca" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">External CA</a></li>
             </ul>
         </div>
         <hr>

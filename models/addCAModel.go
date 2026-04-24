@@ -26,6 +26,23 @@ type CAData struct {
 	CertStatus       int    `json:"cert_status" db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
 }
 
+// структура для внешних CA сертификатов
+type CAExtData struct {
+	Id             int    `json:"id" db:"id"`
+	EntityCAId     int    `json:"EntityCAId" db:"entity_ca_id"`
+	TypeCA         string `json:"TypeCA" db:"type_ca"`
+	CommonName     string `json:"CommonName" db:"common_name"`
+	PublicKey      string `json:"public_key" db:"public_key"`
+	PrivateKey     string `json:"private_key" db:"private_key"`
+	CertCreateTime string `json:"cert_create_time" db:"cert_create_time"`
+	CertExpireTime string `json:"cert_expire_time" db:"cert_expire_time"`
+	DaysLeft       int    `json:"days_left" db:"days_left"`
+	SerialNumber   string `json:"serial_number" db:"serial_number"`
+	CertStatus     int    `json:"cert_status" db:"cert_status"`
+	Algorithm      string `json:"Algorithm" db:"algorithm"`
+	KeyLength      int    `json:"KeyLength" db:"key_length"`
+}
+
 var SchemaCA = `
 CREATE TABLE IF NOT EXISTS ca_certs (
     id INTEGER PRIMARY KEY,
@@ -50,4 +67,22 @@ CREATE TABLE IF NOT EXISTS ca_certs (
 	data_revoke TEXT,
 	reason_revoke TEXT,
 	cert_status INTEGER
+);`
+
+var SchemaCAExt = `
+CREATE TABLE IF NOT EXISTS ca_certs_ext (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_ca_id INTEGER,
+    type_ca TEXT,
+    common_name TEXT,
+    public_key TEXT,
+    private_key TEXT,
+    cert_create_time TEXT,
+    cert_expire_time TEXT,
+    days_left INTEGER,
+    serial_number TEXT,
+    cert_status INTEGER,
+    algorithm TEXT,
+    key_length INTEGER,
+    FOREIGN KEY (entity_ca_id) REFERENCES entity_ca(id)
 );`

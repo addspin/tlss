@@ -115,7 +115,21 @@
               </div>
             </div>
           </div>
-          <div class="indent-5"></div>
+          <div class="indent-2"></div>
+           <div class="row g-3 form_center">
+            <div class="col-md-3">
+              <label class="select_title">Signing CA</label>
+                <select name="SigningCAId" class="select" type="number">
+                  <option value="0" selected>Internal CA</option>
+                  {{ range .entityCAList }}
+                  <option value="{{ .Id }}">{{ .EntityCAName }}</option>
+                  {{ end }}
+                </select>
+            </div>
+           </div>
+
+          <div class="indent-2"></div>
+
           <div class="row g-3 form_center">
             <div class="col-md-3">
               <label class="select_title" title="Обязательное поле">Common Name</label>
@@ -136,7 +150,8 @@
                 <input type="hidden" name="SAN" id="san-values" value="" data-string="true">
               </div>
             </div>
-
+          </div>
+          <div class="row g-3 form_center">
             <div class="col-md-3">
               <label class="select_title">OID Custom</label>
                 <select data-placeholder="true" id="select-oid-custom-subject" name="OID" class="select">  
@@ -161,8 +176,11 @@
                 <input type="hidden" name="OIDValues" id="oid-values" value="" data-string="true">
               </div>
             </div>
-
           </div>
+
+          <!-- <div class="indent-2"></div> -->
+
+
           <div class="row g-3 form_center">
             <div class="col-md-3">
               <label class="select_title">Country Name</label>
@@ -177,7 +195,9 @@
               <input type="text" class="c_input" id="Locality" name="LocalityName" placeholder="Izhevsk" required>
             </div>
           </div>
-          <div class="indent-5"></div> 
+
+          <div class="indent-2"></div> 
+
           <div class="row g-3 form_center">
             <div class="col-md-3">
               <label class="select_title">Organization Name</label>

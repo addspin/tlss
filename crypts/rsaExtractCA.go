@@ -1,7 +1,7 @@
 package crypts
 
 import (
-	"crypto/rsa"
+	"crypto"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -12,7 +12,7 @@ import (
 
 type ca struct {
 	SubCAcert *x509.Certificate
-	SubCAKey  *rsa.PrivateKey
+	SubCAKey  crypto.PrivateKey
 	// rootCAcert *x509.Certificate
 	// rootCAKey  *rsa.PrivateKey
 }

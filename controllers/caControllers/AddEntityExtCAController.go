@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func AddEntityCAController(c fiber.Ctx) error {
+func AddEntityExtCAController(c fiber.Ctx) error {
 
 	//---------------------------------------Database inicialization for add server
 	database := viper.GetString("database.path")
@@ -116,7 +116,6 @@ func AddEntityCAController(c fiber.Ctx) error {
 	})
 }
 
-// EntityListController обрабатывает запросы на получение списка сущностей
 func EntityCAListController(c fiber.Ctx) error {
 	// ---------------------------------------Database inicialization
 	database := viper.GetString("database.path")

@@ -163,6 +163,12 @@ func main() {
 		slog.Error("Error creating entity CA table", "error", err)
 	}
 
+	// create SchemaCAExt tables in db (хранит данные внешних CA сертификатов)
+	_, err = db.Exec(models.SchemaCAExt)
+	if err != nil {
+		slog.Error("Error creating CA ext table", "error", err)
+	}
+
 	// create SchemaOID tables in db (хранит данные OID)
 	_, err = db.Exec(models.SchemaOID)
 	if err != nil {
@@ -174,6 +180,10 @@ func main() {
 	if err != nil {
 		slog.Error("Error creating user certs table", "error", err)
 	}
+	// Миграция: добавляем колонку signing_ca_id в certs и user_certs
+	db.Exec("ALTER TABLE certs ADD COLUMN signing_ca_id INTEGER DEFAULT 0")
+	db.Exec("ALTER TABLE user_certs ADD COLUMN signing_ca_id INTEGER DEFAULT 0")
+
 	var password, salt []byte
 	var login string
 

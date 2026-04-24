@@ -168,9 +168,16 @@ func AddCertsControll(c fiber.Ctx) error {
 			slog.Error("Fatal error", "error", err)
 		}
 
+		entityCAList := []models.EntityCAData{}
+		err = db.Select(&entityCAList, "SELECT id, entity_ca_name, entity_ca_description FROM entity_ca")
+		if err != nil {
+			slog.Error("AddCertsControll: Error fetching entity CA list", "error", err)
+		}
+
 		data := fiber.Map{
-			"Title":      "Add certs",
-			"serverList": serverList,
+			"Title":        "Add certs",
+			"serverList":   serverList,
+			"entityCAList": entityCAList,
 		}
 
 		// Проверяем, является ли запрос HTMX запросом

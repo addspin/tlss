@@ -44,20 +44,23 @@ jobs:
   build-linux-arm64:
     name: Build Linux arm64 (CGO static musl)
     runs-on: ubuntu-24.04-arm
-    container:
-      image: golang:1.25-alpine
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install build tools
-        run: apk add --no-cache gcc musl-dev
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.3'
+
+      - name: Install musl toolchain
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Build linux/arm64 static
         run: |
           set -euxo pipefail
           mkdir -p dist
           BIN="tlss-linux-arm64"
-          CGO_ENABLED=1 go build -trimpath \
+          CC=musl-gcc CGO_ENABLED=1 go build -trimpath \
             -ldflags='-linkmode external -extldflags "-static" -s -w' \
             -o "dist/${BIN}" .
           ls -l "dist/${BIN}"

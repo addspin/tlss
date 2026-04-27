@@ -189,6 +189,30 @@ func checkCerts() {
 		}
 	}
 
+	// Обновляем key_status у API ключей; меняем только с 0 → 1 при истечении срока
+	apiKeys := []models.APIKey{}
+	err = db.Select(&apiKeys, `SELECT id, name, expires_at, key_status FROM api_keys WHERE key_status = 0 AND expires_at != ''`)
+	if err != nil {
+		slog.Error("CheckValidCerts: API key query error", "error", err)
+	} else {
+		for _, key := range apiKeys {
+			expireTime, err := time.Parse(time.RFC3339, key.ExpiresAt)
+			if err != nil {
+				slog.Error("CheckValidCerts: Expiration time parsing error for API key", "name", key.Name, "id", key.Id, "error", err)
+				continue
+			}
+			if currentTime.After(expireTime) {
+				_, err := db.Exec("UPDATE api_keys SET key_status = 1 WHERE id = ?", key.Id)
+				if err != nil {
+					slog.Error("CheckValidCerts: Error updating API key status", "name", key.Name, "id", key.Id, "error", err)
+				} else {
+					slog.Warn("CheckValidCerts: API key expired and marked as invalid", "name", key.Name, "id", key.Id)
+					expiredCount++
+				}
+			}
+		}
+	}
+
 	slog.Info("CheckValidCerts: Certificate validation check completed. Updated days_left for all certificates", "expired_count", expiredCount)
 	Monitors.CheckValidCerts = time.Now()
 }

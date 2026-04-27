@@ -1,0 +1,81 @@
+{{define "apiKeys-content"}}
+<div class="row">
+  <div class="col-2"></div>
+  <div class="col-7">
+    <div><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" hx-get="/overview"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Overview</a></li>
+      <li class="breadcrumb-item active" aria-current="page">API keys</li>
+    </ol></div>
+
+    <div class="core-servers">
+      <form class="" id="create-api-key-form"
+        hx-post="/api_keys"
+        hx-swap="none"
+        hx-ext="json-enc-custom"
+        parse-types="true"
+        hx-on::after-request="
+          if (event.detail.xhr.responseText) {
+            try {
+              const response = JSON.parse(event.detail.xhr.responseText);
+              if (response.status === 'error') {
+                Swal.fire({
+                  customClass: 'custom-alert',
+                  icon: 'error',
+                  title: 'Error',
+                  text: response.message,
+                  confirmButtonColor: '#3085d6'
+                });
+              } else if (response.status === 'success') {
+                showAPIKeyOnce(response.key, response.name);
+                document.getElementById('create-api-key-form').reset();
+                htmx.ajax('GET', '/api_keys_list', { target: '#response', swap: 'innerHTML' });
+              }
+            } catch (e) {}
+          }
+        ">
+        <label class="form_lable">Create API key</label>
+        <div class="input_border color-form-servers">
+          <div class="row g-3 form_center">
+            <div class="col-md-3">
+              <label class="select_title">Name</label>
+              <input type="text" name="Name" class="c_input" placeholder="ci-cd" data-string="true" required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Expires days</label>
+              <input type="number" name="ExpiresDays" class="c_input" min="0" value="90" required>
+            </div>
+            <div class="col-md">
+              <label class="select_title">Scopes</label>
+              <select name="Scopes" class="select" required>
+                <option value="" disabled selected hidden>Select scope</option>
+                <option value="crl:write">crl:write — generate bundled CRL</option>
+                <option value="admin">admin — full access</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn-custom btn-custom-servers mt-2">
+                <span class="btn-text">Create API Key</span>
+                <img src="/static/svg/time.svg" class="time-svg htmx-indicator">
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-2">
+  <div class="col-12">
+    <div id="search-servers" class="search-input-container">
+      <input type="text" class="search-input" name="search-servers" placeholder="Search API keys">
+    </div>
+    <div id="response" class="servers_table">
+      {{template "apiKeyList-tpl" .}}
+    </div>
+  </div>
+</div>
+{{end}}

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/addspin/tlss/crypts"
@@ -13,7 +14,7 @@ import (
 // Session store
 var Store *session.Store
 
-// InitSessionStore инициализирует хранилище сессий с настройками на основе протокола из конфига
+// инициализирует хранилище сессий с настройками на основе протокола из конфига
 func InitSessionStore() {
 	// Автоматически определяем CookieSecure на основе протокола
 	isSecure := viper.GetString("app.protocol") == "https"
@@ -26,7 +27,6 @@ func InitSessionStore() {
 		CookiePath:        "/",              // Доступность куки на всех путях
 		CookieDomain:      "",               // Пустой домен для локальной разработки
 		CookieSessionOnly: false,            // Если true, куки будет удалена при закрытии браузера
-		// KeyLookup удален в Fiber v3 RC.3, по умолчанию используется cookie:session_id
 	})
 }
 
@@ -53,13 +53,18 @@ var staticExtensions = []string{
 func AuthMiddleware() fiber.Handler {
 	return func(c fiber.Ctx) error {
 
-		// Проверка API ключа
+		path := c.Path()
+
+		// /api/v1/* защищены через APIKeyAuth middleware на уровне роутов — пропускаем session-проверку
+		if strings.HasPrefix(path, "/api/v1/") {
+			return c.Next()
+		}
+
+		// Внутренний API ключ (используется фоновыми задачами приложения)
 		apiKey := c.Get("X-API-Key")
 		if apiKey == crypts.GetInternalAPIKey() && apiKey != "" {
-			return c.Next() // Разрешаем доступ, если ключ верный
+			return c.Next()
 		}
-		// Skip middleware for public routes
-		path := c.Path()
 		// логирование запроса
 		// userAgent := c.Get("User-Agent")
 		// log.Printf("Запрос: %s, путь: %s, User-Agent: %s", c.Method(), path, userAgent)
@@ -97,7 +102,7 @@ func AuthMiddleware() fiber.Handler {
 	}
 }
 
-// IsAuthenticated проверяет, авторизован ли пользователь
+// проверяет, авторизован ли пользователь
 func IsAuthenticated(c fiber.Ctx) bool {
 	sess, err := Store.Get(c)
 	if err != nil {

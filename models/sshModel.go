@@ -6,6 +6,7 @@ type SSHKey struct {
 	PublicKey  string `json:"public_key" db:"public_key"`
 	PrivateKey string `json:"private_key" db:"private_key"`
 	KeyLength  int    `json:"keyLength" db:"key_length"`
+	Passphrase string `json:"passphrase" db:"passphrase"`
 	Algorithm  string `json:"algorithm" db:"algorithm"`
 }
 
@@ -16,5 +17,6 @@ CREATE TABLE IF NOT EXISTS ssh_key (
 	public_key TEXT,
 	private_key TEXT,
 	key_length INTEGER,
+	passphrase TEXT NOT NULL DEFAULT '',
 	algorithm TEXT
 );`

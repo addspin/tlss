@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 
+	apiKeyControllers "github.com/addspin/tlss/controllers/apiKeyControllers"
 	caControllers "github.com/addspin/tlss/controllers/caControllers"
 	certInfoController "github.com/addspin/tlss/controllers/certInfoController"
 	loginControllers "github.com/addspin/tlss/controllers/loginControllers"
@@ -39,17 +40,16 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Get("/", loginControllers.LoginControll)
 	app.Post("/", loginControllers.LoginControll)
 
-	// API routes (no auth required)
-	app.Get("/api/v1/crl/subca/der", serverCertControllers.GetSubCACRL)       // Получение Sub CA CRL в DER формате
-	app.Get("/api/v1/crl/rootca/der", serverCertControllers.GetRootCACRL)     // Получение Root CA CRL в DER формате
-	app.Get("/api/v1/crl/bundleca/der", serverCertControllers.GetBundleCACRL) // Получение бандла Root CA и Sub CA CRL в DER формате
+	// CRL read endpoints — публичные, без авторизации
+	app.Get("/api/v1/crl/subca/der", serverCertControllers.GetSubCACRL)
+	app.Get("/api/v1/crl/rootca/der", serverCertControllers.GetRootCACRL)
+	app.Get("/api/v1/crl/bundleca/der", serverCertControllers.GetBundleCACRL)
+	app.Get("/api/v1/crl/subca/pem", serverCertControllers.GetSubCAPemCRL)
+	app.Get("/api/v1/crl/rootca/pem", serverCertControllers.GetRootCAPemCRL)
+	app.Get("/api/v1/crl/bundleca/pem", serverCertControllers.GetBundleCAPemCRL)
 
-	app.Get("/api/v1/crl/subca/pem", serverCertControllers.GetSubCAPemCRL)       // Получение Sub CA CRL в PEM формате
-	app.Get("/api/v1/crl/rootca/pem", serverCertControllers.GetRootCAPemCRL)     // Получение Root CA CRL в PEM формате
-	app.Get("/api/v1/crl/bundleca/pem", serverCertControllers.GetBundleCAPemCRL) // Получение бандла Root CA и Sub CA CRL в PEM 	формате
-
-	// Admin API routes (auth required)
-	app.Post("/api/v1/crl/bundleca/generate", serverCertControllers.GenerateCombinedCACRL) // Генерация бандла Root CA и Sub CA через API
+	// Admin API endpoints — защищены API ключами с проверкой scope
+	app.Post("/api/v1/crl/bundleca/generate", middleware.APIKeyAuth("crl:write"), serverCertControllers.GenerateCombinedCACRL)
 
 	// Protected routes (auth required)
 	app.Get("/add_server", serverCertControllers.AddServerControll)                  // Получение списка серверов
@@ -111,6 +111,12 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 
 	app.Get("/cert_info", certInfoController.CertInfoController)  // Получение информации о сертификате
 	app.Post("/cert_info", certInfoController.CertInfoController) // Загрузка сертификата для анализа
+
+	// API keys management (UI, защищён session)
+	app.Get("/api_keys", apiKeyControllers.APIKeyController)
+	app.Post("/api_keys", apiKeyControllers.APIKeyController)
+	app.Get("/api_keys_list", apiKeyControllers.APIKeyListController)
+	app.Post("/remove_api_key", apiKeyControllers.RemoveAPIKey)
 
 	app.Get("/logout", loginControllers.LogoutController)
 }

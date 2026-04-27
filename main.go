@@ -180,9 +180,28 @@ func main() {
 	if err != nil {
 		slog.Error("Error creating user certs table", "error", err)
 	}
+
+	// create SchemaAPIKey tables in db (хранит API ключи внешних сервисов)
+	_, err = db.Exec(models.SchemaAPIKey)
+	if err != nil {
+		slog.Error("Error creating API keys table", "error", err)
+	}
+
+	// Миграция: добавляем колонку key_status в api_keys
+	db.Exec("ALTER TABLE api_keys ADD COLUMN key_status INTEGER DEFAULT 0")
+
 	// Миграция: добавляем колонку signing_ca_id в certs и user_certs
 	db.Exec("ALTER TABLE certs ADD COLUMN signing_ca_id INTEGER DEFAULT 0")
 	db.Exec("ALTER TABLE user_certs ADD COLUMN signing_ca_id INTEGER DEFAULT 0")
+
+	// Миграция: добавляем колонку passphrase в ssh_key
+	db.Exec("ALTER TABLE ssh_key ADD COLUMN passphrase TEXT NOT NULL DEFAULT ''")
+	// db.Exec("UPDATE ssh_key SET passphrase = '' WHERE passphrase IS NULL")
+
+	// Загружаем актуальные API ключи в in-memory store для проверки в APIKeyAuth
+	if err := middleware.APIKeyStore.Load(db); err != nil {
+		slog.Error("Error loading API keys into store", "error", err)
+	}
 
 	var password, salt []byte
 	var login string
@@ -402,7 +421,6 @@ func main() {
 			Type:  "RSA PRIVATE KEY",
 			Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 		})
-		// privateKeyBytes := crypts.EncodePrivateKeyToPEM(privateKey)
 
 		publicKeyBytes, err := crypts.GeneratePublicKeyForSSH(&privateKey.PublicKey)
 		if err != nil {
@@ -410,7 +428,6 @@ func main() {
 			os.Exit(1)
 		}
 
-		// privateKeyBytes := crypts.EncodePrivateKeyToPEM(privateKey)
 		encryptedKey, err := aes.Encrypt(keyPEM, crypts.AesSecretKey.Key)
 		if err != nil {
 			slog.Error("Fatal error", "error", err)

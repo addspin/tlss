@@ -115,11 +115,11 @@
         </li>
         <div class="collapse" id="apiCollapse">
             <ul class="list-unstyled">
-                <!-- <li><a class="link-menu-left disabled" aria-disabled="true"
-                    hx-get="" 
-                    hx-target="#main-content" 
-                    hx-swap="innerHTML" 
-                    hx-push-url="true">API lists</a></li> -->
+                <li><a class="link-menu-left {{if eq .Title "API keys"}}active{{else}}{{end}}"
+                    hx-get="/api_keys"
+                    hx-target="#main-content"
+                    hx-swap="innerHTML"
+                    hx-push-url="true">API keys</a></li>
             </ul>
         </div>
         <hr>

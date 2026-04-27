@@ -28,15 +28,10 @@ type saveOnServer struct{}
 // Общий ssh клиент для подключения к серверу, расшифровывает приватный ключ и подключается к серверу
 func sshClient(key models.SSHKey, port int, username, serverName string) (*ssh.Client, error) {
 
-	aes := Aes{}
-	decryptPrivKey, err := aes.Decrypt(([]byte(key.PrivateKey)), AesSecretKey.Key)
+	signer, err := LoadSSHSigner(key)
 	if err != nil {
-		slog.Error("rsaSSH: ошибка расшифровки приватного ключа", slog.Any("error", err))
-	}
-
-	signer, err := ssh.ParsePrivateKey(decryptPrivKey)
-	if err != nil {
-		slog.Error("rsaSSH: ошибка, невозможно получить приватный ключ", slog.Any("error", err))
+		slog.Error("sshClient: failed to load SSH signer", slog.Any("error", err))
+		return nil, fmt.Errorf("failed to load SSH signer: %w", err)
 	}
 
 	keyConfig := &ssh.ClientConfig{
@@ -55,7 +50,6 @@ func sshClient(key models.SSHKey, port int, username, serverName string) (*ssh.C
 	return client, nil
 }
 
-// executeSSHCommand выполняет команду на удаленном сервере
 func executeSSHCommand(client *ssh.Client, command string) ([]byte, error) {
 	session, err := client.NewSession()
 	if err != nil {

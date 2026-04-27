@@ -20,6 +20,18 @@
 
     var uploadedFiles = null;
 
+    function setDisabledStyle(el, disabled) {
+      if (!el) return;
+      el.disabled = disabled;
+      if (disabled) {
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '0.6';
+      } else {
+        el.style.pointerEvents = '';
+        el.style.opacity = '';
+      }
+    }
+
     function setUploadMode(files) {
       uploadedFiles = files;
       file1Name.textContent = files[0].name;
@@ -27,9 +39,9 @@
       defaultView.style.display = 'none';
       filesView.style.display = '';
 
-      if (algorithmSelect) algorithmSelect.disabled = true;
-      if (rsaSelect) rsaSelect.disabled = true;
-      if (ed25519Select) ed25519Select.disabled = true;
+      setDisabledStyle(algorithmSelect, true);
+      setDisabledStyle(rsaSelect, true);
+      setDisabledStyle(ed25519Select, true);
 
       form.removeAttribute('hx-ext');
       form.removeAttribute('parse-types');
@@ -43,9 +55,9 @@
       defaultView.style.display = '';
       filesView.style.display = 'none';
 
-      if (algorithmSelect) algorithmSelect.disabled = false;
-      if (rsaSelect) rsaSelect.disabled = false;
-      if (ed25519Select) ed25519Select.disabled = false;
+      setDisabledStyle(algorithmSelect, false);
+      setDisabledStyle(rsaSelect, false);
+      setDisabledStyle(ed25519Select, false);
 
       form.setAttribute('hx-ext', 'json-enc-custom');
       form.setAttribute('parse-types', 'true');
@@ -77,6 +89,10 @@
       fd.append('nameSSHKey', document.getElementById('nameSSHKey').value);
       fd.append('ssh_file_1', uploadedFiles[0]);
       fd.append('ssh_file_2', uploadedFiles[1]);
+      var passphraseEl = document.getElementById('passphrase');
+      if (passphraseEl && passphraseEl.value) {
+        fd.append('passphrase', passphraseEl.value);
+      }
 
       var xhr = new XMLHttpRequest();
       xhr.open('POST', '/add_ssh_key');

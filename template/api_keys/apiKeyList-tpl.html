@@ -1,0 +1,89 @@
+{{define "apiKeyList-tpl"}}
+<table class="table table-certs" id="apiKeyListTable">
+  <thead>
+    <tr>
+      <th scope="col" class="sortable-header" onclick="sortTable(0, 'apiKeyListTable')">
+        Name
+        <span class="sort-arrow" id="arrow-0">&#9660;</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(2, 'apiKeyListTable')">
+        Scopes
+        <span class="sort-arrow" id="arrow-2">&#9660;</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(3, 'apiKeyListTable')">
+        Created
+        <span class="sort-arrow" id="arrow-3">&#9660;</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(4, 'apiKeyListTable')">
+        Expires
+        <span class="sort-arrow" id="arrow-4">&#9660;</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(7, 'apiKeyListTable')">
+        Status
+        <span class="sort-arrow" id="arrow-7">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(5, 'apiKeyListTable')">
+        Last used
+        <span class="sort-arrow" id="arrow-5">&#9660;</span>
+      </th>
+      <th scope="col" class="th-text-center">Remove</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ if .apiKeys }}
+      {{ range .apiKeys }}
+        <tr class="api_key_id_{{ .Id }}">
+          <td>{{ .Name }}</td>
+          <td>{{ .Scopes }}</td>
+          <td>{{ .CreatedAt }}</td>
+          <td>{{ if .ExpiresAt }}{{ .ExpiresAt }}{{ else }}never{{ end }}</td>
+          <td>
+            <div class="state-{{ if eq .KeyStatus 0 }}valid-certs{{ else if eq .KeyStatus 1 }}expired-certs{{ end }}" >
+              {{ if eq .KeyStatus 0 }}valid{{ else if eq .KeyStatus 1 }}expired{{ end }}
+            </div>
+          </td>
+          <td>
+            {{ if .LastUsedAt }}{{ .LastUsedAt }}{{ if .LastUsedIP }}<br><small>{{ .LastUsedIP }}</small>{{ end }}{{ else }}—{{ end }}
+          </td>
+          
+          <td class="th-text-center">
+            <button class="btn-trash" name="id" value="{{ .Id }}"
+              hx-trigger='remove'
+              hx-post="/remove_api_key"
+              hx-target="#response"
+              hx-ext="json-enc-custom"
+              parse-types="true"
+              onClick="Swal.fire({
+                customClass: 'custom-alert',
+                icon: 'warning',
+                input: 'text',
+                title: 'Delete API key {{ .Name }}?',
+                html: '<p style=\'margin-bottom:6px;\'>This will <strong>permanently revoke</strong> the key. All requests using it will start failing immediately.</p><p style=\'margin-bottom:8px;\'>To confirm, enter <strong>{{ .Name }}</strong></p>',
+                showCancelButton: true,
+                confirmButtonColor: '#983636',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete!',
+                inputValidator: (value) => {
+                  if (value != '{{ .Name }}') {
+                    return 'You entered an invalid name, enter {{ .Name }}';
+                  }
+                }
+              }).then((result) => {
+                if (result.isConfirmed) { htmx.trigger(this, 'remove'); }
+              });">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="trash" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      {{ end }}
+    {{ else }}
+      <tr>
+        <td colspan="7">No API keys created yet</td>
+      </tr>
+    {{ end }}
+  </tbody>
+</table>
+{{end}}

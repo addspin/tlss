@@ -64,5 +64,6 @@ CREATE TABLE IF NOT EXISTS  certs (
 	serial_number TEXT,
 	data_revoke TEXT,
 	reason_revoke TEXT,
-	cert_status INTEGER
+	cert_status INTEGER,
+	signing_ca_id INTEGER DEFAULT 0
 );`

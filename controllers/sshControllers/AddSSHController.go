@@ -197,8 +197,20 @@ func handleSSHKeyGenerate(c fiber.Ctx, db *sqlx.DB) error {
 		})
 	}
 
-	_, err = db.Exec(`INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm) VALUES (?, ?, ?, ?, ?)`,
-		data.NameSSHKey, string(publicKeyBytes), string(encryptedKey), data.KeyLength, data.Algorithm)
+	encryptedPassphrase := ""
+	if data.Passphrase != "" {
+		encPass, err := aes.Encrypt([]byte(data.Passphrase), crypts.AesSecretKey.Key)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Error encrypting passphrase: " + err.Error(),
+			})
+		}
+		encryptedPassphrase = string(encPass)
+	}
+
+	_, err = db.Exec(`INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm, passphrase) VALUES (?, ?, ?, ?, ?, ?)`,
+		data.NameSSHKey, string(publicKeyBytes), string(encryptedKey), data.KeyLength, data.Algorithm, encryptedPassphrase)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
@@ -268,23 +280,32 @@ func handleSSHKeyUpload(c fiber.Ctx, db *sqlx.DB) error {
 		})
 	}
 
+	passphrase := c.FormValue("passphrase")
+
+	parseRaw := func(b []byte) (interface{}, error) {
+		if passphrase != "" {
+			return ssh.ParseRawPrivateKeyWithPassphrase(b, []byte(passphrase))
+		}
+		return ssh.ParseRawPrivateKey(b)
+	}
+
 	// Определяем какой файл приватный, а какой публичный
 	var privBytes, pubBytes []byte
 	var rawKey interface{}
 
-	rawKey, err = ssh.ParseRawPrivateKey(bytes1)
+	rawKey, err = parseRaw(bytes1)
 	if err == nil {
 		privBytes = bytes1
 		pubBytes = bytes2
 	} else {
-		rawKey, err = ssh.ParseRawPrivateKey(bytes2)
+		rawKey, err = parseRaw(bytes2)
 		if err == nil {
 			privBytes = bytes2
 			pubBytes = bytes1
 		} else {
 			return c.Status(400).JSON(fiber.Map{
 				"status":  "error",
-				"message": "Could not find a valid private key in uploaded files",
+				"message": "Could not find a valid private key in uploaded files (or wrong passphrase)",
 			})
 		}
 	}
@@ -326,9 +347,21 @@ func handleSSHKeyUpload(c fiber.Ctx, db *sqlx.DB) error {
 		})
 	}
 
+	encryptedPassphrase := ""
+	if passphrase != "" {
+		encPass, err := aes.Encrypt([]byte(passphrase), crypts.AesSecretKey.Key)
+		if err != nil {
+			return c.Status(500).JSON(fiber.Map{
+				"status":  "error",
+				"message": "Error encrypting passphrase: " + err.Error(),
+			})
+		}
+		encryptedPassphrase = string(encPass)
+	}
+
 	// Сохраняем в базу данных
-	_, err = db.Exec(`INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm) VALUES (?, ?, ?, ?, ?)`,
-		name, strings.TrimSpace(string(pubBytes)), string(encryptedKey), keyLength, algorithm)
+	_, err = db.Exec(`INSERT INTO ssh_key (name_ssh_key, public_key, private_key, key_length, algorithm, passphrase) VALUES (?, ?, ?, ?, ?, ?)`,
+		name, strings.TrimSpace(string(pubBytes)), string(encryptedKey), keyLength, algorithm, encryptedPassphrase)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",

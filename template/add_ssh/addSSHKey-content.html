@@ -78,18 +78,18 @@
     <label for="inputUser" id= "" class="form_lable" >Create ssh key</label>
     <div class="input_border color-form-servers">
       <div class="row g-3 form_center">
-        <div class="col-md-4 ">
+        <div class="col-md-3">
           <label class="select_title">Name key</label>
-          <input type="text" class="c_input " id="nameSSHKey" name="nameSSHKey" placeholder="Name ssh key" required>
+          <input type="text" class="c_input " id="nameSSHKey" name="nameSSHKey" placeholder="Name ssh key" data-string="true" required>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label class="select_title">Algorithm</label>
             <select id="select-type" name="Algorithm" class="select">
               <option value="RSA" selected>RSA</option>
               <option value="ED25519">ED25519</option>
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <label class="select_title">Key Lenght</label>
             <!-- RSA -->
             <select id="select-key-length-rsa" class="select key-length-selector" data-algorithm="RSA" type="number">  
@@ -103,6 +103,10 @@
             </select>
             <!-- Скрытое поле для отправки значения длины ключа -->
             <input type="hidden" name="KeyLength" id="key-length-value" value="4096">
+        </div>
+        <div class="col-md-3">
+          <label class="select_title">Passphrase</label>
+          <input type="password" class="c_input " id="passphrase" name="passphrase" placeholder="Passphrase" data-string="true">
         </div>
         <!-- Drop zone для загрузки пары SSH ключей из файлов -->
         <div class="col-12 mt-2">

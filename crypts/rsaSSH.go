@@ -93,6 +93,33 @@ func GenerateED25519PublicKeyForSSH(publicKey ed25519.PublicKey) ([]byte, error)
 	return pubKeyBytes, nil
 }
 
+// расшифровывает приватный ключ и passphrase (если задан)
+func LoadSSHSigner(key models.SSHKey) (ssh.Signer, error) {
+	aes := Aes{}
+	decryptPrivKey, err := aes.Decrypt([]byte(key.PrivateKey), AesSecretKey.Key)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt private key: %w", err)
+	}
+
+	if key.Passphrase != "" {
+		decryptPass, err := aes.Decrypt([]byte(key.Passphrase), AesSecretKey.Key)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt passphrase: %w", err)
+		}
+		signer, err := ssh.ParsePrivateKeyWithPassphrase(decryptPrivKey, decryptPass)
+		if err != nil {
+			return nil, fmt.Errorf("parse private key with passphrase: %w", err)
+		}
+		return signer, nil
+	}
+
+	signer, err := ssh.ParsePrivateKey(decryptPrivKey)
+	if err != nil {
+		return nil, fmt.Errorf("parse private key: %w", err)
+	}
+	return signer, nil
+}
+
 // Добавление ключа доступа на удаленный сервер, через пароль или ключ
 func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, path, sshKeyName string) error {
 
@@ -102,15 +129,10 @@ func AddAuthorizedKeys(db *sqlx.DB, hostname, tlssSSHport, username, password, p
 		if err != nil {
 			return fmt.Errorf("failed to retrieve certificates: %w", err)
 		}
-		aes := Aes{}
-		decryptPrivKey, err := aes.Decrypt(([]byte(key.PrivateKey)), AesSecretKey.Key)
+		signer, err := LoadSSHSigner(key)
 		if err != nil {
-			slog.Error("rsaSSH: Private key decryption error", "error", err)
-		}
-
-		signer, err := ssh.ParsePrivateKey(decryptPrivKey)
-		if err != nil {
-			slog.Error("rsaSSH: Unable to get private key", "error", err)
+			slog.Error("rsaSSH: Unable to load SSH signer", "error", err)
+			return fmt.Errorf("failed to load SSH signer: %w", err)
 		}
 		// Используем ключ для подключения к серверу
 		keyConfig := &ssh.ClientConfig{

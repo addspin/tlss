@@ -1,10 +1,16 @@
 package middleware
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"log/slog"
 	"strings"
 	"time"
 
+	"github.com/addspin/tlss/crypts"
+	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -13,9 +19,18 @@ import (
 
 const APIKeyPrefix = "tlss_"
 
+// HashKey считает HMAC-SHA256(AesSecretKey, plaintext) и возвращает hex-строку.
+func HashKey(plaintext string) (string, error) {
+	secret := crypts.AesSecretKey.Key
+	if len(secret) == 0 {
+		return "", errors.New("server secret not initialized")
+	}
+	h := hmac.New(sha256.New, secret)
+	h.Write([]byte(plaintext))
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
 // APIKeyAuth возвращает middleware для проверки API ключа из заголовка X-API-Key или Authorization: Bearer.
-// requiredScope — пустая строка означает, что достаточно валидного ключа без проверки scope.
-// Проверка идёт через HMAC-SHA256 + lookup в in-memory APIKeyStore (O(1), без bcrypt и DB-запросов).
 func APIKeyAuth(requiredScope string) fiber.Handler {
 	return func(c fiber.Ctx) error {
 		rawKey := extractAPIKey(c)
@@ -33,9 +48,27 @@ func APIKeyAuth(requiredScope string) fiber.Handler {
 			return c.Status(503).JSON(fiber.Map{"status": "error", "message": "Server not unlocked"})
 		}
 
-		k, ok := APIKeyStore.Get(hashHex)
-		if !ok {
+		database := viper.GetString("database.path")
+		db, err := sqlx.Open("sqlite3", database)
+		if err != nil {
+			slog.Error("APIKeyAuth: database connection error", "error", err)
+			return c.Status(503).JSON(fiber.Map{"status": "error", "message": "Database unavailable"})
+		}
+		defer db.Close()
+
+		var k models.APIKey
+		err = db.Get(&k, `SELECT id, name, scopes,
+			COALESCE(expires_at, '')   AS expires_at,
+			COALESCE(key_status, 0)    AS key_status,
+			COALESCE(last_used_at, '') AS last_used_at,
+			COALESCE(last_used_ip, '') AS last_used_ip
+			FROM api_keys WHERE key_hash = ?`, hashHex)
+		if err != nil {
 			return c.Status(401).JSON(fiber.Map{"status": "error", "message": "Invalid API key"})
+		}
+
+		if k.KeyStatus == 1 {
+			return c.Status(401).JSON(fiber.Map{"status": "error", "message": "API key expired"})
 		}
 
 		if k.ExpiresAt != "" {
@@ -88,5 +121,4 @@ func updateLastUsed(id int, ip string) {
 	defer db.Close()
 	now := time.Now().Format(time.RFC3339)
 	_, _ = db.Exec("UPDATE api_keys SET last_used_at = ?, last_used_ip = ? WHERE id = ?", now, ip, id)
-	APIKeyStore.UpdateLastUsed(id, now, ip)
 }

@@ -198,10 +198,6 @@ func main() {
 	db.Exec("ALTER TABLE ssh_key ADD COLUMN passphrase TEXT NOT NULL DEFAULT ''")
 	// db.Exec("UPDATE ssh_key SET passphrase = '' WHERE passphrase IS NULL")
 
-	// Загружаем актуальные API ключи в in-memory store для проверки в APIKeyAuth
-	if err := middleware.APIKeyStore.Load(db); err != nil {
-		slog.Error("Error loading API keys into store", "error", err)
-	}
 
 	var password, salt []byte
 	var login string

@@ -106,15 +106,7 @@ func handleCreateAPIKey(c fiber.Ctx, db *sqlx.DB) error {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Failed to save: " + err.Error()})
 	}
 
-	id, _ := res.LastInsertId()
-	middleware.APIKeyStore.Add(models.APIKey{
-		Id:        int(id),
-		Name:      req.Name,
-		KeyHash:   hashHex,
-		Scopes:    req.Scopes,
-		CreatedAt: createdAt,
-		ExpiresAt: expiresAt,
-	})
+	_, _ = res.LastInsertId()
 
 	slog.Info("APIKeyController: API key created", "name", req.Name, "scopes", req.Scopes, "expires_at", expiresAt)
 

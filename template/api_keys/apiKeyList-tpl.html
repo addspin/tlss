@@ -43,7 +43,7 @@
             </div>
           </td>
           <td>
-            {{ if .LastUsedAt }}{{ .LastUsedAt }}{{ if .LastUsedIP }}<br><small>{{ .LastUsedIP }}</small>{{ end }}{{ else }}—{{ end }}
+            {{ if .LastUsedAt }}{{ .LastUsedAt }}{{ if .LastUsedIP }} -- {{ .LastUsedIP }}{{ end }}{{ else }}not used{{ end }}
           </td>
           
           <td class="th-text-center">

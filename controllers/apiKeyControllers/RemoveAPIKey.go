@@ -3,7 +3,6 @@ package apiKeyControllers
 import (
 	"log/slog"
 
-	"github.com/addspin/tlss/middleware"
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
@@ -33,8 +32,6 @@ func RemoveAPIKey(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error deleting API key: " + err.Error()})
 	}
-
-	middleware.APIKeyStore.DeleteByID(data.Id)
 
 	slog.Info("RemoveAPIKey: API key deleted", "id", data.Id)
 

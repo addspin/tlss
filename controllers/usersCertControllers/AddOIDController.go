@@ -71,18 +71,18 @@ func AddOIDController(c fiber.Ctx) error {
 					"message": "Error adding data to database: " + err.Error(),
 				})
 			}
-		err = tx.Commit() // Проверяем ошибку при коммите
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Error saving data: " + err.Error(),
-			})
-		}
+			err = tx.Commit() // Проверяем ошибку при коммите
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Error saving data: " + err.Error(),
+				})
+			}
 
-		return c.Status(200).JSON(fiber.Map{
-			"status":  "success",
-			"message": "OID successfully added",
-		})
+			return c.Status(200).JSON(fiber.Map{
+				"status":  "success",
+				"message": "OID successfully added",
+			})
 		}
 	}
 	if c.Method() == "GET" {
@@ -115,7 +115,7 @@ func AddOIDController(c fiber.Ctx) error {
 	})
 }
 
-// OIDListController обрабатывает запросы на получение списка OID
+// обрабатывает запросы на получение списка OID
 func OIDListController(c fiber.Ctx) error {
 	// ---------------------------------------Database inicialization
 	database := viper.GetString("database.path")
@@ -135,6 +135,31 @@ func OIDListController(c fiber.Ctx) error {
 		return c.Render("add_oid/oidList", fiber.Map{
 			"oidList": &oidList,
 		})
+	}
+
+	return c.Status(400).JSON(fiber.Map{
+		"status":  "error",
+		"message": "Method not allowed",
+	})
+}
+
+func APIOIDListController(c fiber.Ctx) error {
+	// ---------------------------------------Database inicialization
+	database := viper.GetString("database.path")
+	db, err := sqlx.Open("sqlite3", database)
+	if err != nil {
+		slog.Error("Fatal error", "error", err)
+	}
+	defer db.Close()
+
+	if c.Method() == "GET" {
+		oidList := []models.OIDData{}
+		err := db.Select(&oidList, "SELECT id, TRIM(oid_name) as oid_name, TRIM(oid_description) as oid_description FROM oid")
+		if err != nil {
+			slog.Error("Fatal error", "error", err)
+		}
+
+		return c.JSON(fiber.Map{"status": "success", "data": oidList})
 	}
 
 	return c.Status(400).JSON(fiber.Map{

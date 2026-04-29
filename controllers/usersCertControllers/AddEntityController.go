@@ -71,18 +71,18 @@ func AddEntityController(c fiber.Ctx) error {
 					"message": "Error adding data to database: " + err.Error(),
 				})
 			}
-		err = tx.Commit() // Проверяем ошибку при коммите
-		if err != nil {
-			return c.Status(500).JSON(fiber.Map{
-				"status":  "error",
-				"message": "Error saving data: " + err.Error(),
-			})
-		}
+			err = tx.Commit() // Проверяем ошибку при коммите
+			if err != nil {
+				return c.Status(500).JSON(fiber.Map{
+					"status":  "error",
+					"message": "Error saving data: " + err.Error(),
+				})
+			}
 
-		return c.Status(200).JSON(fiber.Map{
-			"status":  "success",
-			"message": "Entity successfully added",
-		})
+			return c.Status(200).JSON(fiber.Map{
+				"status":  "success",
+				"message": "Entity successfully added",
+			})
 		}
 	}
 	if c.Method() == "GET" {
@@ -116,7 +116,7 @@ func AddEntityController(c fiber.Ctx) error {
 	})
 }
 
-// EntityListController обрабатывает запросы на получение списка сущностей
+// обрабатывает запросы на получение списка сущностей
 func EntityListController(c fiber.Ctx) error {
 	// ---------------------------------------Database inicialization
 	database := viper.GetString("database.path")
@@ -136,6 +136,31 @@ func EntityListController(c fiber.Ctx) error {
 		return c.Render("add_entity/entityList", fiber.Map{
 			"entityList": &entityList,
 		})
+	}
+
+	return c.Status(400).JSON(fiber.Map{
+		"status":  "error",
+		"message": "Method not allowed",
+	})
+}
+
+func APIEntityListController(c fiber.Ctx) error {
+	// ---------------------------------------Database inicialization
+	database := viper.GetString("database.path")
+	db, err := sqlx.Open("sqlite3", database)
+	if err != nil {
+		slog.Error("Fatal error", "error", err)
+	}
+	defer db.Close()
+
+	if c.Method() == "GET" {
+		entityList := []models.EntityData{}
+		err := db.Select(&entityList, "SELECT id, TRIM(entity_name) as entity_name, TRIM(entity_description) as entity_description FROM entity")
+		if err != nil {
+			slog.Error("Fatal error", "error", err)
+		}
+
+		return c.JSON(fiber.Map{"status": "success", "data": entityList})
 	}
 
 	return c.Status(400).JSON(fiber.Map{

@@ -49,9 +49,23 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Get("/api/v1/crl/bundleca/pem", serverCertControllers.GetBundleCAPemCRL)
 
 	// Admin API endpoints — защищены API ключами с проверкой scope
-	app.Post("/api/v1/crl/bundleca/generate", middleware.APIKeyAuth("crl:write"), serverCertControllers.GenerateCombinedCACRL)
+	app.Post("/api/v1/crl/bundleca/generate", middleware.APIKeyAuth("write"), serverCertControllers.GenerateCombinedCACRL) // Генерация CRL для Root CA и Sub CA
+
+	// API Для серверных сертификатов
+	app.Post("/api/v1/server/add_server", middleware.APIKeyAuth("write"), serverCertControllers.AddServerControll)         // Добавить сервер
+	app.Post("/api/v1/server/add_entity", middleware.APIKeyAuth("write"), serverCertControllers.AddServerEntityController) // Добавить сущность
+	app.Post("/api/v1/server/add_certs", middleware.APIKeyAuth("write"), serverCertControllers.AddCertsControll)           // Добавить сертификат на сервер
+	// Получить список сущностей для серверных сертфиикатов
+	// Если поле cert_config_path не пустое, значит сертификат сохранялся на внешнем сервере
+	app.Get("/api/v1/server/entity_server_list", middleware.APIKeyAuth("read"), serverCertControllers.APIServerEntityList)
+
+	// API Для пользовательских сертификатов
+	app.Get("/api/v1/users/entity_list", middleware.APIKeyAuth("read"), usersCertControllers.APIEntityListController) // Получение сущностей
+	app.Get("/api/v1/users/oid_list", middleware.APIKeyAuth("read"), usersCertControllers.APIOIDListController)       // Получение списка OID
+	app.Post("/api/v1/users/add_certs", middleware.APIKeyAuth("write"), usersCertControllers.AddUserCertsController)  // Добавить сертификат пользователя
 
 	// Protected routes (auth required)
+	// Пути для серверных сертификатов
 	app.Get("/add_server", serverCertControllers.AddServerControll)                  // Получение списка серверов
 	app.Post("/add_server", serverCertControllers.AddServerControll)                 // Добавление сервера
 	app.Get("/server_list", serverCertControllers.ServerListController)              // Получение списка серверов
@@ -71,6 +85,7 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Post("/rollback_cert", serverCertControllers.RollbackCert) // Откат сертификата
 	app.Get("/take_cert", serverCertControllers.TakeCert)          // Скачать сертификат
 
+	// Пути для пользовательских сертификатов
 	app.Get("/add_entity", usersCertControllers.AddEntityController)               // Получение сущности
 	app.Post("/add_entity", usersCertControllers.AddEntityController)              // Добавление сущности
 	app.Get("/entity_list", usersCertControllers.EntityListController)             // Получение списка сущностей
@@ -95,8 +110,8 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Post("/revoke_ca_certs", caControllers.RevokeCACert)           // Отзыв CA
 	app.Post("/remove_ca_cert", caControllers.RemoveCACert)            // Удаление CA
 	app.Get("/revoke_ca_certs", caControllers.RevokeCACertsController) // Получение списка CA для отзыва
-	app.Get("/add_entity_ca", caControllers.AddEntityExtCAController)     // Получение списка сущностей для внешних CA
-	app.Post("/add_entity_ca", caControllers.AddEntityExtCAController)    // Добавление сущности для внешних CA
+	app.Get("/add_entity_ca", caControllers.AddEntityExtCAController)  // Получение списка сущностей для внешних CA
+	app.Post("/add_entity_ca", caControllers.AddEntityExtCAController) // Добавление сущности для внешних CA
 	app.Get("/entity_ca_list", caControllers.EntityCAListController)   // Получение списка сущностей для внешних CA
 	app.Post("/remove_entity_ca", caControllers.RemoveEntityCA)        // Удаление сущности для внешних CA
 	app.Get("/ext_ca", caControllers.AddExtCAController)               // Страница загрузки внешних CA сертификатов
@@ -104,6 +119,7 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Get("/ext_ca_list", caControllers.ExtCAListController)         // Получение списка внешних CA сертификатов
 	app.Post("/remove_ext_ca", caControllers.RemoveExtCA)              // Удаление внешнего CA сертификата
 
+	// Пути для ssh ключей
 	app.Get("/add_ssh_key", sshControllers.AddSSHControll)         // Получение списка ssh ключей
 	app.Post("/add_ssh_key", sshControllers.AddSSHControll)        // Добавление ssh ключа
 	app.Get("/ssh_key_list", sshControllers.SSHCertListController) // Получение списка ssh ключей
@@ -112,7 +128,7 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Get("/cert_info", certInfoController.CertInfoController)  // Получение информации о сертификате
 	app.Post("/cert_info", certInfoController.CertInfoController) // Загрузка сертификата для анализа
 
-	// API keys management (UI, защищён session)
+	// Пути для API ключей
 	app.Get("/api_keys", apiKeyControllers.APIKeyController)
 	app.Post("/api_keys", apiKeyControllers.APIKeyController)
 	app.Get("/api_keys_list", apiKeyControllers.APIKeyListController)

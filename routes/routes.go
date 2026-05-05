@@ -52,17 +52,18 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Post("/api/v1/crl/bundleca/generate", middleware.APIKeyAuth("write"), serverCertControllers.GenerateCombinedCACRL) // Генерация CRL для Root CA и Sub CA
 
 	// API Для серверных сертификатов
-	app.Post("/api/v1/server/add_server", middleware.APIKeyAuth("write"), serverCertControllers.AddServerControll)         // Добавить сервер
-	app.Post("/api/v1/server/add_entity", middleware.APIKeyAuth("write"), serverCertControllers.AddServerEntityController) // Добавить сущность
-	app.Post("/api/v1/server/add_certs", middleware.APIKeyAuth("write"), serverCertControllers.AddCertsControll)           // Добавить сертификат на сервер
+	app.Post("/api/v1/server/add_server", middleware.APIKeyAuth("write"), serverCertControllers.APIAddServerControll)         // Добавить сервер
+	app.Post("/api/v1/server/add_entity", middleware.APIKeyAuth("write"), serverCertControllers.APIAddServerEntityController) // Добавить сущность
+	app.Post("/api/v1/server/add_certs", middleware.APIKeyAuth("write"), serverCertControllers.APIAddCertsControll)           // Добавить сертификат на сервер
 	// Получить список сущностей для серверных сертфиикатов
 	// Если поле cert_config_path не пустое, значит сертификат сохранялся на внешнем сервере
 	app.Get("/api/v1/server/entity_server_list", middleware.APIKeyAuth("read"), serverCertControllers.APIServerEntityList)
+	app.Get("/api/v1/server/ssh_key_list", middleware.APIKeyAuth("read"), sshControllers.APISSHCertListController)
 
 	// API Для пользовательских сертификатов
-	app.Get("/api/v1/users/entity_list", middleware.APIKeyAuth("read"), usersCertControllers.APIEntityListController) // Получение сущностей
-	app.Get("/api/v1/users/oid_list", middleware.APIKeyAuth("read"), usersCertControllers.APIOIDListController)       // Получение списка OID
-	app.Post("/api/v1/users/add_certs", middleware.APIKeyAuth("write"), usersCertControllers.AddUserCertsController)  // Добавить сертификат пользователя
+	app.Get("/api/v1/users/entity_list", middleware.APIKeyAuth("read"), usersCertControllers.APIEntityListController)   // Получение сущностей
+	app.Get("/api/v1/users/oid_list", middleware.APIKeyAuth("read"), usersCertControllers.APIOIDListController)         // Получение списка OID
+	app.Post("/api/v1/users/add_certs", middleware.APIKeyAuth("write"), usersCertControllers.APIAddUserCertsController) // Добавить сертификат пользователя
 
 	// Protected routes (auth required)
 	// Пути для серверных сертификатов
@@ -133,6 +134,9 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Post("/api_keys", apiKeyControllers.APIKeyController)
 	app.Get("/api_keys_list", apiKeyControllers.APIKeyListController)
 	app.Post("/remove_api_key", apiKeyControllers.RemoveAPIKey)
+
+	// Пути для API examples
+	app.Get("/api_examples", apiKeyControllers.APIExamplesController)
 
 	app.Get("/logout", loginControllers.LogoutController)
 }

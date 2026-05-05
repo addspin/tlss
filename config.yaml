@@ -13,6 +13,7 @@ logging:
   format: text # json, text
   output: stdout # file, stdout, both
   file: logs/tlss.log
+  ## not working
   # maxSize: 100 # MB
   # maxBackups: 3
   # maxAge: 28 # days / дней

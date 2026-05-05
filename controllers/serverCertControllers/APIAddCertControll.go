@@ -2,17 +2,15 @@ package controllers
 
 import (
 	"log/slog"
-	"time"
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 )
 
-func AddCertsControll(c fiber.Ctx) error {
+func APIAddCertsControll(c fiber.Ctx) error {
 	// ---------------------------------------Database inicialization for add server
 	database := viper.GetString("database.path")
 
@@ -154,127 +152,8 @@ func AddCertsControll(c fiber.Ctx) error {
 				"message": "Unsupported algorithm: " + data.Algorithm,
 			})
 		}
-		// APICertResponse := data.Domain + "\n" + string(certPEM) + "\n" + string(keyPEM)
-		// return c.Send([]byte(APICertResponse))
-		return c.JSON(fiber.Map{
-			"status":  "success",
-			"domain":  data.Domain,
-			"message": "Certificate created successfully",
-		})
-	}
-	if c.Method() == "GET" {
-		serverList := []models.Server{}
-		err := db.Select(&serverList, "SELECT id, hostname, server_status, COALESCE(cert_config_path, '') as cert_config_path FROM server")
-		if err != nil {
-			slog.Error("Fatal error", "error", err)
-		}
-
-		entityCAList := []models.EntityCAData{}
-		err = db.Select(&entityCAList, "SELECT id, entity_ca_name, entity_ca_description FROM entity_ca")
-		if err != nil {
-			slog.Error("AddCertsControll: Error fetching entity CA list", "error", err)
-		}
-
-		data := fiber.Map{
-			"Title":        "Add certs",
-			"serverList":   serverList,
-			"entityCAList": entityCAList,
-		}
-
-		// Проверяем, является ли запрос HTMX запросом
-		if c.Get("HX-Request") != "" {
-			err := c.Render("addCerts-content", data, "")
-			if err != nil {
-				slog.Error("Error rendering addCerts-content", "error", err)
-				return err
-			}
-			return nil
-		}
-
-		return c.Render("add_certs/addCerts", data)
-	}
-	return c.Status(405).JSON(fiber.Map{
-		"status":  "error",
-		"message": "Method not allowed",
-	})
-}
-
-// CertListController обрабатывает запросы на получение списка сертификатов
-func CertListController(c fiber.Ctx) error {
-	// ---------------------------------------Database inicialization
-	database := viper.GetString("database.path")
-	db, err := sqlx.Open("sqlite3", database)
-	if err != nil {
-		slog.Error("Fatal error", "error", err)
-	}
-	defer db.Close()
-	if c.Method() == "POST" {
-		// Получаем ID сервера из запроса
-		serverId := c.Query("serverId")
-		// Получаем список сертификатов
-		certList := []models.CertsData{}
-		if serverId != "" {
-			// Если указан ID сервера, фильтруем сертификаты по серверу
-			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, domain, wildcard, cert_status, cert_create_time, cert_expire_time, recreate, days_left FROM certs WHERE server_id = ?", serverId)
-			if err != nil {
-				slog.Error("Fatal error", "error", err)
-			}
-		}
-		// Обрабатываем wildcard домены для отображения
-		if len(certList) > 0 {
-			wildcard := certList[0].Wildcard
-			for i := range certList {
-				if wildcard {
-					certList[i].Domain = "*." + certList[i].Domain
-				}
-			}
-		}
-
-		// Рендерим шаблон списка сертификатов
-		return c.Render("add_certs/certList", fiber.Map{
-			"certList": certList,
-		})
-	}
-	if c.Method() == "GET" {
-		// Получаем ID сервера из запроса
-		serverId := c.Query("serverId")
-		// Получаем список сертификатов
-		certList := []models.CertsData{}
-
-		if serverId != "" {
-			// Если указан ID сервера, фильтруем сертификаты по серверу кроме результатов 2 - revoked
-			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, domain, wildcard, cert_status, cert_create_time, cert_expire_time, recreate, save_on_server, days_left FROM certs WHERE server_id = ? AND cert_status IN (0, 1)", serverId)
-			if err != nil {
-				slog.Error("Fatal error", "error", err)
-			}
-		}
-		// Обрабатываем wildcard домены для отображения
-		if len(certList) > 0 {
-			// wildcard := certList[0].Wildcard
-			for i := range certList {
-				if certList[i].Wildcard {
-					certList[i].Domain = "*." + certList[i].Domain
-				}
-			}
-		}
-		// Преобразуем формат времени из RFC3339 в 02.01.2006 15:04:05
-		for i := range certList {
-			// Парсим время создания сертификата
-			createTime, err := time.Parse(time.RFC3339, certList[i].CertCreateTime)
-			if err == nil {
-				certList[i].CertCreateTime = createTime.Format("02.01.2006 15:04:05")
-			}
-
-			// Парсим время истечения сертификата
-			expireTime, err := time.Parse(time.RFC3339, certList[i].CertExpireTime)
-			if err == nil {
-				certList[i].CertExpireTime = expireTime.Format("02.01.2006 15:04:05")
-			}
-		}
-		// Рендерим шаблон списка сертификатов
-		return c.Render("add_certs/certList", fiber.Map{
-			"certList": certList,
-		})
+		APICertResponse := string(certPEM) + "\n" + string(keyPEM)
+		return c.Send([]byte(APICertResponse))
 	}
 	return c.Status(405).JSON(fiber.Map{
 		"status":  "error",

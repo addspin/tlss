@@ -1,0 +1,293 @@
+{{define "apiExamples-content"}}
+<div class="row">
+  <div class="col-2">
+  </div>
+  <div class="col-7">
+    <div>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#" hx-get="/overview" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">Overview</a></li>
+        <li class="breadcrumb-item active" aria-current="page">API Examples</li>
+      </ol>
+    </div>
+
+    <div class="core-servers" id="api-examples-container">
+      <label class="form_lable">API Examples</label>
+      <div class="input_border color-form-servers">
+        <div class="p-2 scroll-area">
+
+          <!-- Get SSH key list -->
+          <div class="panel-wrapper">
+            <label class="px-0 py-1 fw-bold text-secondary-emphasis d-block">SSH key list:</label>
+            <div class="d-flex align-items-center justify-content-between p-2 border rounded text-primary-emphasis fw-bold api-panel-header" 
+                 style="cursor: pointer;">
+              <span class="text-truncate me-2" style="max-width: 500px;"><span class="method-badge method-get">GET</span>https://tlss.lv.local/api/v1/server/ssh_key_list</span>
+              <button type="button" class="btn btn-link p-0 text-decoration-none text-primary-emphasis copy-api-btn flex-shrink-0" data-copy='' title="Copy JSON">
+                <img src="/static/svg/copy.svg" alt="Copy" class="copy-icon" width="18" height="18">
+              </button>
+            </div>
+            <div id="panel-ssh-key-list" class="api-panel-body mt-2 p-2 border rounded">
+              <pre class="small m-0"><code>\\ No request body - GET endpoint</code></pre>
+            </div>
+          </div>
+
+          <!-- Get Entity server list -->
+          <div class="panel-wrapper">
+            <label class="px-0 py-1 fw-bold text-secondary-emphasis d-block">Entity server list:</label>
+            <div class="d-flex align-items-center justify-content-between p-2 border rounded text-primary-emphasis fw-bold api-panel-header" 
+                 style="cursor: pointer;">
+              <span class="text-truncate me-2" style="max-width: 500px;"><span class="method-badge method-get">GET</span>https://tlss.lv.local/api/v1/server/entity_server_list</span>
+              <button type="button" class="btn btn-link p-0 text-decoration-none text-primary-emphasis copy-api-btn flex-shrink-0" data-copy='' title="Copy JSON">
+                <img src="/static/svg/copy.svg" alt="Copy" class="copy-icon" width="18" height="18">
+              </button>
+            </div>
+            <div id="panel-entity-server-list" class="api-panel-body mt-2 p-2 border rounded">
+              <pre class="small m-0"><code>\\ No request body - GET endpoint</code></pre>
+            </div>
+          </div>
+
+          <!-- Add server entity -->
+          <div class="panel-wrapper">
+            <label class="px-0 py-1 fw-bold text-secondary-emphasis d-block">Add server entity:</label>
+            <div class="d-flex align-items-center justify-content-between p-2 border rounded text-primary-emphasis fw-bold api-panel-header" 
+                 style="cursor: pointer;">
+              <span class="text-truncate me-2" style="max-width: 500px;"><span class="method-badge method-post">POST</span>https://tlss.lv.local/api/v1/server/add_entity</span>
+              <button type="button" class="btn btn-link p-0 text-decoration-none text-primary-emphasis copy-api-btn flex-shrink-0" 
+              data-copy='{
+    "hostname": "add-entity1",
+    "description": "describ"
+}' title="Copy JSON">
+                <img src="/static/svg/copy.svg" alt="Copy" class="copy-icon" width="18" height="18">
+              </button>
+            </div>
+            <div id="panel-add-entity" class="api-panel-body mt-2 p-2 border rounded">
+              <pre class="small m-0"><code>{
+    "hostname": "add-entity1",
+    "description": "describ"
+}</code></pre>
+            </div>
+          </div>
+
+          <!-- Add server -->
+          <div class="panel-wrapper">
+            <label class="px-0 py-1 fw-bold text-secondary-emphasis d-block">Add server:</label>
+            <div class="d-flex align-items-center justify-content-between p-2 border rounded text-primary-emphasis fw-bold api-panel-header" 
+                 style="cursor: pointer;">
+              <span class="text-truncate me-2" style="max-width: 500px;"><span class="method-badge method-post">POST</span>https://tlss.lv.local/api/v1/server/add_server</span>
+              <button type="button" class="btn btn-link p-0 text-decoration-none text-primary-emphasis copy-api-btn flex-shrink-0" 
+              data-copy='{
+      "username": "root",
+      "hostname": "176.125.254.184",
+      "password": "", 
+      "tlssSSHport": 22,
+      "path": "/tmp",
+      "sshKey": "vpn"
+}' title="Copy JSON">
+                <img src="/static/svg/copy.svg" alt="Copy" class="copy-icon" width="18" height="18">
+              </button>
+            </div>
+            <div id="panel-add-server" class="api-panel-body mt-2 p-2 border rounded">
+              <pre class="small m-0"><code>\\ Choose one password or ssh key
+                
+{
+    "username": "root",
+    "hostname": "76.12.25.14",
+    "password": "",     
+    "tlssSSHport": 22,
+    "path": "/tmp",
+    "sshKey": "vpn"
+}</code></pre>
+            </div>
+          </div>
+
+           <!-- Add server cert -->
+          <div class="panel-wrapper">
+            <label class="px-0 py-1 fw-bold text-secondary-emphasis d-block">Add server cert:</label>
+            <div class="d-flex align-items-center justify-content-between p-2 border rounded text-primary-emphasis fw-bold api-panel-header" 
+                 style="cursor: pointer;">
+              <span class="text-truncate me-2" style="max-width: 500px;"><span class="method-badge method-post">POST</span>https://tlss.lv.local/api/v1/server/add_certs</span>
+              <button type="button" class="btn btn-link p-0 text-decoration-none text-primary-emphasis copy-api-btn flex-shrink-0" data-copy='{
+    "Algorithm": "RSA",
+    "KeyLength": 4096,
+    "TTL": 365,
+    "Domain": "api.ru",
+    "Wildcard": true,
+    "Recreate": true,
+    "SaveOnServer": true,
+    "SigningCAId": 4,
+    "CommonName": "api.ru",
+    "SAN": "1.1.1.1, 2.2.2.2",
+    "CountryName": "ru",
+    "StateProvince": "udm",
+    "LocalityName": "izh",
+    "Email": "tdv@mail.ru",
+    "Organization": "lv",
+    "OrganizationUnit": "it",
+    "AppType": "haproxy",
+    "ServerId": 59,
+    "ServerStatus": "online"
+}' title="Copy JSON">
+                <img src="/static/svg/copy.svg" alt="Copy" class="copy-icon" width="18" height="18">
+              </button>
+            </div>
+            <div id="panel-add-cert" class="api-panel-body mt-2 p-2 border rounded">
+              <pre class="small m-0"><code>\\ SAN is an optional parameter.
+
+{
+    "Algorithm": "RSA",
+    "KeyLength": 4096,
+    "TTL": 365,
+    "Domain": "api.ru",
+    "Wildcard": true,
+    "Recreate": true,
+    "SaveOnServer": true,
+    "SigningCAId": 4,
+    "CommonName": "api.ru",
+    "SAN": "1.1.1.1, 2.2.2.2",
+    "CountryName": "ru",
+    "StateProvince": "udm",
+    "LocalityName": "izh",
+    "Email": "tdv@mail.ru",
+    "Organization": "lv",
+    "OrganizationUnit": "it",
+    "AppType": "haproxy",
+    "ServerId": 59,
+    "ServerStatus": "online"
+}</code></pre>
+            </div>
+          </div>
+
+          <!-- Get entity user list-->
+          <div class="panel-wrapper">
+            <label class="px-0 py-1 fw-bold text-secondary-emphasis d-block">Get entity user list:</label>
+            <div class="d-flex align-items-center justify-content-between p-2 border rounded text-primary-emphasis fw-bold api-panel-header" 
+                 style="cursor: pointer;">
+              <span class="text-truncate me-2" style="max-width: 500px;"><span class="method-badge method-get">GET</span>https://tlss.lv.local/api/v1/users/entity_list</span>
+              <button type="button" class="btn btn-link p-0 text-decoration-none text-primary-emphasis copy-api-btn flex-shrink-0" data-copy='' title="Copy JSON">
+                <img src="/static/svg/copy.svg" alt="Copy" class="copy-icon" width="18" height="18">
+              </button>
+            </div>
+            <div id="panel-user-entity-list" class="api-panel-body mt-2 p-2 border rounded">
+              <pre class="small m-0"><code>\\ No request body - GET endpoint</code></pre>
+            </div>
+          </div>
+
+          <!-- Get oid user list-->
+          <div class="panel-wrapper">
+            <label class="px-0 py-1 fw-bold text-secondary-emphasis d-block">Get oid user list:</label>
+            <div class="d-flex align-items-center justify-content-between p-2 border rounded text-primary-emphasis fw-bold api-panel-header" 
+                 style="cursor: pointer;">
+              <span class="text-truncate me-2" style="max-width: 500px;"><span class="method-badge method-get">GET</span>https://tlss.lv.local/api/v1/users/oid_list</span>
+              <button type="button" class="btn btn-link p-0 text-decoration-none text-primary-emphasis copy-api-btn flex-shrink-0" data-copy='' title="Copy JSON">
+                <img src="/static/svg/copy.svg" alt="Copy" class="copy-icon" width="18" height="18">
+              </button>
+            </div>
+            <div id="panel-user-oid-list" class="api-panel-body mt-2 p-2 border rounded">
+              <pre class="small m-0"><code>\\ No request body - GET endpoint</code></pre>
+            </div>
+          </div>
+
+          <!-- Add user cert -->
+          <div class="panel-wrapper">
+            <label class="px-0 py-1 fw-bold text-secondary-emphasis d-block">Add user cert:</label>
+            <div class="d-flex align-items-center justify-content-between p-2 border rounded text-primary-emphasis fw-bold api-panel-header" 
+                 style="cursor: pointer;">
+              <span class="text-truncate me-2" style="max-width: 500px;"><span class="method-badge method-post">POST</span>https://tlss.lv.local/api/v1/users/add_certs</span>
+              <button type="button" class="btn btn-link p-0 text-decoration-none text-primary-emphasis copy-api-btn flex-shrink-0" data-copy='{
+    "Algorithm": "RSA",
+    "KeyLength": 4096,
+    "TTL": 365,
+    "recreate": true,
+    "SigningCAId": 0,
+    "CommonName": "tdv",
+    "SAN": "jon,connor",
+    "OID": "1.3.4.1.3.5",
+    "OIDValues": "oid values",
+    "CountryName": "ru",
+    "StateProvince": "udm",
+    "LocalityName": "izh",
+    "Organization": "lv",
+    "OrganizationUnit": "it",
+    "Email": "tdv@test.ru",
+    "EntityId": 2,
+    "Password": "123123"
+}' title="Copy JSON">
+                <img src="/static/svg/copy.svg" alt="Copy" class="copy-icon" width="18" height="18">
+              </button>
+            </div>
+            <div id="panel-user-cert" class="api-panel-body mt-2 p-2 border rounded">
+              <pre class="small m-0"><code>\\ SAN, OID, OIDValues is an optional parameter.
+
+{
+    "Algorithm": "RSA",
+    "KeyLength": 4096,
+    "TTL": 365,
+    "recreate": true,
+    "SigningCAId": 0,
+    "CommonName": "tdv",
+    "SAN": "jon,connor",
+    "OID": "1.3.4.1.3.5",
+    "OIDValues": "oid values",
+    "CountryName": "ru",
+    "StateProvince": "udm",
+    "LocalityName": "izh",
+    "Organization": "lv",
+    "OrganizationUnit": "it",
+    "Email": "tdv@test.ru",
+    "EntityId": 2,
+    "Password": "123123"
+}</code></pre>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-2">
+  <div class="col-12">
+  </div>
+</div>
+
+<script>
+(function() {
+  document.querySelectorAll('.panel-wrapper').forEach(function(wrapper) {
+    var header = wrapper.querySelector('.api-panel-header');
+    var body = wrapper.querySelector('.api-panel-body');
+
+    if (header && body) {
+      header.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (e.target.closest('.copy-api-btn')) return;
+        
+        if (body.classList.contains('show')) {
+          body.classList.remove('show');
+        } else {
+          body.classList.add('show');
+        }
+      });
+    }
+  });
+
+  document.querySelectorAll('.copy-api-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const content = this.getAttribute('data-copy');
+      const icon = this.querySelector('.copy-icon');
+      
+      navigator.clipboard.writeText(content).then(() => {
+        const originalSrc = icon.getAttribute('src');
+        icon.setAttribute('src', '/static/svg/check.svg');
+        setTimeout(() => {
+          icon.setAttribute('src', originalSrc);
+        }, 2000);
+      }).catch(function(err) {
+        console.error('Failed to copy: ', err);
+      });
+    });
+  });
+})();
+</script>
+{{end}}

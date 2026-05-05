@@ -570,3 +570,28 @@ color: #ffffff;
 .collapse {
     will-change: height;
 }
+
+/* Стили для API Examples */
+.method-badge {
+font-size: 0.75rem;
+padding: 2px 6px;
+border-radius: 4px;
+margin-right: 8px;
+letter-spacing: 0.3px;
+}
+.method-post { background-color: #5078b3; color: #fff; }
+.method-get { background-color: #2ba03d; color: #fff; }
+
+/* Скрытие/показ панелей */
+.api-panel-body { display: none; }
+.api-panel-body.show {
+display: block;
+overflow-y: auto;
+}
+
+/* Скроллинг если контент не вмещается */
+.scroll-area {
+overflow-y: auto;
+height: fit-content;
+max-height: 80vh;
+}

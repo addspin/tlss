@@ -120,6 +120,11 @@
                     hx-target="#main-content"
                     hx-swap="innerHTML"
                     hx-push-url="true">API keys</a></li>
+                <li><a class="link-menu-left {{if eq .Title "API examples"}}active{{else}}{{end}}" 
+                    hx-get="/api_examples" 
+                    hx-target="#main-content" 
+                    hx-swap="innerHTML" 
+                    hx-push-url="true">API examples</a></li>
             </ul>
         </div>
         <hr>

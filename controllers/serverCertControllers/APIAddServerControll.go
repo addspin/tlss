@@ -8,11 +8,10 @@ import (
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/viper"
 )
 
-func AddServerControll(c fiber.Ctx) error {
+func APIAddServerControll(c fiber.Ctx) error {
 
 	//---------------------------------------Database inicialization for add server
 	database := viper.GetString("database.path")
@@ -103,65 +102,6 @@ func AddServerControll(c fiber.Ctx) error {
 				})
 			}
 		}
-	}
-	if c.Method() == "GET" {
-		serverList := []models.Server{}
-		err := db.Select(&serverList, "SELECT id, hostname, COALESCE(cert_config_path, '') as cert_config_path, server_status FROM server WHERE cert_config_path NOT NULL")
-		if err != nil {
-			slog.Error("Fatal error", "error", err)
-		}
-		sshKeyList := []models.SSHKey{}
-		err = db.Select(&sshKeyList, "SELECT name_ssh_key FROM ssh_key")
-		if err != nil {
-			slog.Error("Fatal error", "error", err)
-		}
-
-		data := fiber.Map{
-			"Title":      "Add server",
-			"serverList": &serverList,
-			"sshKeyList": &sshKeyList,
-		}
-
-		// Проверяем, является ли запрос HTMX запросом
-		if c.Get("HX-Request") != "" {
-			err := c.Render("addServer-content", data, "")
-			if err != nil {
-				slog.Error("Error rendering addServer-content", "error", err)
-				return err
-			}
-			return nil
-		}
-
-		return c.Render("add_server/addServer", data)
-	}
-
-	return c.Status(400).JSON(fiber.Map{
-		"status":  "error",
-		"message": "Method not allowed",
-	})
-}
-
-// ServerListController обрабатывает запросы на получение списка серверов
-func ServerListController(c fiber.Ctx) error {
-	// ---------------------------------------Database inicialization
-	database := viper.GetString("database.path")
-	db, err := sqlx.Open("sqlite3", database)
-	if err != nil {
-		slog.Error("Fatal error", "error", err)
-	}
-	defer db.Close()
-
-	if c.Method() == "GET" {
-		serverList := []models.Server{}
-		err = db.Select(&serverList, "SELECT id, hostname, COALESCE(cert_config_path, '') as cert_config_path, server_status FROM server WHERE cert_config_path NOT NULL")
-		if err != nil {
-			slog.Error("Fatal error", "error", err)
-		}
-
-		// Рендерим только шаблон списка серверов
-		return c.Render("add_server/serverList", fiber.Map{
-			"serverList": &serverList,
-		})
 	}
 
 	return c.Status(400).JSON(fiber.Map{

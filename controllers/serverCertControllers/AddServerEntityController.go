@@ -70,18 +70,18 @@ func AddServerEntityController(c fiber.Ctx) error {
 						"message": "Error adding data to database: " + err.Error(),
 					})
 				}
-			err = tx.Commit() // Проверяем ошибку при коммите
-			if err != nil {
-				return c.Status(500).JSON(fiber.Map{
-					"status":  "error",
-					"message": "Error saving data: " + err.Error(),
-				})
-			}
+				err = tx.Commit() // Проверяем ошибку при коммите
+				if err != nil {
+					return c.Status(500).JSON(fiber.Map{
+						"status":  "error",
+						"message": "Error saving data: " + err.Error(),
+					})
+				}
 
-			return c.Status(200).JSON(fiber.Map{
-				"status":  "success",
-				"message": "Server entity successfully added",
-			})
+				return c.Status(200).JSON(fiber.Map{
+					"status":  "success",
+					"message": "Server entity successfully added",
+				})
 			}
 		}
 	}

@@ -154,8 +154,7 @@ func AddCertsControll(c fiber.Ctx) error {
 				"message": "Unsupported algorithm: " + data.Algorithm,
 			})
 		}
-		// APICertResponse := data.Domain + "\n" + string(certPEM) + "\n" + string(keyPEM)
-		// return c.Send([]byte(APICertResponse))
+
 		return c.JSON(fiber.Map{
 			"status":  "success",
 			"domain":  data.Domain,

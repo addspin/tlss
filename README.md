@@ -2,6 +2,8 @@
 <img width="862" height="248" alt="login_no" src="https://github.com/user-attachments/assets/c8141bae-aef7-40ff-a08e-57f769b96d66" />
 </div>
 
+## TLSS
+
 Hello, TLSS is a small project aimed at the simplest possible work with certificates, the main goal of which is to simplify the deployment and control of certificates in the internal infrastructure, and ensure simple data portability.
 
 ## Main features:
@@ -92,8 +94,8 @@ Clients certs:
 I cannot check everything, there may be more than one bug found, I apologize 🥺
 
 ## MIT License 🎉
-https://github.com/user-attachments/assets/e5511d51-0105-4ce2-bbad-525856fa2239
 
+<img width="1882" height="934" alt="Запись экрана 2026-05-07 в 01 50 00" src="https://github.com/user-attachments/assets/5d5c17bb-e9dd-4f82-8376-1468a8dfbeb6" />
 <br></br>
 
 # TLSS

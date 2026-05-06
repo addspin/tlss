@@ -236,48 +236,48 @@ func GenerateUserED25519Certificate(data *models.UserCertsData, db *sqlx.DB) (ce
 		return nil, nil, fmt.Errorf("error checking common_name existence: %v", err)
 	}
 
-	if exists {
-		// Если запись существует, обновляем её
-		// Для ED25519 key_length всегда 256
-		_, err = tx.Exec(`UPDATE user_certs SET 
-                algorithm = ?, key_length = ?, ttl = ?, recreate = ?,
-                common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
-                organization = ?, organization_unit = ?, email = ?, password = ?,
-                public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
-                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?, oid = ?, oid_values = ?
-            WHERE common_name = ? AND entity_id = ?`,
-			data.Algorithm, 256, data.TTL, data.Recreate,
-			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
-			data.Organization, data.OrganizationUnit, data.Email, data.Password,
-			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues,
-			data.CommonName, data.EntityId)
-		if err != nil {
-			tx.Rollback()
-			return nil, nil, fmt.Errorf("failed to update existing ED25519 certificate in database: %w", err)
-		}
-		slog.Info("ED25519 certificate for common_name updated in database", slog.String("common_name", data.CommonName), slog.Int("id", data.Id))
-	} else {
-		// Сертификат не существует, добавляем новый
-		// Для ED25519 key_length всегда 256
-		_, err = tx.Exec(`INSERT INTO user_certs (
+	// if exists {
+	// 	// Если запись существует, обновляем её
+	// 	// Для ED25519 key_length всегда 256
+	// 	_, err = tx.Exec(`UPDATE user_certs SET
+	//             algorithm = ?, key_length = ?, ttl = ?, recreate = ?,
+	//             common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
+	//             organization = ?, organization_unit = ?, email = ?, password = ?,
+	//             public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
+	//             serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?, oid = ?, oid_values = ?
+	//         WHERE common_name = ? AND entity_id = ?`,
+	// 		data.Algorithm, 256, data.TTL, data.Recreate,
+	// 		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
+	// 		data.Organization, data.OrganizationUnit, data.Email, data.Password,
+	// 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
+	// 		data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues,
+	// 		data.CommonName, data.EntityId)
+	// 	if err != nil {
+	// 		tx.Rollback()
+	// 		return nil, nil, fmt.Errorf("failed to update existing ED25519 certificate in database: %w", err)
+	// 	}
+	// 	slog.Info("ED25519 certificate for common_name updated in database", slog.String("common_name", data.CommonName), slog.Int("id", data.Id))
+	// } else {
+	// Сертификат не существует, добавляем новый
+	// Для ED25519 key_length всегда 256
+	_, err = tx.Exec(`INSERT INTO user_certs (
                 entity_id, algorithm, key_length, ttl, recreate,
                 common_name, country_name, state_province, locality_name,
                 organization, organization_unit, email, password,
                 public_key, private_key, cert_create_time, cert_expire_time,
                 serial_number, data_revoke, reason_revoke, cert_status, days_left, san, oid, oid_values
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			data.EntityId, data.Algorithm, 256, data.TTL, data.Recreate,
-			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
-			data.Organization, data.OrganizationUnit, data.Email, data.Password,
-			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues)
-		if err != nil {
-			tx.Rollback()
-			return nil, nil, fmt.Errorf("failed to add new ED25519 certificate to database: %w", err)
-		}
-		slog.Info("New ED25519 certificate for common_name added to database", slog.String("common_name", data.CommonName))
+		data.EntityId, data.Algorithm, 256, data.TTL, data.Recreate,
+		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
+		data.Organization, data.OrganizationUnit, data.Email, data.Password,
+		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
+		data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues)
+	if err != nil {
+		tx.Rollback()
+		return nil, nil, fmt.Errorf("failed to add new ED25519 certificate to database: %w", err)
 	}
+	slog.Info("New ED25519 certificate for common_name added to database", slog.String("common_name", data.CommonName))
+	// }
 
 	// Если все операции прошли успешно, фиксируем транзакцию
 	if err = tx.Commit(); err != nil {

@@ -241,46 +241,46 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPe
 		return nil, nil, fmt.Errorf("error checking common_name existence: %v", err)
 	}
 
-	if exists {
-		// Если запись существует, обновляем её
-		_, err = tx.Exec(`UPDATE user_certs SET 
-                algorithm = ?, key_length = ?, ttl = ?, recreate = ?,
-                common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
-                organization = ?, organization_unit = ?, email = ?, password = ?,
-                public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
-                serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?, oid = ?, oid_values = ?
-            WHERE common_name = ? AND entity_id = ?`,
-			data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
-			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
-			data.Organization, data.OrganizationUnit, data.Email, data.Password,
-			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues,
-			data.CommonName, data.EntityId)
-		if err != nil {
-			tx.Rollback()
-			return nil, nil, fmt.Errorf("failed to update existing certificate in database: %w", err)
-		}
-		slog.Info("Сертификат для common_name обновлен в базе данных", slog.String("common_name", data.CommonName), slog.Int("entity_id", data.EntityId))
-	} else {
-		// Сертификат не существует, добавляем новый
-		_, err = tx.Exec(`INSERT INTO user_certs (
+	// if exists {
+	// 	// Если запись существует, обновляем её
+	// 	_, err = tx.Exec(`UPDATE user_certs SET
+	//             algorithm = ?, key_length = ?, ttl = ?, recreate = ?,
+	//             common_name = ?, country_name = ?, state_province = ?, locality_name = ?,
+	//             organization = ?, organization_unit = ?, email = ?, password = ?,
+	//             public_key = ?, private_key = ?, cert_create_time = ?, cert_expire_time = ?,
+	//             serial_number = ?, data_revoke = ?, reason_revoke = ?, cert_status = ?, days_left = ?, san = ?, oid = ?, oid_values = ?
+	//         WHERE common_name = ? AND entity_id = ?`,
+	// 		data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
+	// 		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
+	// 		data.Organization, data.OrganizationUnit, data.Email, data.Password,
+	// 		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
+	// 		data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues,
+	// 		data.CommonName, data.EntityId)
+	// 	if err != nil {
+	// 		tx.Rollback()
+	// 		return nil, nil, fmt.Errorf("failed to update existing certificate in database: %w", err)
+	// 	}
+	// 	slog.Info("Сертификат для common_name обновлен в базе данных", slog.String("common_name", data.CommonName), slog.Int("entity_id", data.EntityId))
+	// } else {
+	// Сертификат не существует, добавляем новый
+	_, err = tx.Exec(`INSERT INTO user_certs (
                 entity_id, algorithm, key_length, ttl, recreate,
                 common_name, country_name, state_province, locality_name,
                 organization, organization_unit, email, password,
                 public_key, private_key, cert_create_time, cert_expire_time,
                 serial_number, data_revoke, reason_revoke, cert_status, days_left, san, oid, oid_values
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			data.EntityId, data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
-			data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
-			data.Organization, data.OrganizationUnit, data.Email, data.Password,
-			string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
-			data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues)
-		if err != nil {
-			tx.Rollback()
-			return nil, nil, fmt.Errorf("failed to add new certificate to database: %w", err)
-		}
-		slog.Info("Новый сертификат для common_name добавлен в базу данных", slog.String("common_name", data.CommonName))
+		data.EntityId, data.Algorithm, data.KeyLength, data.TTL, data.Recreate,
+		data.CommonName, data.CountryName, data.StateProvince, data.LocalityName,
+		data.Organization, data.OrganizationUnit, data.Email, data.Password,
+		string(certPEM), string(encryptedKey), now.Format(time.RFC3339), expiry.Format(time.RFC3339),
+		data.SerialNumber, "", "", 0, daysLeft, data.SAN, data.OID, data.OIDValues)
+	if err != nil {
+		tx.Rollback()
+		return nil, nil, fmt.Errorf("failed to add new certificate to database: %w", err)
 	}
+	slog.Info("Новый сертификат для common_name добавлен в базу данных", slog.String("common_name", data.CommonName))
+	// }
 
 	// Если все операции прошли успешно, фиксируем транзакцию
 	if err = tx.Commit(); err != nil {

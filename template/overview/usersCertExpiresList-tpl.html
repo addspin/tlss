@@ -1,0 +1,29 @@
+{{define "usersCertExpiresList-tpl"}}
+            <table class="table" id="certListTable">
+              <thead>
+              <tr>
+                <th scope="col" class="sortable-header" onclick="sortTable(0, 'certListTable')">
+                  Entity
+                  <span class="sort-arrow" id="arrow-0">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(1, 'certListTable')">
+                  Object name
+                  <span class="sort-arrow" id="arrow-0">▼</span>
+                </th>
+                <th scope="col" class="sortable-header" onclick="sortTable(2, 'certListTable')">
+                  Expire in
+                  <span class="sort-arrow" id="arrow-3">▼</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {{ range .userCertExpiredList }}
+              <tr class="cert_id_{{ .Id }}" name="{{ .Id }}">
+                  <td>{{ .EntityName }}</td>
+                  <td>{{ .CommonName }}</td>
+                  <td>{{ .DaysLeft }} days</td>
+              </tr>
+              {{ end }}
+            </tbody>
+            </table>
+{{end}}

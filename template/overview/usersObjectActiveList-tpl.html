@@ -1,24 +1,24 @@
-{{define "serversObjectActiveList-tpl"}}
+{{define "usersObjectActiveList-tpl"}}
 
-            <table class="table" id="serversObjectActiveListTable">
+            <table class="table" id="usersObjectActiveListTable">
               <thead>
               <tr>
-                <th scope="col" class="sortable-header" onclick="sortTable(0, 'serversObjectActiveListTable')">
+                <th scope="col" class="sortable-header" onclick="sortTable(0, 'usersObjectActiveListTable')">
                   Object name
                   <span class="sort-arrow" id="arrow-0">▼</span>
                 </th>
-                <th scope="col" class="sortable-header" onclick="sortTable(1, 'serversObjectActiveListTable')">
+                <th scope="col" class="sortable-header" onclick="sortTable(1, 'usersObjectActiveListTable')">
                   Status
                   <span class="sort-arrow" id="arrow-1">▼</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              {{ if .serverCertNoValid }}
-                {{ range .serverCertNoValid }}
+              {{ if .userCertNoValid }}
+                {{ range .userCertNoValid }}
                   <tr class="task_id_{{ .Id }}" name="{{ .Id }}">
                     <!-- Hostname -->
-                      <td>{{ .Domain }}</td>
+                      <td>{{ .CommonName }}</td>
                       <!-- Status -->
                       <td>
                         <div class="state-{{ if eq .CertStatus 0 }}valid-certs{{ else if eq .CertStatus 1 }}expired-certs{{ else if eq .CertStatus 2 }}revoked-certs{{ end }}" >

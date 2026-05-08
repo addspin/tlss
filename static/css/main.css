@@ -117,7 +117,7 @@
     font-size: 14px;
     font-family: Inter;
     font-weight: 100;
-    max-height: 40vh;
+    /* max-height: 40vh; */
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
@@ -594,4 +594,24 @@ overflow-y: auto;
 overflow-y: auto;
 height: fit-content;
 max-height: 80vh;
+}
+
+.scroll-area-overview {
+overflow-y: auto;
+height: fit-content;
+max-height: 24vh;
+}
+
+.scroll-area-overview::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 15px;
+    background: linear-gradient(to bottom, transparent, #212529);
+    pointer-events: none;
+    z-index: 5;
+    display: block;
+    margin-top: auto;
 }

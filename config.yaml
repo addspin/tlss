@@ -76,3 +76,8 @@ monitor:
   RecreateCertsInterval: 3
   unitCheckValidCerts: seconds # minutes, seconds, hours
   CheckValidCertsInterval: 10
+
+################################## Настройки overview  / Overview Settings
+overview:
+  checkClientExpireDaysLeft: 30 # days
+  checkServerExpireDaysLeft: 30 # days

@@ -179,9 +179,17 @@ func UserCertListController(c fiber.Ctx) error {
 		EntityId := c.Query("EntityId")
 		// Получаем список сертификатов
 		certList := []models.UserCertsData{}
-		if EntityId != "" {
+		if EntityId != "" && EntityId != "all" {
 			// Если указан ID сущности, фильтруем сертификаты по сущности кроме результатов 2 - revoked
 			err = db.Select(&certList, "SELECT id, entity_id, algorithm, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM user_certs WHERE entity_id = ? AND cert_status IN (0, 1)", EntityId)
+			if err != nil {
+				slog.Error("Fatal error", "error", err)
+			}
+		}
+
+		if EntityId == "all" {
+			// Если указан ID сущности all фильтруем сертификаты по всем сущностям
+			err = db.Select(&certList, "SELECT id, entity_id, algorithm, key_length, ttl, recreate, common_name, country_name, state_province, locality_name, organization, organization_unit, email, public_key, private_key, cert_create_time, cert_expire_time, days_left, serial_number, data_revoke, reason_revoke, cert_status FROM user_certs WHERE cert_status IN (0, 1)")
 			if err != nil {
 				slog.Error("Fatal error", "error", err)
 			}

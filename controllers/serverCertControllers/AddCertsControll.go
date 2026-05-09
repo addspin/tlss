@@ -240,9 +240,16 @@ func CertListController(c fiber.Ctx) error {
 		// Получаем список сертификатов
 		certList := []models.CertsData{}
 
-		if serverId != "" {
+		if serverId != "" && serverId != "all" {
 			// Если указан ID сервера, фильтруем сертификаты по серверу кроме результатов 2 - revoked
 			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, domain, wildcard, cert_status, cert_create_time, cert_expire_time, recreate, save_on_server, days_left FROM certs WHERE server_id = ? AND cert_status IN (0, 1)", serverId)
+			if err != nil {
+				slog.Error("Fatal error", "error", err)
+			}
+		}
+		if serverId == "all" {
+			// Если указан ID сервера all, фильтруем сертификаты по всем серверам
+			err = db.Select(&certList, "SELECT id, server_id, algorithm, key_length, domain, wildcard, cert_status, cert_create_time, cert_expire_time, recreate, save_on_server, days_left FROM certs WHERE cert_status IN (0, 1)")
 			if err != nil {
 				slog.Error("Fatal error", "error", err)
 			}

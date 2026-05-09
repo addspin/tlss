@@ -3,8 +3,23 @@
   <div class="col-2">
     <div class="left-core">
       <!-- Левая панель с сущьностями -->
-      <div id="search-server" class="search-input-container-server">
-        <input type="text" class="search-input" name="search-entity" placeholder="Search entitys">
+      <div id="search-server" class="search-input-container-server-all">
+        <input type="text" class="search-input" name="search-entity" placeholder="Search entities">
+
+        <div class="row-auto">
+          <div class="col-auto">
+            <button id="entity-all" class="input_border_button mt-1" 
+                    hx-get="/user_cert_list" 
+                    hx-target="#response" 
+                    hx-ext="json-enc-custom" 
+                    parse-types="true"
+                    hx-vals='{"EntityId": "all"}'
+                    >
+               All certs for search
+            </button>
+          </div>
+        </div>
+
       </div>
       {{template "entitysList-users-certs-tpl" .}}
     </div>
@@ -243,5 +258,23 @@
     </div>
   </div>
 </div>
+<script>
+document.addEventListener('click', function(e) {
+    const createBtn = document.getElementById('create-cert-btn');
+    const serverAllBtn = document.getElementById('entity-all');
+    
+    // Если нажали на "All certs" — блокируем
+    if (serverAllBtn.contains(e.target)) {
+        createBtn.disabled = true;
+    } 
+    
+    // Если нажали на любой "entity-X" (где X - цифра) — разблокируем
+    const otherServerBtn = e.target.closest('[id^="entity-"]');
+    
+    if (otherServerBtn && otherServerBtn.id !== 'entity-all' && /\d$/.test(otherServerBtn.id)) {
+        createBtn.disabled = false;
+    }
+});
+</script>
 {{end}}
 

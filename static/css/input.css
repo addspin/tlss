@@ -472,6 +472,17 @@ select:focus {
     padding-top: 5px;
     padding-bottom: 5px;
 }
+.search-input-container-server-all {
+    padding-left: 0%;
+    padding-right: 0%;
+    align-content: center;
+    margin-bottom: 10%;
+    position: sticky;
+    top: 0;
+    background-color: #212529;
+    z-index: 10;
+    padding-top: 5px;
+}
 [class^="server_id_"] {
     font-family: Inter;
     font-weight: 100;
@@ -733,4 +744,10 @@ select:focus {
     display: block;
     margin-bottom: 8px;
     font-family: Inter;
+}
+
+/* Стили для кнопки создания сертификата если выбран поиск по всем сертфиикатам */
+#create-cert-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

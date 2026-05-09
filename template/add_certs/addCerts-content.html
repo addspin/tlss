@@ -3,8 +3,23 @@
   <!-- Блок серверов -->
   <div class="col-2">
     <div class="left-core">
-      <div id="search-server" class="search-input-container-server">
+      <div id="search-server" class="search-input-container-server-all">
         <input type="text" class="search-input" name="search-server" placeholder="Search object">
+
+        <div class="row-auto">
+          <div class="col-auto">
+            <button id="server-all" class="input_border_button mt-1" 
+                    hx-get="/cert_list" 
+                    hx-target="#response" 
+                    hx-ext="json-enc-custom" 
+                    parse-types="false"
+                    hx-vals='{"serverId": "all"}'
+                   >
+              All certs for search
+            </button>
+          </div>
+        </div>
+
       </div>
       {{template "serverList-certs-tpl" .}}
     </div>
@@ -236,5 +251,23 @@
     </div>
   </div>
 </div>
+<script>
+document.addEventListener('click', function(e) {
+    const createBtn = document.getElementById('create-cert-btn');
+    const serverAllBtn = document.getElementById('server-all');
+    
+    // Если нажали на "All certs" — блокируем
+    if (serverAllBtn.contains(e.target)) {
+        createBtn.disabled = true;
+    } 
+    
+    // Если нажали на любой "server-X" (где X - цифра) — разблокируем
+    const otherServerBtn = e.target.closest('[id^="server-"]');
+    
+    if (otherServerBtn && otherServerBtn.id !== 'server-all' && /\d$/.test(otherServerBtn.id)) {
+        createBtn.disabled = false;
+    }
+});
+</script>
 {{end}}
 

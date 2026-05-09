@@ -135,7 +135,7 @@
             <div class="col-md-3">
               <label class="select_title">Signing CA</label>
                 <select name="SigningCAId" class="select" type="number">
-                  <option value="0" selected>Internal CA</option>
+                  <option value="0" selected>Core CA</option>
                   {{ range .entityCAList }}
                   <option value="{{ .Id }}">{{ .EntityCAName }}</option>
                   {{ end }}

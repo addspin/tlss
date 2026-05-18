@@ -60,6 +60,11 @@ func AuthMiddleware() fiber.Handler {
 			return c.Next()
 		}
 
+		// /.well-known/est/* защищены через ESTBasicAuth middleware — пропускаем session-проверку
+		if strings.HasPrefix(path, "/.well-known/est/") {
+			return c.Next()
+		}
+
 		// Внутренний API ключ (используется фоновыми задачами приложения)
 		apiKey := c.Get("X-API-Key")
 		if apiKey == crypts.GetInternalAPIKey() && apiKey != "" {

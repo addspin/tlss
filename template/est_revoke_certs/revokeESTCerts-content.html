@@ -1,0 +1,43 @@
+{{define "revokeESTCerts-content"}}
+<div class="row">
+  <div class="col-2">
+    <div class="left-core">
+      <div id="search-server" class="search-input-container-server">
+        <input type="text" class="search-input" name="search-est-user" placeholder="Search EST user">
+      </div>
+      {{template "estUsersListRevoke-tpl" .}}
+    </div>
+  </div>
+
+  <div class="col-7">
+    <div><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" hx-get="/overview"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Overview</a></li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/est_users"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Add EST users</a></li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/add_est_certs"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Add EST certs</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Revoke EST certs</li>
+    </ol></div>
+
+    <div class="row mt-2">
+      <div class="col-12">
+        <div class="core-certs-revoke">
+          <div id="search-certs" class="search-input-container-revoke">
+            <input type="text" class="search-input" name="search-certs" placeholder="Search EST certs">
+          </div>
+          <div id="response" class="certs_revoke_table">
+            {{template "certESTRevokeList-tpl" .}}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

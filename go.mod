@@ -8,6 +8,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/spf13/viper v1.20.0-alpha.6
+	go.mozilla.org/pkcs7 v0.9.0
 	golang.org/x/crypto v0.50.0
 	software.sslmate.com/src/go-pkcs12 v0.5.0
 )

@@ -143,10 +143,10 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	// Получаем отозванные клинтские сертификаты
 	var revokedUserCerts []models.UserCertsData
 	err = db.Select(&revokedUserCerts, `
-		SELECT 
-			id, cert_status, public_key, 
+		SELECT
+			id, cert_status, public_key,
 			data_revoke, reason_revoke, serial_number
-		FROM user_certs 
+		FROM user_certs
 		WHERE cert_status = 2
 	`)
 	if err != nil {
@@ -156,6 +156,27 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 			entry, err := createRevokedEntry(cert.SerialNumber, cert.DataRevoke, cert.ReasonRevoke)
 			if err != nil {
 				return nil, fmt.Errorf("sub CA CRL: error creating entry for client certificate %s: %v", cert.SerialNumber, err)
+			}
+			revokedEntries = append(revokedEntries, entry)
+		}
+	}
+
+	// Получаем отозванные EST сертификаты, подписанные нашим Sub CA (Core CA) External CA не учитываются
+	var revokedESTCerts []models.ESTCert
+	err = db.Select(&revokedESTCerts, `
+		SELECT
+			id, cert_status, public_key,
+			data_revoke, reason_revoke, serial_number
+		FROM est_certs
+		WHERE cert_status = 2 AND signing_ca_id = 0
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("sub CA CRL: warning - failed to get revoked EST certificates: %v", err)
+	} else {
+		for _, cert := range revokedESTCerts {
+			entry, err := createRevokedEntry(cert.SerialNumber, cert.DataRevoke, cert.ReasonRevoke)
+			if err != nil {
+				return nil, fmt.Errorf("sub CA CRL: error creating entry for EST certificate %s: %v", cert.SerialNumber, err)
 			}
 			revokedEntries = append(revokedEntries, entry)
 		}
@@ -210,7 +231,7 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 		RevokedCertificates: revokedEntries,
 		Number:              big.NewInt(int64(SubCAcrlInfo.CrlNumber)),
 		ThisUpdate:          time.Now(),
-		NextUpdate:          time.Now().Add(time.Duration(viper.GetInt("SubCAcrl.updateInterval")) * time.Hour),
+		NextUpdate:          time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour),
 	}
 
 	// Генерируем CRL в DER формате
@@ -249,7 +270,7 @@ func createRevokedEntry(serialNumber, dataRevoke, reasonRevoke string) (pkix.Rev
 		RevocationTime: revocationTime,
 	}
 
-	// Добавляем причину отзыва (DER-кодированная ASN.1 ENUMERATED)
+	// Добавляем причину отзыва
 	reason := getRevocationReason(reasonRevoke)
 	if reason != 0 { // unspecified обычно опускают
 		val, err := asn1.Marshal(asn1.Enumerated(reason))
@@ -395,7 +416,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 	} else {
 		// Обновляем существующую информацию о Root CA CRL
 		rootCACrlInfo.LastUpdate = time.Now().Format(time.RFC3339)
-		rootCACrlInfo.NextUpdate = time.Now().Add(time.Duration(viper.GetInt("RootCAcrl.updateInterval")) * time.Hour).Format(time.RFC3339)
+		rootCACrlInfo.NextUpdate = time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour).Format(time.RFC3339)
 		rootCACrlInfo.CrlNumber++
 		_, err = db.Exec(`
 			UPDATE root_ca_crl_info SET
@@ -414,7 +435,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 		RevokedCertificates: revokedEntries,
 		Number:              big.NewInt(int64(rootCACrlInfo.CrlNumber)),
 		ThisUpdate:          time.Now(),
-		NextUpdate:          time.Now().Add(time.Duration(viper.GetInt("RootCAcrl.updateInterval")) * time.Hour),
+		NextUpdate:          time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour),
 	}
 	// Генерируем CRL в DER формате
 	crlRootBytes, err = x509.CreateRevocationList(rand.Reader, template, rootCert, rootKey)

@@ -72,13 +72,14 @@ func (s *StatusCodeTcp) checkPort() {
 	} else {
 		// проходимся по списку серверов и проверяем доступность
 		testData := utils.NewTestData()
+		dialTimeout := utils.SelectTime(viper.GetString("add_server.unit"), viper.GetInt("add_server.waitingToConnect"))
 		for _, server := range serverList {
 			port, err := testData.TestString(server.Port)
 			if err != nil {
 				slog.Error("TCP checker: Port conversion error", "hostname", server.Hostname, "error", err)
 				continue
 			}
-			conn, err := net.Dial("tcp", server.Hostname+":"+port)
+			conn, err := net.DialTimeout("tcp", server.Hostname+":"+port, dialTimeout)
 			if err != nil {
 				s.ExitCodeTcp = false // port is not available
 				// slog.Info("TCP port is not available", "hostname", server.Hostname, "port", server.Port)

@@ -1,0 +1,205 @@
+{{define "addESTCerts-content"}}
+<div class="row">
+  <div class="col-2">
+    <div class="left-core">
+      <!-- Левая панель со списком EST пользователей -->
+      <div id="search-server" class="search-input-container-server-all">
+        <input type="text" class="search-input" name="search-est-user" placeholder="Search EST users">
+
+        <div class="row-auto">
+          <div class="col-auto">
+            <button id="estuser-all" class="input_border_button mt-1"
+                    hx-get="/est_cert_list"
+                    hx-target="#response"
+                    hx-ext="json-enc-custom"
+                    parse-types="true"
+                    hx-vals='{"ESTUserId": "all"}'
+                    >
+               All certs for search
+            </button>
+          </div>
+        </div>
+      </div>
+      {{template "estUsersList-est-certs-tpl" .}}
+    </div>
+  </div>
+
+  <!-- Правая панель с формой -->
+  <div class="col-7">
+    <div><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" hx-get="/overview"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Overview</a></li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/est_users"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Add EST users</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Add EST certs</li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/revoke_est_certs"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Revoke EST certs</a></li>
+    </ol></div>
+
+    <div class="core-certs">
+      <form class=""
+        hx-post="/add_est_certs"
+        hx-swap="none"
+        hx-ext="json-enc-custom"
+        parse-types="true"
+        hx-on::after-request="
+          if (event.detail.xhr.responseText) {
+            try {
+              const response = JSON.parse(event.detail.xhr.responseText);
+              if (response.status === 'error') {
+                Swal.fire({
+                  showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                  hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                  customClass: 'custom-alert',
+                  icon: 'error',
+                  title: 'Error',
+                  text: response.message,
+                  confirmButtonColor: '#3085d6'
+                });
+              } else if (response.status === 'success') {
+                Swal.fire({
+                  showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                  hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                  customClass: 'custom-alert',
+                  icon: 'success',
+                  title: 'Success',
+                  text: `EST certificate for ${response.CommonName} created successfully`,
+                  confirmButtonColor: '#3085d6'
+                }).then(() => {
+                  htmx.ajax('GET', '/est_cert_list', {
+                    target: '#response',
+                    swap: 'innerHTML',
+                    values: {
+                      ESTUserId: document.getElementById('estUserId').value
+                    }
+                  });
+                });
+              }
+            } catch (e) {
+              console.error('Response processing error:', e);
+            }
+          }
+        ">
+        <label class="form_lable">Create EST certificate</label>
+        <div class="input_border color-form-certs">
+          <div class="row g-3 form_center">
+            <div class="col-md-3">
+              <label class="select_title">Algorithm</label>
+              <select id="select-type" name="Algorithm" class="select">
+                <option value="RSA" selected>RSA</option>
+                <option value="ECDSA">ECDSA</option>
+                <option value="ED25519">ED25519</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Key Length</label>
+              <!-- RSA -->
+              <select id="select-key-length-rsa" class="select key-length-selector" data-algorithm="RSA" type="number">
+                <option value="2048">2048 bits</option>
+                <option value="4096" selected>4096 bits</option>
+                <option value="8192">8192 bits</option>
+              </select>
+              <!-- ECDSA -->
+              <select id="select-key-length-ecdsa" class="select key-length-selector" data-algorithm="ECDSA" type="number" style="display:none;">
+                <option value="256" selected>P-256 (256 bit)</option>
+                <option value="384">P-384 (384 bit)</option>
+                <option value="521">P-521 (521 bit)</option>
+              </select>
+              <!-- ED25519 -->
+              <select id="select-key-length-ed25519" class="select key-length-selector" data-algorithm="ED25519" type="number" style="display:none; pointer-events:none; opacity:0.6;">
+                <option value="256" selected>256 bits</option>
+              </select>
+              <input type="hidden" name="KeyLength" id="key-length-value" value="4096">
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">TTL (days)</label>
+              <input class="c_input" id="ttl" name="TTL" placeholder="TTL" value="365" required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Signing CA</label>
+              <select name="SigningCAId" class="select" type="number">
+                <option value="0" selected>Core CA</option>
+                {{ range .entityCAList }}
+                <option value="{{ .Id }}">{{ .EntityCAName }}</option>
+                {{ end }}
+              </select>
+            </div>
+          </div>
+
+          <div class="indent-2"></div>
+
+          <div class="row g-3 form_center">
+            <div class="col-md-3">
+              <label class="select_title" title="Required">Common Name</label>
+              <input title="Required" type="text" class="c_input" id="Common" name="CommonName" placeholder="device-01" required>
+            </div>
+
+            <div class="col-md-9">
+              <label class="select_title">Subject Alternative Names</label>
+              <div class="tags-container">
+                <input type="text"
+                  id="san-input"
+                  class="c_input tag-input"
+                  placeholder="device-01.local, 192.168.1.10">
+                <div id="san-tags" class="tags">
+                  <!-- Теги -->
+                </div>
+                <input type="hidden" name="SAN" id="san-values" value="" data-string="true">
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 form_center">
+            <div class="col-md-3" style="display: none;">
+              <input type="number" id="estUserId" name="ESTUserId" value="">
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Password container</label>
+              <input type="password" class="c_input" id="Password" name="Password" placeholder="****" data-string="true" required>
+            </div>
+            <div class="btn-container btn-container-right">
+              <button type="submit" class="btn-custom btn-custom-certs" id="create-cert-btn">
+                <span class="btn-text">Create</span>
+                <img src="/static/svg/time.svg" class="time-svg htmx-indicator">
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Поиск и список сертификатов -->
+<div class="row mt-2">
+  <div class="col-12">
+    <div id="search-certs" class="search-input-container">
+      <input type="text" class="search-input" name="search-est-certs" placeholder="Search certs">
+    </div>
+    <div id="response" class="server-cert-tables">
+      {{template "certESTList-tpl" .}}
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('click', function(e) {
+    const createBtn = document.getElementById('create-cert-btn');
+    const allBtn = document.getElementById('estuser-all');
+
+    if (allBtn && allBtn.contains(e.target)) {
+        createBtn.disabled = true;
+    }
+
+    const otherBtn = e.target.closest('[id^="estuser-"]');
+    if (otherBtn && otherBtn.id !== 'estuser-all' && /\d$/.test(otherBtn.id)) {
+        createBtn.disabled = false;
+    }
+});
+</script>
+{{end}}

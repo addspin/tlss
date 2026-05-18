@@ -112,7 +112,7 @@ func GenerateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("CAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 
@@ -265,7 +265,7 @@ func RecreateRSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, keyPe
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("SubCAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 	// Получаем подписывающий CA сертификат и ключ

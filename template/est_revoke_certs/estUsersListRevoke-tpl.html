@@ -1,0 +1,22 @@
+{{define "estUsersListRevoke-tpl"}}
+<div class="server-list-container">
+  {{ range .estUserList }}
+    <div class="row-auto">
+      <div class="col-auto">
+        <button id="estuser-{{ .Id }}" class="input_border_button mt-1"
+                hx-get="/est_cert_list_revoke"
+                hx-target="#response"
+                hx-ext="json-enc-custom"
+                parse-types="true"
+                hx-vals='{"ESTUserId": {{ .Id }}}'
+                onclick="var input = document.getElementById('estUserId');
+                         input.value = '{{ .Id }}';
+                         input.setAttribute('value', '{{ .Id }}'); ">
+          {{ .Username }}
+          <span class=""></span>
+        </button>
+      </div>
+    </div>
+  {{ end }}
+</div>
+{{end}}

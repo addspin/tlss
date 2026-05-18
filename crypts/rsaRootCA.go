@@ -66,7 +66,6 @@ func GenerateRSARootCA(data *models.CAData, db *sqlx.DB) error {
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 		MaxPathLen:            1,
-		CRLDistributionPoints: []string{viper.GetString("RootCAcrl.crlURL")},
 	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)

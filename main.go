@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/tls"
 	"crypto/x509"
 	"embed"
 	"encoding/pem"
@@ -187,6 +188,18 @@ func main() {
 		slog.Error("Error creating API keys table", "error", err)
 	}
 
+	// create SchemaESTUser tables in db (хранит пользователей EST для basic auth)
+	_, err = db.Exec(models.SchemaESTUser)
+	if err != nil {
+		slog.Error("Error creating est user table", "error", err)
+	}
+
+	// create SchemaESTCerts tables in db (хранит сертификаты, выпущенные через EST)
+	_, err = db.Exec(models.SchemaESTCerts)
+	if err != nil {
+		slog.Error("Error creating est certs table", "error", err)
+	}
+
 	// Миграция: добавляем колонку key_status в api_keys
 	db.Exec("ALTER TABLE api_keys ADD COLUMN key_status INTEGER DEFAULT 0")
 
@@ -197,7 +210,6 @@ func main() {
 	// Миграция: добавляем колонку passphrase в ssh_key
 	db.Exec("ALTER TABLE ssh_key ADD COLUMN passphrase TEXT NOT NULL DEFAULT ''")
 	// db.Exec("UPDATE ssh_key SET passphrase = '' WHERE passphrase IS NULL")
-
 
 	var password, salt []byte
 	var login string
@@ -502,6 +514,36 @@ func main() {
 		certFile := viper.GetString("app.certFile")
 		keyFile := viper.GetString("app.keyFile")
 		address := viper.GetString("app.hostname") + ":" + viper.GetString("app.port")
+
+		// Отдельный Fiber app для EST с mTLS
+		estApp := fiber.New()
+		routes.ESTsetup(estApp)
+
+		// Пул доверенных CA для верификации клиентских сертификатов EST
+		clientCAPool, err := crypts.BuildESTClientCAPool(db)
+		if err != nil {
+			slog.Error("Error building EST client CA pool", "error", err)
+			os.Exit(1)
+		}
+
+		estAddress := viper.GetString("app.hostname") + ":" + viper.GetString("app.est_port")
+		slog.Info("Starting EST mTLS server", "address", estAddress)
+
+		// Запускаем EST listener в горутине
+		go func() {
+			err := estApp.Listen(estAddress, fiber.ListenConfig{
+				CertFile:    certFile,
+				CertKeyFile: keyFile,
+				TLSConfigFunc: func(tlsConfig *tls.Config) {
+					tlsConfig.ClientAuth = tls.VerifyClientCertIfGiven
+					tlsConfig.ClientCAs = clientCAPool
+				},
+			})
+			if err != nil {
+				slog.Error("Error starting EST server", "error", err)
+				os.Exit(1)
+			}
+		}()
 
 		slog.Info("Starting TLSS server with HTTPS",
 			"address", address,

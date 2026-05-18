@@ -207,5 +207,21 @@
       </div>
     </div>
     {{end}}
+
+    <!-- Subject Key Identifier -->
+    {{if .SubjectKeyId}}
+    <div class="info-item">
+      <label class="info-label">Subject Key Identifier:</label>
+      <span class="info-value-small">{{.SubjectKeyId}}</span>
+    </div>
+    {{end}}
+
+    <!-- Authority Key Identifier -->
+    {{if .AuthorityKeyId}}
+    <div class="info-item">
+      <label class="info-label">Authority Key Identifier:</label>
+      <span class="info-value-small">{{.AuthorityKeyId}}</span>
+    </div>
+    {{end}}
   </div>
 </div>

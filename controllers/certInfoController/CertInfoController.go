@@ -44,6 +44,8 @@ type CertInfo struct {
 	ExtKeyUsage            []string // Расширенное использование ключа
 	CRLDistributionPoints  []string // CRL Distribution Points
 	OCSPDistributionPoints []string // OCSP Distribution Points
+	SubjectKeyId           string   // Subject Key Identifier (hex, SHA-1 публичного ключа)
+	AuthorityKeyId         string   // Authority Key Identifier (hex, ссылка на SKI издателя)
 }
 
 func CertInfoController(c fiber.Ctx) error {
@@ -145,6 +147,8 @@ func CertInfoController(c fiber.Ctx) error {
 			"ExtKeyUsage":            certInfo.ExtKeyUsage,
 			"CRLDistributionPoints":  certInfo.CRLDistributionPoints,
 			"OCSPDistributionPoints": certInfo.OCSPDistributionPoints,
+			"SubjectKeyId":           certInfo.SubjectKeyId,
+			"AuthorityKeyId":         certInfo.AuthorityKeyId,
 		})
 	}
 
@@ -152,6 +156,18 @@ func CertInfoController(c fiber.Ctx) error {
 		"status":  "error",
 		"message": "Method not allowed",
 	})
+}
+
+// formatKeyId форматирует key identifier как hex c двоеточиями
+func formatKeyId(keyId []byte) string {
+	if len(keyId) == 0 {
+		return ""
+	}
+	parts := make([]string, len(keyId))
+	for i, b := range keyId {
+		parts[i] = fmt.Sprintf("%02X", b)
+	}
+	return strings.Join(parts, ":")
 }
 
 // parseCertificate парсит PEM или DER-encoded сертификат и извлекает информацию
@@ -180,13 +196,15 @@ func parseCertificate(certBytes []byte) (*CertInfo, error) {
 
 	certInfo := &CertInfo{
 		Version:      cert.Version,
-		SerialNumber: cert.SerialNumber.String(),
+		SerialNumber: strings.ToUpper(cert.SerialNumber.Text(16)),
 		CommonName:   cert.Subject.CommonName,
 		Issuer:       cert.Issuer.CommonName,
 	}
 
 	certInfo.CRLDistributionPoints = cert.CRLDistributionPoints
 	certInfo.OCSPDistributionPoints = cert.OCSPServer
+	certInfo.SubjectKeyId = formatKeyId(cert.SubjectKeyId)
+	certInfo.AuthorityKeyId = formatKeyId(cert.AuthorityKeyId)
 	// if len(certInfo.OCSPDistributionPoints) == 0 {
 	// 	certInfo.OCSPDistributionPoints = []string{""}
 	// }

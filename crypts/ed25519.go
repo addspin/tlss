@@ -110,7 +110,7 @@ func GenerateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("CAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 
@@ -269,7 +269,7 @@ func RecreateED25519Certificate(data *models.CertsData, db *sqlx.DB) (certPem, k
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("SubCAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 

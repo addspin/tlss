@@ -1,6 +1,7 @@
 ################################## Настройки приложения / Application Settings
 app:
   port: 43000
+  est_port: 43001 # отдельный порт для EST endpoints с mTLS / separate port for EST endpoints with mTLS
   hostname: tlss.lv.local
   # hostname: localhost
   protocol: https # http или https / http or https
@@ -33,10 +34,14 @@ sub_ca_tlss:
   commonName: TLSS Sub CA
 
 ################################## Настройки CRL / CRL Settings
+# По RFC 5280 каждый сертификат указывает CDP на CRL своего издателя:
+# - конечные сертификаты (server/client/EST) подписаны Sub CA
+# - Sub CA сертификаты подписаны Root CA
 CAcrl:
-  crlURL: https://tlss.lv.local:43000/api/v1/crl/bundleca/pem # der или pem большинство прокси работают с pem / der or pem (most proxies work with pem)
+  subCACrlURL: https://tlss.lv.local:43000/api/v1/crl/subca/pem # CRL подписанный Sub CA, для конечных сертификатов / CRL signed by Sub CA, for end-entity certs
+  rootCACrlURL: https://tlss.lv.local:43000/api/v1/crl/rootca/pem # CRL подписанный Root CA, для Sub CA сертификатов / CRL signed by Root CA, for Sub CA certs
   unit: hours # minutes, seconds, hours
-  updateInterval: 24 # minutes 12 hours / интервал обновления: 12 часов
+  updateInterval: 24 # interval of CRL update / интервал обновления CRL
 
 ################################## Настройки CA / CA Settings
 CApath:
@@ -81,3 +86,7 @@ monitor:
 overview:
   checkClientExpireDaysLeft: 30 # days
   checkServerExpireDaysLeft: 30 # days
+
+################################## Настройки EST / EST Settings
+est:
+  cert_ttl_enrollment: 365 # days, срок службы (ttl) устанавливаемый сертификату при первичной выдаче используя basic auth / certificate ttl (ttl) set by the certificate issued using basic auth 

@@ -101,7 +101,39 @@
             </ul>
         </div>
         <hr>
-        
+
+        <!-- EST Section -->
+        <li class="title-menu-left collapsed"
+            data-bs-toggle="collapse"
+            data-bs-target="#estCollapse"
+            aria-expanded="false"
+            aria-controls="estCollapse">
+            <span class="menu-icon-text">
+                <img src="/static/svg/lock.svg" alt="EST" class="menu-icon">
+                <span>EST</span>
+            </span>
+        </li>
+        <div class="collapse" id="estCollapse">
+            <ul class="list-unstyled">
+                <li><a class="link-menu-left {{if eq .Title "Add EST users"}}active{{else}}{{end}}"
+                    hx-get="/est_users"
+                    hx-target="#main-content"
+                    hx-swap="innerHTML"
+                    hx-push-url="true">Add EST users</a></li>
+                <li><a class="link-menu-left {{if eq .Title "Add EST certs"}}active{{else}}{{end}}"
+                    hx-get="/add_est_certs"
+                    hx-target="#main-content"
+                    hx-swap="innerHTML"
+                    hx-push-url="true">Add EST certs</a></li>
+                <li><a class="link-menu-left {{if eq .Title "Revoke EST certs"}}active{{else}}{{end}}"
+                    hx-get="/revoke_est_certs"
+                    hx-target="#main-content"
+                    hx-swap="innerHTML"
+                    hx-push-url="true">Revoke EST certs</a></li>
+            </ul>
+        </div>
+        <hr>
+
         <!-- API Section -->
         <li class="title-menu-left collapsed" 
             data-bs-toggle="collapse" 

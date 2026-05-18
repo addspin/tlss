@@ -129,8 +129,6 @@ func RollbackCert(c fiber.Ctx) error {
 				})
 			}
 
-			crl.CombinedCRL(db)
-
 			saveOnServer := crypts.NewSaveOnServer()
 			err = saveOnServer.SaveOnServer(data, db, []byte(keyList[0].PublicKey), decryptedKey)
 			if err != nil {
@@ -148,6 +146,11 @@ func RollbackCert(c fiber.Ctx) error {
 				"status":  "error",
 				"message": "Error saving changes: " + err.Error(),
 			})
+		}
+
+		// Пересоздаем CRL - после rollback, убираем из CRL
+		if err := crl.CombinedCRL(db); err != nil {
+			slog.Error("RollbackCert: CRL regeneration failed", "error", err)
 		}
 
 		return c.Status(200).JSON(fiber.Map{

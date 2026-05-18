@@ -7,6 +7,7 @@ import (
 	apiKeyControllers "github.com/addspin/tlss/controllers/apiKeyControllers"
 	caControllers "github.com/addspin/tlss/controllers/caControllers"
 	certInfoController "github.com/addspin/tlss/controllers/certInfoController"
+	estControllers "github.com/addspin/tlss/controllers/estControllers"
 	loginControllers "github.com/addspin/tlss/controllers/loginControllers"
 	overviewController "github.com/addspin/tlss/controllers/overviewController"
 	serverCertControllers "github.com/addspin/tlss/controllers/serverCertControllers"
@@ -47,6 +48,25 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Get("/api/v1/crl/subca/pem", serverCertControllers.GetSubCAPemCRL)
 	app.Get("/api/v1/crl/rootca/pem", serverCertControllers.GetRootCAPemCRL)
 	app.Get("/api/v1/crl/bundleca/pem", serverCertControllers.GetBundleCAPemCRL)
+
+	// EST users - создание\удаление пользователя
+	app.Get("/est_users", estControllers.ESTUserController)
+	app.Post("/est_users", estControllers.ESTUserController)
+	app.Get("/est_user_list", estControllers.ESTUserListController)
+	app.Post("/remove_est_user", estControllers.RemoveESTUser)
+
+	// EST certs - первичная выдача сертификата
+	app.Get("/add_est_certs", estControllers.AddESTCertController)
+	app.Post("/add_est_certs", estControllers.AddESTCertController)
+	app.Get("/est_cert_list", estControllers.ESTCertListController)
+	app.Post("/remove_est_cert", estControllers.RemoveESTCert)
+	app.Post("/revoke_est_cert", estControllers.RevokeESTCert)
+	app.Get("/take_est_cert", estControllers.TakeESTCert)
+
+	// EST certs revoke page
+	app.Get("/revoke_est_certs", estControllers.RevokeESTCertsController)
+	app.Get("/est_cert_list_revoke", estControllers.ESTCertListRevokeController)
+	app.Post("/rollback_est_cert", estControllers.RollbackESTCert)
 
 	// Admin API endpoints — защищены API ключами с проверкой scope
 	app.Post("/api/v1/crl/bundleca/generate", middleware.APIKeyAuth("write"), serverCertControllers.GenerateCombinedCACRL) // Генерация CRL для Root CA и Sub CA
@@ -139,4 +159,16 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Get("/api_examples", apiKeyControllers.APIExamplesController)
 
 	app.Get("/logout", loginControllers.LogoutController)
+}
+
+// ESTsetup настраивает маршруты EST endpoints (RFC 7030) на отдельном порту с mTLS.
+func ESTsetup(estApp *fiber.App) {
+	// cacerts - без аутентификации
+	estApp.Get("/.well-known/est/cacerts", estControllers.CACerts)
+
+	// simpleenroll - HTTP Basic Auth (клиент ещё не имеет сертификата, выдаем его)
+	estApp.Post("/.well-known/est/simpleenroll", middleware.ESTBasicAuth(), estControllers.SimpleEnroll)
+
+	// simplereenroll - mTLS аутентификация через выпущенный ранее сертификат
+	estApp.Post("/.well-known/est/simplereenroll", middleware.ESTCertAuth(), estControllers.SimpleReenroll)
 }

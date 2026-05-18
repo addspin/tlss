@@ -3,6 +3,7 @@ package controllers
 import (
 	"log/slog"
 
+	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
@@ -70,6 +71,11 @@ func RollbackUserCert(c fiber.Ctx) error {
 				"status":  "error",
 				"message": "Error saving changes: " + err.Error(),
 			})
+		}
+
+		// Пересоздаем CRL - после rollback, убираем из CRL
+		if err := crl.CombinedCRL(db); err != nil {
+			slog.Error("RollbackUserCert: CRL regeneration failed", "error", err)
 		}
 
 		return c.Render("user_revoke_certs/certUserRevokeList-tpl", fiber.Map{})

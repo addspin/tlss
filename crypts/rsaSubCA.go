@@ -132,7 +132,7 @@ func GenerateRSASubCA(data *models.CAData, db *sqlx.DB) error {
 		BasicConstraintsValid: true,
 		IsCA:                  true,
 		MaxPathLen:            0,
-		CRLDistributionPoints: []string{viper.GetString("SubCAcrl.crlURL")},
+		CRLDistributionPoints: []string{viper.GetString("CAcrl.rootCACrlURL")},
 	}
 
 	subCACertDER, err := x509.CreateCertificate(rand.Reader, template, rootCert, &subCAKey.PublicKey, rootKey)
@@ -183,5 +183,10 @@ func GenerateRSASubCA(data *models.CAData, db *sqlx.DB) error {
 	if err != nil {
 		return fmt.Errorf("sub CA: error committing: %w", err)
 	}
+
+	// Сбрасываем кэш - иначе сертификаты будут подписаныСТАРЫМ Sub CA из памяти.
+	ExtractCA.SubCAcert = nil
+	ExtractCA.SubCAKey = nil
+
 	return nil
 }

@@ -130,7 +130,7 @@ func GenerateECDSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, key
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("CAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 
@@ -290,7 +290,7 @@ func RecreateECDSACertificate(data *models.CertsData, db *sqlx.DB) (certPem, key
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("SubCAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 	// Получаем подписывающий CA сертификат и ключ

@@ -1,0 +1,162 @@
+{{define "certESTList-tpl"}}
+<table class="table table-certs" id="certESTListTable">
+  <thead>
+    <tr>
+      <th scope="col" class="sortable-header" onclick="sortTable(0, 'certESTListTable')">
+        Common name
+        <span class="sort-arrow" id="arrow-0">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(1, 'certESTListTable')">
+        Signing CA
+        <span class="sort-arrow" id="arrow-1">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(2, 'certESTListTable')">
+        Create date
+        <span class="sort-arrow" id="arrow-2">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(3, 'certESTListTable')">
+        Expire date
+        <span class="sort-arrow" id="arrow-3">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(4, 'certESTListTable')">
+        Expire in
+        <span class="sort-arrow" id="arrow-4">▼</span>
+      </th>
+      <th scope="col" class="sortable-header th-text-center" onclick="sortTable(5, 'certESTListTable')">
+        Algorithm
+        <span class="sort-arrow" id="arrow-5">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(6, 'certESTListTable')">
+        Key size
+        <span class="sort-arrow" id="arrow-6">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(7, 'certESTListTable')">
+        Status
+        <span class="sort-arrow" id="arrow-7">▼</span>
+      </th>
+      <th scope="col">Revoke</th>
+      <th scope="col"></th>
+      <th scope="col"></th>
+      <th scope="col">Take cert</th>
+      <th scope="col" class="th-text-center">Remove</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ if .certList }}
+      {{ range .certList }}
+        <tr class="est_cert_id_{{ .Id }}" name="{{ .Id }}">
+          <!-- Common name -->
+          <td>{{ .CommonName }}</td>
+          <!-- Signing CA -->
+          <td>{{ if eq .SigningCAId 0 }}Core CA{{ else }}ext:{{ .SigningCAId }}{{ end }}</td>
+          <!-- Create date -->
+          <td>{{ .CertCreateTime }}</td>
+          <!-- Expire date -->
+          <td>{{ .CertExpireTime }}</td>
+          <!-- Expire in -->
+          <td>{{ .DaysLeft }} days</td>
+          <!-- Algorithm -->
+          <td class="th-text-center">{{ .Algorithm }}</td>
+          <!-- Key length -->
+          <td>{{ .KeyLength }} bits</td>
+          <!-- Status -->
+          <td>
+            <div class="state-{{ if eq .CertStatus 0 }}valid-certs{{ else if eq .CertStatus 1 }}expired-certs{{ else if eq .CertStatus 2 }}revoked-certs{{ end }}">
+              {{ if eq .CertStatus 0 }}valid{{ else if eq .CertStatus 1 }}expired{{ else if eq .CertStatus 2 }}revoked{{ end }}
+            </div>
+          </td>
+          <!-- Revoke reason -->
+          <td>
+            <select id="revoke_reason_{{ .Id }}" name="reason_revoke" class="select_certs_revoke" type="text">
+              <option value="keyCompromise">keyCompromise</option>
+              <option value="superseded">superseded</option>
+              <option value="unspecified" selected>unspecified</option>
+            </select>
+          </td>
+          <td>
+            <button type="submit" class="select_cert_revoke" hx-trigger='revoke' hx-post="/revoke_est_cert" hx-target=".est_cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true"
+            hx-vals='js:{
+                "Id": {{ .Id }},
+                "ESTUserId": {{ .ESTUserId }},
+                "ReasonRevoke": document.getElementById("revoke_reason_{{ .Id }}").value
+            }'
+            onClick="Swal.fire({
+              showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+              hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+              customClass: 'custom-alert',
+              input: 'text',
+              title: 'Are you sure you want to revoke certificate - {{ .CommonName }}?',
+              text: 'To confirm, enter {{ .CommonName }}',
+              showCancelButton: true,
+              confirmButtonColor: '#983636',
+              cancelButtonColor: '#3085d6',
+              confirmButtonText: 'Yes, revoke!',
+              inputValidator: (value) => {
+                if (value != '{{ .CommonName }}') {
+                  return 'You entered an invalid certificate name, enter {{ .CommonName }}';
+                }
+              }
+            }).then((result) => {
+              if (result.isConfirmed) {
+                htmx.trigger(this, 'revoke');
+              }
+            });"
+            >Revoke</button>
+          </td>
+          <td></td>
+          <!-- Take cert -->
+          <td>
+            <div class="btn-group">
+              <button type="button" class="select_cert_take dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="/static/svg/take_cert.svg" alt="Select format" style="cursor: pointer;" width="15" height="15">
+                Select format
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item-take" href="/take_est_cert?ESTUserId={{ .ESTUserId }}&id={{ .Id }}&format=zip">zip</a></li>
+                <li><a class="dropdown-item-take" href="/take_est_cert?ESTUserId={{ .ESTUserId }}&id={{ .Id }}&format=pkcs12">pkcs12</a></li>
+                <li><a class="dropdown-item-take" href="/take_est_cert?ESTUserId={{ .ESTUserId }}&id={{ .Id }}&format=pkcs12-legacy">pkcs12-legacy</a></li>
+              </ul>
+            </div>
+          </td>
+          <!-- Remove -->
+          <td class="th-text-center">
+            <button class="btn-trash" name="id" value="{{ .Id }}" type="number" hx-trigger='remove' hx-post="/remove_est_cert" hx-target=".est_cert_id_{{ .Id }}" hx-ext="json-enc-custom" parse-types="true"
+            onClick="Swal.fire({
+              showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+              hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+              customClass: 'custom-alert',
+              input: 'text',
+              title: 'Are you sure you want to delete certificate - {{ .CommonName }}?',
+              text: 'To confirm, enter {{ .CommonName }}',
+              showCancelButton: true,
+              confirmButtonColor: '#983636',
+              cancelButtonColor: '#3085d6',
+              confirmButtonText: 'Yes, delete!',
+              inputValidator: (value) => {
+                if (value != '{{ .CommonName }}') {
+                  return 'You entered an invalid certificate name, enter {{ .CommonName }}';
+                }
+              }
+            }).then((result) => {
+              if (result.isConfirmed) {
+                htmx.trigger(this, 'remove');
+              }
+            });"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="trash" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      {{ end }}
+    {{ else }}
+      <tr>
+        <td colspan="7">No EST user selected or no certs</td>
+        <td></td><td></td><td></td><td></td><td></td><td></td>
+      </tr>
+    {{ end }}
+  </tbody>
+</table>
+{{end}}

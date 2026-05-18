@@ -165,7 +165,7 @@ func GenerateUserECDSACertificate(data *models.UserCertsData, db *sqlx.DB) (cert
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("SubCAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 
@@ -390,7 +390,7 @@ func RecreateUserECDSACertificate(data *models.UserCertsData, db *sqlx.DB) error
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("SubCAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 

@@ -164,18 +164,11 @@ func GetRootCAPemCRL(c fiber.Ctx) error {
 		})
 	}
 
-	// Преобразуем данные из базы в PEM формат
-	crldb := pem.EncodeToMemory(&pem.Block{
-		Type:  "X509 CRL",
-		Bytes: []byte(crlData.DataCRL),
-	})
-
-	// Устанавливаем заголовки для CRL файла
+	// Отдаем данные в PEM формате
 	c.Set("Content-Disposition", "attachment; filename="+rootCAPEMcrl)
 	c.Set("Content-Type", "application/x-pem-file")
 
-	// Отправляем файл
-	return c.Send(crldb)
+	return c.Send([]byte(crlData.DataCRL))
 }
 
 // GetSubCACRL обрабатывает запрос на получение CRL файла
@@ -229,16 +222,10 @@ func GetSubCAPemCRL(c fiber.Ctx) error {
 			"error": "CRL file not found",
 		})
 	}
-	// Преобразуем данные из базы в PEM формат
-	crldb := pem.EncodeToMemory(&pem.Block{
-		Type:  "X509 CRL",
-		Bytes: []byte(crlData.DataCRL),
-	})
 
-	// Устанавливаем заголовки для CRL файла
+	// Отдаем данные в PEM формате
 	c.Set("Content-Disposition", "attachment; filename="+subCAPEMcrl)
 	c.Set("Content-Type", "application/x-pem-file")
 
-	// Отправляем файл
-	return c.Send(crldb)
+	return c.Send([]byte(crlData.DataCRL))
 }

@@ -1,0 +1,109 @@
+{{define "addESTUser-content"}}
+<div class="row">
+  <div class="col-2"></div>
+  <div class="col-7">
+    <div><ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" hx-get="/overview"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Overview</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Add EST users</li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/add_est_certs"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Add EST certs</a></li>
+      <li class="breadcrumb-item"><a href="#" hx-get="/revoke_est_certs"
+        hx-target="#main-content"
+        hx-swap="innerHTML"
+        hx-push-url="true">Revoke EST certs</a></li>
+    </ol></div>
+
+    <div class="core-servers">
+      <form id="add-est-user-form"
+        hx-post="/est_users"
+        hx-swap="none"
+        hx-ext="json-enc-custom"
+        parse-types="true"
+        hx-on::after-request="
+          if (event.detail.xhr.responseText) {
+            try {
+              const response = JSON.parse(event.detail.xhr.responseText);
+              if (response.status === 'error') {
+                Swal.fire({
+                  showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                  hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                  customClass: 'custom-alert',
+                  icon: 'error',
+                  title: 'Error',
+                  text: response.message,
+                  confirmButtonColor: '#3085d6'
+                });
+              } else if (response.status === 'success') {
+                Swal.fire({
+                  showClass: { popup: 'animate__animated animate__fadeInUp animate__fast' },
+                  hideClass: { popup: 'animate__animated animate__fadeOutDown animate__fast' },
+                  customClass: 'custom-alert',
+                  icon: 'success',
+                  title: 'Success',
+                  text: response.message,
+                  confirmButtonColor: '#3085d6'
+                }).then(() => {
+                  htmx.ajax('GET', '/est_user_list', { target: '#response', swap: 'innerHTML' });
+                  document.getElementById('add-est-user-form').reset();
+                });
+              }
+            } catch (e) {}
+          }
+        ">
+        <label class="form_lable">Add EST user</label>
+        <div class="input_border color-form-servers">
+          <div class="row g-3 form_center">
+            <div class="col-md-3">
+              <label class="select_title">Username</label>
+              <input type="text" class="c_input" name="username" placeholder="est object" data-string="true" required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Password</label>
+              <input type="password" class="c_input" name="password" placeholder="Password" data-string="true" required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Max uses</label>
+              <input type="number" class="c_input" name="MaxUses" min="1" value="1" required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">TTL (days)</label>
+              <input type="number" class="c_input" name="TTL" min="1" value="365" required>
+            </div>
+            <div class="col-md-3">
+              <label class="select_title">Signing CA</label>
+              <select name="SigningCAId" class="select">
+                <option value="0" selected>Core CA</option>
+                {{ range .entityCAList }}
+                <option value="{{ .Id }}">{{ .EntityCAName }}</option>
+                {{ end }}
+              </select>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn-custom btn-custom-servers mt-2">
+                <span class="btn-text">Add EST user</span>
+                <img src="/static/svg/time.svg" class="time-svg htmx-indicator">
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-2">
+  <div class="col-12">
+    <div id="search-servers" class="search-input-container">
+      <input type="text" class="search-input" name="search-est-users" placeholder="Search EST users">
+    </div>
+    <div id="response" class="servers_table">
+      {{template "estUserList-tpl" .}}
+    </div>
+  </div>
+</div>
+{{end}}

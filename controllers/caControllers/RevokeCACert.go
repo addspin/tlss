@@ -7,6 +7,7 @@ import (
 
 	"sync"
 
+	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
@@ -274,6 +275,22 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 			return fmt.Errorf("RevokeCACertWithData: root ca: %w", err)
 		}
 
+		// Получаем все валидные EST сертификаты, подписанные нашим Core CA (signing_ca_id = 0)
+		estCertList := []models.ESTCert{}
+		err = db.Select(&estCertList, `SELECT id, est_user_id, signing_ca_id, common_name, san,
+			algorithm, key_length, ttl
+			FROM est_certs
+			WHERE cert_status = ? AND signing_ca_id = 0`, validStatus)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: root ca: error getting list of EST certificates for recreation: %w", err)
+		}
+
+		// Обрабатываем EST сертификаты
+		err = processESTCertificates(estCertList, db, numWorkers)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: root ca: %w", err)
+		}
+
 		// 3) Удаление отозванных и просроченных сертификатов подписанных старым CA
 		// Удаляем все отозванные и просроченные клиентские сертификаты
 		_, err = db.Exec(`DELETE FROM user_certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
@@ -285,6 +302,12 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 		_, err = db.Exec(`DELETE FROM certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
 		if err != nil {
 			return fmt.Errorf("RevokeCACertWithData: root ca: error deleting revoked server certificates: %w", err)
+		}
+
+		// Удаляем все отозванные и просроченные EST сертификаты (только подписанные Core CA)
+		_, err = db.Exec(`DELETE FROM est_certs WHERE cert_status IN (?, ?) AND signing_ca_id = 0`, revokeStatus, expiredStatus)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: root ca: error deleting revoked EST certificates: %w", err)
 		}
 
 		return nil
@@ -335,8 +358,8 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 
 		// Получаем все валидные клиентские сертификаты для пересоздания
 		userCertList := []models.UserCertsData{}
-		err = db.Select(&userCertList, `SELECT id, entity_id, algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password 
-			FROM user_certs 
+		err = db.Select(&userCertList, `SELECT id, entity_id, algorithm, key_length, san, oid, oid_values, common_name, country_name, state_province, locality_name, organization, organization_unit, email, ttl, recreate, reason_revoke, days_left, password
+			FROM user_certs
 			WHERE cert_status = ?`, validStatus)
 		if err != nil {
 			return fmt.Errorf("RevokeCACertWithData: sub ca: error getting list of client certificates for recreation: %w", err)
@@ -344,6 +367,23 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 
 		// Обрабатываем пользовательские сертификаты
 		err = processUserCertificates(userCertList, db, numWorkers)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: sub ca: %w", err)
+		}
+
+		// Получаем все валидные EST сертификаты, подписанные нашим Core CA (signing_ca_id = 0)
+		// Сертификаты, подписанные внешними CA, не трогаем — они не зависят от нашего Sub CA
+		estCertList := []models.ESTCert{}
+		err = db.Select(&estCertList, `SELECT id, est_user_id, signing_ca_id, common_name, san,
+			algorithm, key_length, ttl
+			FROM est_certs
+			WHERE cert_status = ? AND signing_ca_id = 0`, validStatus)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: sub ca: error getting list of EST certificates for recreation: %w", err)
+		}
+
+		// Обрабатываем EST сертификаты
+		err = processESTCertificates(estCertList, db, numWorkers)
 		if err != nil {
 			return fmt.Errorf("RevokeCACertWithData: sub ca: %w", err)
 		}
@@ -359,6 +399,17 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 		_, err = db.Exec(`DELETE FROM certs WHERE cert_status IN (?, ?)`, revokeStatus, expiredStatus)
 		if err != nil {
 			return fmt.Errorf("RevokeCACertWithData: sub ca: error deleting revoked server certificates: %w", err)
+		}
+
+		// Удаляем все отозванные и просроченные EST сертификаты (только подписанные Core CA)
+		_, err = db.Exec(`DELETE FROM est_certs WHERE cert_status IN (?, ?) AND signing_ca_id = 0`, revokeStatus, expiredStatus)
+		if err != nil {
+			return fmt.Errorf("RevokeCACertWithData: sub ca: error deleting revoked EST certificates: %w", err)
+		}
+
+		// Пересоздаем CRL — иначе он будет подписан старым Sub CA
+		if err := crl.CombinedCRL(db); err != nil {
+			slog.Error("RevokeCACertWithData: sub ca: CRL regeneration failed", "error", err)
 		}
 		return nil
 	}
@@ -546,6 +597,77 @@ func processUserCertificates(userCertList []models.UserCertsData, db *sqlx.DB, n
 			slog.Error("Error processing user certificate", "error", err)
 		}
 		return fmt.Errorf("RevokeCACertWithData: errors found while processing %d user certificates", len(userErrors))
+	}
+
+	return nil
+}
+
+// Функция для обработки EST certificates
+func processESTCertificates(estCertList []models.ESTCert, db *sqlx.DB, numWorkers int) error {
+	if len(estCertList) == 0 {
+		return nil
+	}
+
+	estJobs := make(chan models.ESTCert, len(estCertList))
+	estResultsErrors := make(chan error, len(estCertList))
+	var dbMutex sync.Mutex
+
+	// Отправляем задания
+	for _, estCert := range estCertList {
+		estJobs <- estCert
+	}
+	close(estJobs)
+
+	// Запускаем воркеры
+	var estWg sync.WaitGroup
+	for w := 1; w <= numWorkers; w++ {
+		estWg.Add(1)
+		go func() {
+			defer estWg.Done()
+			for estCert := range estJobs {
+				var certErr error
+				switch estCert.Algorithm {
+				case "RSA":
+					dbMutex.Lock()
+					certErr = crypts.RecreateESTRSACertificate(&estCert, db)
+					dbMutex.Unlock()
+					estResultsErrors <- certErr
+				case "ED25519":
+					dbMutex.Lock()
+					certErr = crypts.RecreateESTED25519Certificate(&estCert, db)
+					dbMutex.Unlock()
+					estResultsErrors <- certErr
+				case "ECDSA":
+					dbMutex.Lock()
+					certErr = crypts.RecreateESTECDSACertificate(&estCert, db)
+					dbMutex.Unlock()
+					estResultsErrors <- certErr
+				default:
+					estResultsErrors <- fmt.Errorf("unsupported algorithm: %s", estCert.Algorithm)
+				}
+			}
+		}()
+	}
+
+	// ОДНА горутина для закрытия канала ПОСЛЕ завершения всех воркеров
+	go func() {
+		estWg.Wait()
+		close(estResultsErrors)
+	}()
+
+	// Собираем ошибки ПОСЛЕ цикла создания воркеров
+	var estErrors []error
+	for err := range estResultsErrors {
+		if err != nil {
+			estErrors = append(estErrors, err)
+		}
+	}
+
+	if len(estErrors) > 0 {
+		for _, err := range estErrors {
+			slog.Error("Error processing EST certificate", "error", err)
+		}
+		return fmt.Errorf("RevokeCACertWithData: errors found while processing %d EST certificates", len(estErrors))
 	}
 
 	return nil

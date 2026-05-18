@@ -69,6 +69,15 @@ function setupSearchDelegation() {
                 case 'search-entity':
                     searchInEntityList(value);
                     break;
+                case 'search-est-user':
+                    searchInEntityList(value);
+                    break;
+                case 'search-est-users':
+                    searchInServerTable(value);
+                    break;
+                case 'search-est-certs':
+                    searchInCertTables(value);
+                    break;
             }
         }
     });

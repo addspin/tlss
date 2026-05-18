@@ -213,6 +213,30 @@ func checkCerts() {
 		}
 	}
 
+	// Обновляем user_status у EST пользователей; меняем только с 0 → 1 при истечении срока
+	estUsers := []models.ESTUser{}
+	err = db.Select(&estUsers, `SELECT id, username, user_expire_time, user_status FROM est_users WHERE user_status = 0 AND user_expire_time != ''`)
+	if err != nil {
+		slog.Error("CheckValidCerts: EST user query error", "error", err)
+	} else {
+		for _, user := range estUsers {
+			expireTime, err := time.Parse(time.RFC3339, user.UserExpireTime)
+			if err != nil {
+				slog.Error("CheckValidCerts: Expiration time parsing error for EST user", "username", user.Username, "id", user.Id, "error", err)
+				continue
+			}
+			if currentTime.After(expireTime) {
+				_, err := db.Exec("UPDATE est_users SET user_status = 1, max_uses = 0 WHERE id = ?", user.Id)
+				if err != nil {
+					slog.Error("CheckValidCerts: Error updating EST user status", "username", user.Username, "id", user.Id, "error", err)
+				} else {
+					slog.Warn("CheckValidCerts: EST user expired and marked as invalid", "username", user.Username, "id", user.Id)
+					expiredCount++
+				}
+			}
+		}
+	}
+
 	slog.Info("CheckValidCerts: Certificate validation check completed. Updated days_left for all certificates", "expired_count", expiredCount)
 	Monitors.CheckValidCerts = time.Now()
 }

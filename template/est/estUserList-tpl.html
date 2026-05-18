@@ -1,0 +1,84 @@
+{{define "estUserList-tpl"}}
+<table class="table table-certs" id="estUserTable">
+  <thead>
+    <tr>
+      <th scope="col" class="sortable-header" onclick="sortTable(0, 'estUserTable')">
+        Username <span class="sort-arrow" id="arrow-0">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(1, 'estUserTable')">
+        Signing CA <span class="sort-arrow" id="arrow-1">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(2, 'estUserTable')">
+        Max uses <span class="sort-arrow" id="arrow-2">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(3, 'estUserTable')">
+        Create date <span class="sort-arrow" id="arrow-3">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(4, 'estUserTable')">
+        Expire date <span class="sort-arrow" id="arrow-4">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(5, 'estUserTable')">
+        Expire in <span class="sort-arrow" id="arrow-5">▼</span>
+      </th>
+      <th scope="col" class="sortable-header" onclick="sortTable(6, 'estUserTable')">
+        Status <span class="sort-arrow" id="arrow-6">▼</span>
+      </th>
+      <th scope="col" class="th-text-center">Remove</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{ if .estUserList }}
+      {{ range .estUserList }}
+      <tr class="est_user_id_{{ .Id }}">
+        <td>{{ .Username }}</td>
+        <td>{{ if eq .SigningCAId 0 }}Core CA{{ else }}ext:{{ .SigningCAId }}{{ end }}</td>
+        <td>{{ .MaxUses }}</td>
+        <td>{{ .UserCreateTime }}</td>
+        <td>{{ .UserExpireTime }}</td>
+        <td>{{ .DaysLeft }} days</td>
+        <td>
+          <div class="state-{{ if eq .UserStatus 0 }}valid-certs{{ else if eq .UserStatus 1 }}expired-certs{{ else if eq .UserStatus 3 }}revoked-certs{{ else }}expired-certs{{ end }}">
+            {{ if eq .UserStatus 0 }}active{{ else if eq .UserStatus 1 }}expired{{ else if eq .UserStatus 3 }}disabled{{ else }}expired{{ end }}
+          </div>
+        </td>
+        <td class="th-text-center">
+          <button class="btn-trash" name="id" value="{{ .Id }}"
+            hx-trigger='remove'
+            hx-post="/remove_est_user"
+            hx-target=".est_user_id_{{ .Id }}"
+            hx-ext="json-enc-custom"
+            parse-types="true"
+            onClick="Swal.fire({
+              customClass: 'custom-alert',
+              icon: 'warning',
+              input: 'text',
+              title: 'Delete EST user {{ .Username }}?',
+              text: 'To confirm, enter {{ .Username }}',
+              showCancelButton: true,
+              confirmButtonColor: '#983636',
+              cancelButtonColor: '#3085d6',
+              confirmButtonText: 'Yes, delete!',
+              inputValidator: (value) => {
+                if (value != '{{ .Username }}') {
+                  return 'You entered an invalid name, enter {{ .Username }}';
+                }
+              }
+            }).then((result) => {
+              if (result.isConfirmed) { htmx.trigger(this, 'remove'); }
+            });">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="trash" viewBox="0 0 16 16">
+              <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+              <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+            </svg>
+          </button>
+        </td>
+      </tr>
+      {{ end }}
+    {{ else }}
+      <tr>
+        <td colspan="8">No EST users created yet</td>
+      </tr>
+    {{ end }}
+  </tbody>
+</table>
+{{end}}

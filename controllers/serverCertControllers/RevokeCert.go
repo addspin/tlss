@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/models"
 	"github.com/gofiber/fiber/v3"
 	"github.com/jmoiron/sqlx"
@@ -70,6 +71,11 @@ func RevokeCert(c fiber.Ctx) error {
 				"status":  "error",
 				"message": "Error saving changes: " + err.Error(),
 			})
+		}
+
+		// Пересоздаем CRL сразу после отзыва
+		if err := crl.CombinedCRL(db); err != nil {
+			slog.Error("RevokeCert: CRL regeneration failed", "error", err)
 		}
 	}
 	return c.Render("add_certs/certList-tpl", fiber.Map{})

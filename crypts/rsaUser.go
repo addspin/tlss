@@ -158,7 +158,7 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPe
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("SubCAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 	// Получаем подписывающий CA сертификат и ключ
@@ -387,7 +387,7 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 		IPAddresses:           san.IPAddresses,
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
-			viper.GetString("SubCAcrl.crlURL"),
+			viper.GetString("CAcrl.subCACrlURL"),
 		},
 	}
 	// Получаем подписывающий CA сертификат и ключ

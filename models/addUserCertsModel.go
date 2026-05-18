@@ -1,33 +1,5 @@
 package models
 
-// type UserCerts struct {
-// 	Id               int    `db:"id"`
-// 	EntityId         int    `db:"entity_id"`
-// 	Algorithm        string `db:"algorithm"`
-// 	KeyLength        int    `db:"key_length"`
-// 	TTL              int    `db:"ttl"`
-// 	Recreate         bool   `db:"recreate"`
-// 	CommonName       string `db:"common_name"`
-// 	CountryName      string `db:"country_name"`
-// 	StateProvince    string `db:"state_province"`
-// 	LocalityName     string `db:"locality_name"`
-// 	Organization     string `db:"organization"`
-// 	OrganizationUnit string `db:"organization_unit"`
-// 	Email            string `db:"email"`
-// 	Password         string `db:"password"`
-// 	// CaName           string `db:"cert_ca_name"`
-// 	// CaKey            string `db:"cert_ca_key"`
-// 	PublicKey      string `db:"public_key"`
-// 	PrivateKey     string `db:"private_key"`
-// 	CertCreateTime string `db:"cert_create_time"`
-// 	CertExpireTime string `db:"cert_expire_time"`
-// 	DaysLeft       int    `db:"days_left"`
-// 	SerialNumber   string `db:"serial_number"`
-// 	DataRevoke     string `db:"data_revoke"`
-// 	ReasonRevoke   string `db:"reason_revoke"`
-// 	CertStatus     int    `db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
-// }
-
 // структура для добавления сертификата
 type UserCertsData struct {
 	Id               int    `json:"Id" db:"id"`
@@ -47,18 +19,16 @@ type UserCertsData struct {
 	OrganizationUnit string `json:"OrganizationUnit" db:"organization_unit"`
 	Email            string `json:"Email" db:"email"`
 	Password         string `json:"Password" db:"password"`
-	// CaName           string `json:"cert_ca_name"`
-	// CaKey            string `json:"cert_ca_key"`
-	PublicKey      string `json:"public_key" db:"public_key"`
-	PrivateKey     string `json:"private_key" db:"private_key"`
-	CertCreateTime string `json:"cert_create_time" db:"cert_create_time"`
-	CertExpireTime string `json:"cert_expire_time" db:"cert_expire_time"`
-	DaysLeft       int    `json:"DaysLeft" db:"days_left"`
-	SerialNumber   string `json:"serial_number" db:"serial_number"`
-	DataRevoke     string `json:"data_revoke" db:"data_revoke"`
-	ReasonRevoke   string `json:"ReasonRevoke" db:"reason_revoke"`
-	CertStatus     int    `json:"CertStatus" db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
-	SigningCAId    int    `json:"SigningCAId" db:"signing_ca_id"`
+	PublicKey        string `json:"public_key" db:"public_key"`
+	PrivateKey       string `json:"private_key" db:"private_key"`
+	CertCreateTime   string `json:"cert_create_time" db:"cert_create_time"`
+	CertExpireTime   string `json:"cert_expire_time" db:"cert_expire_time"`
+	DaysLeft         int    `json:"DaysLeft" db:"days_left"`
+	SerialNumber     string `json:"serial_number" db:"serial_number"`
+	DataRevoke       string `json:"data_revoke" db:"data_revoke"`
+	ReasonRevoke     string `json:"ReasonRevoke" db:"reason_revoke"`
+	CertStatus       int    `json:"CertStatus" db:"cert_status"` // 0 - valid, 1 - expired, 2 - revoked
+	SigningCAId      int    `json:"SigningCAId" db:"signing_ca_id"`
 }
 
 var SchemaUserCerts = `

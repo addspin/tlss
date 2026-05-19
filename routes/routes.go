@@ -166,6 +166,9 @@ func ESTsetup(estApp *fiber.App) {
 	// cacerts - без аутентификации
 	estApp.Get("/.well-known/est/cacerts", estControllers.CACerts)
 
+	// csrattrs - подсказка клиенту какие атрибуты сервер ожидает в CSR
+	estApp.Get("/.well-known/est/csrattrs", estControllers.CSRAttrs)
+
 	// simpleenroll - HTTP Basic Auth (клиент ещё не имеет сертификата, выдаем его)
 	estApp.Post("/.well-known/est/simpleenroll", middleware.ESTBasicAuth(), estControllers.SimpleEnroll)
 

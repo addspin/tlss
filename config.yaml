@@ -90,3 +90,7 @@ overview:
 ################################## Настройки EST / EST Settings
 est:
   cert_ttl_enrollment: 365 # days, срок службы (ttl) устанавливаемый сертификату при первичной выдаче используя basic auth / certificate ttl (ttl) set by the certificate issued using basic auth 
+
+#  Из-за различий в структуре для разных клиентов стоит выбрать или старый оригинальный rfc7030 или изменения на основе RFC 9908 / Choose either the original rfc7030 or changes based on RFC 9908
+estCSRAttrs:
+  rfc9908: true # true - использовать RFC 9908, false - использовать RFC 7030 / use RFC 9908, false - use RFC 7030

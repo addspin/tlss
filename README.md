@@ -8,6 +8,9 @@ Hello, TLSS is a small project aimed at the simplest possible work with certific
 
 https://github.com/user-attachments/assets/320e3ce7-9618-4c16-a88d-30ebb8369ae7
 
+## Latest update:
+19.05.26
+- hsdf
 
 ## Main features:
 

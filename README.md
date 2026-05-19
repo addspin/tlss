@@ -12,7 +12,7 @@ Here's the English translation of your text:
 
 **IMPORTANT:**
 
-**When upgrading from version 1.2.0 to 1.3.0, add/recreate (keys will already be there) the following parameters:**
+**When upgrading from version 1.3.0 to 1.4.0, add/recreate (keys will already be there) the following parameters:**
 
 Add:
 ```yaml
@@ -172,7 +172,7 @@ I cannot check everything, there may be more than one bug found, I apologize �
 
 **ВАЖНО:**
 
-**При переходе с версии 1.2.0 на 1.3.0 добавьте в конфигурацию\пересоздайте (ключи уже будут там) следующие параметры:**
+**При переходе с версии 1.3.0 на 1.4.0 добавьте в конфигурацию\пересоздайте (ключи уже будут там) следующие параметры:**
 
 Добавьте:
 ```yaml

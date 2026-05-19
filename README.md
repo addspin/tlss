@@ -8,8 +8,6 @@ Hello, TLSS is a small project aimed at the simplest possible work with certific
 
 https://github.com/user-attachments/assets/320e3ce7-9618-4c16-a88d-30ebb8369ae7
 
-Here's the English translation of your text:
-
 **IMPORTANT:**
 
 **When upgrading from version 1.3.0 to 1.4.0, add/recreate (keys will already be there) the following parameters:**

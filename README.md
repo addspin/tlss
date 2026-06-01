@@ -198,7 +198,7 @@ CAcrl:
 - Enrollment of Clients - /.well-known/est/simpleenroll
 - Re-enrollment of Clients - /.well-known/est/simplereenroll
 Опциональные:
- - CSR Attributes - /.well-known/est/csrattrs (из-за разницы в струкутере оригинальной RFC 7030 и дополнения в RFC 9908, в конфигурации добавлен пункт estCSRAttrs ) 
+ - CSR Attributes - /.well-known/est/csrattrs (из-за разницы в структуре оригинальной RFC 7030 и дополнения в RFC 9908, в конфигурации добавлен пункт estCSRAttrs ) 
  Требуется внести для нормальной работы приложения 
  ```yaml
 estCSRAttrs:
@@ -224,7 +224,7 @@ CAcrl:
 
 **Fix:** Не обновлялся CRL после пересоздания Sub ca (требовалось ждать, следующего обновления)
 
-**Fix:** Обновления времени (следующего обновления) в crl 
+**Fix:** Обновления метки времени (next update) в crl 
 
 **Fix:** Фикс отображения серийного номера сертификата  в Certificate Info, согласован с БД и отображением в openssl
 

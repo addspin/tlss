@@ -9,7 +9,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/spf13/viper v1.20.0-alpha.6
 	go.mozilla.org/pkcs7 v0.9.0
-	golang.org/x/crypto v0.50.0
+	golang.org/x/crypto v0.52.0
 	software.sslmate.com/src/go-pkcs12 v0.5.0
 )
 
@@ -38,8 +38,8 @@ require (
 	github.com/valyala/fasthttp v1.70.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
-	golang.org/x/net v0.53.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

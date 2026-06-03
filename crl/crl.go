@@ -18,6 +18,7 @@ import (
 
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
+	"github.com/addspin/tlss/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 )
@@ -192,7 +193,7 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 			SignatureAlgorithm: "SHA256-RSA",
 			IssuerName:         subCACert.Subject.String(),
 			LastUpdate:         time.Now().Format(time.RFC3339),
-			NextUpdate:         time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour).Format(time.RFC3339),
+			NextUpdate:         time.Now().Add(utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))).Format(time.RFC3339),
 			CrlNumber:          1,
 			CrlURL:             viper.GetString("CAcrl.crlURL"),
 		}
@@ -212,7 +213,7 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	} else {
 		// Обновляем существующую информацию о CRL
 		SubCAcrlInfo.LastUpdate = time.Now().Format(time.RFC3339)
-		SubCAcrlInfo.NextUpdate = time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour).Format(time.RFC3339)
+		SubCAcrlInfo.NextUpdate = time.Now().Add(utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))).Format(time.RFC3339)
 		SubCAcrlInfo.CrlNumber++
 		_, err = db.Exec(`
 			UPDATE sub_ca_crl_info SET
@@ -231,7 +232,7 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 		RevokedCertificates: revokedEntries,
 		Number:              big.NewInt(int64(SubCAcrlInfo.CrlNumber)),
 		ThisUpdate:          time.Now(),
-		NextUpdate:          time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour),
+		NextUpdate:          time.Now().Add(utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))),
 	}
 
 	// Генерируем CRL в DER формате
@@ -396,7 +397,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 			SignatureAlgorithm: "SHA256-RSA",
 			IssuerName:         rootCert.Subject.String(),
 			LastUpdate:         time.Now().Format(time.RFC3339),
-			NextUpdate:         time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour).Format(time.RFC3339),
+			NextUpdate:         time.Now().Add(utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))).Format(time.RFC3339),
 			CrlNumber:          1,
 			CrlURL:             viper.GetString("CAcrl.crlURL"),
 		}
@@ -416,7 +417,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 	} else {
 		// Обновляем существующую информацию о Root CA CRL
 		rootCACrlInfo.LastUpdate = time.Now().Format(time.RFC3339)
-		rootCACrlInfo.NextUpdate = time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour).Format(time.RFC3339)
+		rootCACrlInfo.NextUpdate = time.Now().Add(utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))).Format(time.RFC3339)
 		rootCACrlInfo.CrlNumber++
 		_, err = db.Exec(`
 			UPDATE root_ca_crl_info SET
@@ -435,7 +436,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 		RevokedCertificates: revokedEntries,
 		Number:              big.NewInt(int64(rootCACrlInfo.CrlNumber)),
 		ThisUpdate:          time.Now(),
-		NextUpdate:          time.Now().Add(time.Duration(viper.GetInt("CAcrl.updateInterval")) * time.Hour),
+		NextUpdate:          time.Now().Add(utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))),
 	}
 	// Генерируем CRL в DER формате
 	crlRootBytes, err = x509.CreateRevocationList(rand.Reader, template, rootCert, rootKey)

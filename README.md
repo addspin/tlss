@@ -11,6 +11,7 @@ https://github.com/user-attachments/assets/320e3ce7-9618-4c16-a88d-30ebb8369ae7
 **IMPORTANT:**
 
 **When upgrading from version 1.4.0 to 1.4.1 READ CHANGELOG.md add/recreate config.yaml (keys will already be there)** 
+
 **When upgrading from version 1.3.0 to 1.4.0 READ CHANGELOG.md, add/recreate config.yaml (keys will already be there)**
 
 

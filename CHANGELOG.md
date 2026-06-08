@@ -1,3 +1,18 @@
+## [v1.4.1] - 09.06.26
+
+**IMPORTANT:**
+- Added splitting APP UI, EST, CRL endpoints
+- Default CRl use http protocol and start on 8080 port, please update config.yaml or recreate config:
+```yaml
+app:
+  crl_port: 8080 
+  crl_protocol: http 
+
+CAcrl:
+  subCACrlURL: http://tlss.lv.local:8080/api/v1/crl/subca/pem 
+  rootCACrlURL: http://tlss.lv.local:8080/api/v1/crl/rootca/pem 
+```
+
 ## [v1.4.0] - 19.05.26
 Details below:
 

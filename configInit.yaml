@@ -2,6 +2,8 @@
 app:
   port: 43000
   est_port: 43001 # отдельный порт для EST endpoints с mTLS / separate port for EST endpoints with mTLS
+  crl_port: 8080 # порт для обновления CRL / port for CRL update
+  crl_protocol: http # http или https / http or https
   # hostname: tlss.lv.local
   hostname: localhost
   protocol: http # http или https / http or https
@@ -38,8 +40,8 @@ sub_ca_tlss:
 # - конечные сертификаты (server/client/EST) подписаны Sub CA
 # - Sub CA сертификаты подписаны Root CA
 CAcrl:
-  subCACrlURL: https://tlss.lv.local:43000/api/v1/crl/subca/pem # CRL подписанный Sub CA, для конечных сертификатов / CRL signed by Sub CA, for end-entity certs
-  rootCACrlURL: https://tlss.lv.local:43000/api/v1/crl/rootca/pem # CRL подписанный Root CA, для Sub CA сертификатов / CRL signed by Root CA, for Sub CA certs
+  subCACrlURL: http://tlss.lv.local:8080/api/v1/crl/subca/pem # CRL подписанный Sub CA, для конечных сертификатов / CRL signed by Sub CA, for end-entity certs
+  rootCACrlURL: http://tlss.lv.local:8080/api/v1/crl/rootca/pem # CRL подписанный Root CA, для Sub CA сертификатов / CRL signed by Root CA, for Sub CA certs
   unit: hours # minutes, seconds, hours
   updateInterval: 24 # interval of CRL update / интервал обновления CRL
 

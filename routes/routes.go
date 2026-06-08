@@ -41,14 +41,6 @@ func Setup(app *fiber.App, staticFS embed.FS) {
 	app.Get("/", loginControllers.LoginControll)
 	app.Post("/", loginControllers.LoginControll)
 
-	// CRL read endpoints — публичные, без авторизации
-	app.Get("/api/v1/crl/subca/der", serverCertControllers.GetSubCACRL)
-	app.Get("/api/v1/crl/rootca/der", serverCertControllers.GetRootCACRL)
-	app.Get("/api/v1/crl/bundleca/der", serverCertControllers.GetBundleCACRL)
-	app.Get("/api/v1/crl/subca/pem", serverCertControllers.GetSubCAPemCRL)
-	app.Get("/api/v1/crl/rootca/pem", serverCertControllers.GetRootCAPemCRL)
-	app.Get("/api/v1/crl/bundleca/pem", serverCertControllers.GetBundleCAPemCRL)
-
 	// EST users - создание\удаление пользователя
 	app.Get("/est_users", estControllers.ESTUserController)
 	app.Post("/est_users", estControllers.ESTUserController)
@@ -174,4 +166,14 @@ func ESTsetup(estApp *fiber.App) {
 
 	// simplereenroll - mTLS аутентификация через выпущенный ранее сертификат
 	estApp.Post("/.well-known/est/simplereenroll", middleware.ESTCertAuth(), estControllers.SimpleReenroll)
+}
+
+func CRLsetup(crlApp *fiber.App) {
+	// CRL read endpoints - публичные, без авторизации
+	crlApp.Get("/api/v1/crl/subca/der", serverCertControllers.GetSubCACRL)
+	crlApp.Get("/api/v1/crl/rootca/der", serverCertControllers.GetRootCACRL)
+	crlApp.Get("/api/v1/crl/bundleca/der", serverCertControllers.GetBundleCACRL)
+	crlApp.Get("/api/v1/crl/subca/pem", serverCertControllers.GetSubCAPemCRL)
+	crlApp.Get("/api/v1/crl/rootca/pem", serverCertControllers.GetRootCAPemCRL)
+	crlApp.Get("/api/v1/crl/bundleca/pem", serverCertControllers.GetBundleCAPemCRL)
 }

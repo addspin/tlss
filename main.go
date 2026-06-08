@@ -508,18 +508,38 @@ func main() {
 	// Настраиваем маршруты
 	routes.Setup(app, staticFS)
 
-	// Определяем, использовать ли HTTPS
-	if viper.GetString("app.protocol") == "https" {
-		// Запуск с TLS (HTTPS)
-		certFile := viper.GetString("app.certFile")
-		keyFile := viper.GetString("app.keyFile")
-		address := viper.GetString("app.hostname") + ":" + viper.GetString("app.port")
+	// Запуск CRL сервера
+	crlApp := fiber.New()
+	routes.CRLsetup(crlApp)
+	crlAddress := viper.GetString("app.hostname") + ":" + viper.GetString("app.crl_port")
+	crlProtocol := viper.GetString("app.crl_protocol")
+	go func() {
+		var err error
+		if crlProtocol == "https" {
+			slog.Info("Starting HTTPS CRL server", "address", crlAddress)
+			err = crlApp.Listen(crlAddress, fiber.ListenConfig{
+				CertFile:    viper.GetString("app.certFile"),
+				CertKeyFile: viper.GetString("app.keyFile"),
+			})
+		} else {
+			slog.Info("Starting HTTP CRL server", "address", crlAddress)
+			err = crlApp.Listen(crlAddress)
+		}
+		if err != nil {
+			slog.Error("Error starting HTTP CRL server", "error", err)
+			os.Exit(1)
+		}
+	}()
 
-		// Отдельный Fiber app для EST с mTLS
+	// Запуск EST сервера (всегда TLS с mTLS - RFC 7030 требует TLS)
+	certFile := viper.GetString("app.certFile")
+	keyFile := viper.GetString("app.keyFile")
+	if certFile == "" || keyFile == "" {
+		slog.Warn("EST server requires TLS but certFile/keyFile are not configured — EST will be unavailable")
+	} else {
 		estApp := fiber.New()
 		routes.ESTsetup(estApp)
 
-		// Пул доверенных CA для верификации клиентских сертификатов EST
 		clientCAPool, err := crypts.BuildESTClientCAPool(db)
 		if err != nil {
 			slog.Error("Error building EST client CA pool", "error", err)
@@ -529,7 +549,6 @@ func main() {
 		estAddress := viper.GetString("app.hostname") + ":" + viper.GetString("app.est_port")
 		slog.Info("Starting EST mTLS server", "address", estAddress)
 
-		// Запускаем EST listener в горутине
 		go func() {
 			err := estApp.Listen(estAddress, fiber.ListenConfig{
 				CertFile:    certFile,
@@ -544,8 +563,13 @@ func main() {
 				os.Exit(1)
 			}
 		}()
+	}
 
-		slog.Info("Starting TLSS server with HTTPS",
+	// Запуск основного приложения
+	if viper.GetString("app.protocol") == "https" {
+		address := viper.GetString("app.hostname") + ":" + viper.GetString("app.port")
+
+		slog.Info("Starting TLSS UI server with HTTPS",
 			"address", address,
 			"cert_file", certFile,
 			"key_file", keyFile)
@@ -554,17 +578,16 @@ func main() {
 			CertFile:    certFile,
 			CertKeyFile: keyFile,
 		}); err != nil {
-			slog.Error("Error starting HTTPS server", "error", err)
+			slog.Error("Error starting TLSS UI HTTPS server", "error", err)
 			os.Exit(1)
 		}
 	} else {
-		// Запуск без TLS (HTTP)
 		address := viper.GetString("app.hostname") + ":" + viper.GetString("app.port")
 
-		slog.Info("Starting TLSS server with HTTP", "address", address)
+		slog.Info("Starting TLSS UI server with HTTP", "address", address)
 
 		if err := app.Listen(address); err != nil {
-			slog.Error("Error starting HTTP server", "error", err)
+			slog.Error("Error starting TLSS UI HTTP server", "error", err)
 			os.Exit(1)
 		}
 	}

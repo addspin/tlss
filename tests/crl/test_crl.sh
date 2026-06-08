@@ -25,6 +25,7 @@ if [[ ! -f "$PROJECT_ROOT/go.mod" ]]; then
 fi
 
 BASE_URL="${BASE_URL:-https://tlss.lv.local:43000}"
+CRL_URL="${CRL_URL:-http://tlss.lv.local:8080}"
 DB="${DB:-$PROJECT_ROOT/db/database.db}"
 WORK_DIR="$(mktemp -d -t tlss-crl-XXXX)"
 trap "rm -rf $WORK_DIR" EXIT
@@ -37,7 +38,8 @@ fi
 
 echo "═══════════════════════════════════════════════════════════════"
 echo " TLSS CRL TEST"
-echo " URL:  $BASE_URL"
+echo " URL:  $BASE_URL
+ CRL:  $CRL_URL"
 echo " DB:   $DB"
 echo " Tmp:  $WORK_DIR"
 echo "═══════════════════════════════════════════════════════════════"
@@ -89,8 +91,8 @@ echo "   AKI:    $CERT_AKI"
 # ─── 3. Скачать оба CRL ─────────────────────────────────────────────
 echo ""
 echo "🔍 Шаг 3: скачиваю Sub CA CRL и Root CA CRL"
-curl -sk "$BASE_URL/api/v1/crl/subca/pem" -o "$WORK_DIR/subca.crl"
-curl -sk "$BASE_URL/api/v1/crl/rootca/pem" -o "$WORK_DIR/rootca.crl"
+curl -sk "$CRL_URL/api/v1/crl/subca/pem" -o "$WORK_DIR/subca.crl"
+curl -sk "$CRL_URL/api/v1/crl/rootca/pem" -o "$WORK_DIR/rootca.crl"
 
 if ! openssl crl -in "$WORK_DIR/subca.crl" -noout 2>/dev/null; then
   echo "❌ Sub CA CRL не парсится"
@@ -153,7 +155,7 @@ cat "$WORK_DIR/subca.crl" "$WORK_DIR/rootca.crl" > "$WORK_DIR/crls.pem"
 # Проверяем CDP в активном Sub CA сертификате
 SUBCA_CDP=$(openssl x509 -in "$WORK_DIR/sub_ca.pem" -text -noout 2>/dev/null | \
   awk '/CRL Distribution/,/Signature Algorithm/' | grep "URI:" | sed 's/.*URI://')
-EXPECTED_ROOTCA_URL="$BASE_URL/api/v1/crl/rootca/pem"
+EXPECTED_ROOTCA_URL="$CRL_URL/api/v1/crl/rootca/pem"
 if [[ -z "$SUBCA_CDP" ]]; then
   SUBCA_CDP_OK="нет"
   echo "   ⚠️  Sub CA НЕ содержит CDP — был выпущен до фикса конфига"

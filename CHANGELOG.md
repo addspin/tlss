@@ -1,4 +1,4 @@
-## [v1.5.0] - **18**.08.26
+## [v1.5.0] - 18.08.26
 
 **IMPORTANT:**
 - OCSP responder added. Add the `CAocsp` section to `config.yaml` (or recreate the config):

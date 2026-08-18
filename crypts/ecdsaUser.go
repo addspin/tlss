@@ -167,6 +167,9 @@ func GenerateUserECDSACertificate(data *models.UserCertsData, db *sqlx.DB) (cert
 		CRLDistributionPoints: []string{
 			viper.GetString("CAcrl.subCACrlURL"),
 		},
+		OCSPServer: []string{
+			viper.GetString("CAocsp.url"),
+		},
 	}
 
 	// Получаем подписывающий CA сертификат и ключ
@@ -391,6 +394,9 @@ func RecreateUserECDSACertificate(data *models.UserCertsData, db *sqlx.DB) error
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("CAcrl.subCACrlURL"),
+		},
+		OCSPServer: []string{
+			viper.GetString("CAocsp.url"),
 		},
 	}
 

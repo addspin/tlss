@@ -1,3 +1,62 @@
+## [v1.5.0] - **18**.08.26
+
+**IMPORTANT:**
+- OCSP responder added. Add the `CAocsp` section to `config.yaml` (or recreate the config):
+```yaml
+CAocsp:
+  url: http://tlss.lv.local:8080/ocsp # AIA (id-ad-ocsp) for all issued certs
+  responseValidity: 24 # hours, response validity (nextUpdate)
+```
+- The AIA extension is written only into **newly issued** certificates. Existing ones
+  have no responder address, so clients will not find it on their own — reissue the
+  certificates if you need OCSP checks for them.
+
+**Add:**
+- OCSP responder according to RFC 6960 with the lightweight profile of RFC 5019:
+  - `POST /ocsp` - DER-encoded OCSPRequest in the body
+  - `GET /ocsp/{base64}` — base64(DER) in the path (RFC 6960 Appendix A.1)
+  - Responses are signed by the CA that issued the certificate (`responderID = byName`)
+  - The issuer is resolved from `IssuerNameHash`/`IssuerKeyHash` of the request, so a
+    single endpoint serves the whole hierarchy: Core Sub CA, Core Root CA and external CAs
+  - `unauthorized (6)` is returned for an unknown serial (RFC 5019) so the
+    responder cannot be used as an oracle
+  - HTTP caching headers according to RFC 5019
+  - Runs on the public CRL listener (`app.crl_port`, HTTP by default)
+- AIA extension (`id-ad-ocsp`) in all issued certificates: server, client, EST and Sub CA
+- Documentation in `docs_en/`:
+  - `technical documentation/` - architecture, configuration, database, crypto, CRL,
+    OCSP, EST, API, checkers, UI, testing and a summary of known issues
+  - `user documentation/` — initialization and production setup
+- Test scripts:
+  - `tests/ocsp/test_ocsp.sh` - AIA, POST and GET requests, caching, `unauthorized`,
+    Sub CA status via Root CA
+  - `tests/revocation/test_revocation.sh` - end-to-end consistency between the database,
+    CRL and OCSP; returns a non-zero exit code on mismatch
+
+**Fix:**
+- `keyCompromise` was never matched in `GetRevocationReason`: the input is lowercased,
+  but the case label was written in camelCase. Revocations with this reason were
+  published in the CRL as `unspecified`
+- CRL metadata used the non-existent configuration key `CAcrl.crlURL`, so an empty
+  string was written to the `crl_url` column of `sub_ca_crl_info` and `root_ca_crl_info`
+- Certificates issued by external CAs were included in the Sub CA CRL. That CRL is
+  signed by our Sub CA and is not applicable to them - a client would reject it.
+  Revocation for such certificates is served via OCSP
+- Certificates issued through the EST protocol had no CDP and no AIA at all
+- `simplereenroll` did not verify that Subject and SubjectAltName match the certificate
+  being renewed (RFC 7030). The owner of any valid certificate could issue one
+  for an arbitrary name
+- The EST trusted CA pool was built once at startup: after reissuing the Sub CA, clients
+  with new certificates could not pass mTLS until a restart. The pool is now rebuilt on
+  handshake with a short cache and is reset immediately when the Sub CA is reissued
+- Monitor poll intervals for the recreate and validity checkers were taken from the
+  checker sections instead of `monitor.*`, so four configuration keys were ignored and
+  the monitor woke up less often than configured
+
+**Update:**
+- `GetRevocationReason` is now exported from the `crl` package and shared with OCSP -
+  revocation reason codes are common to both mechanisms
+
 ## [v1.4.1] - 09.06.26
 
 **IMPORTANT:**

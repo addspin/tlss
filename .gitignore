@@ -22,6 +22,9 @@
 /.idea
 /.vscode
 /https
+docs_ru/task.md
+docs_ru/technical documentation/13-improvements.md
+docs_en/technical documentation/13-improvements.md
 go.work
 go.work.sum
 tailwindcss

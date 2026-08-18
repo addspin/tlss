@@ -45,6 +45,14 @@ CAcrl:
   unit: hours # minutes, seconds, hours
   updateInterval: 24 # interval of CRL update / интервал обновления CRL
 
+################################## Настройки OCSP / OCSP Settings
+# По RFC 5280 расширение AIA (id-ad-ocsp) указывает URL респондера.
+# В отличие от CRL, адрес один на всю иерархию: респондер определяет издателя
+# по IssuerNameHash/IssuerKeyHash из самого запроса (RFC 6960).
+CAocsp:
+  url: http://tlss.lv.local:8080/ocsp # AIA (id-ad-ocsp) для всех выпускаемых сертификатов / AIA for all issued certs
+  responseValidity: 24 # hours, срок действия ответа (nextUpdate) / response validity (nextUpdate)
+
 ################################## Настройки CA / CA Settings
 CApath:
   db: true # true - сохранять в базе данных / save to database

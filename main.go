@@ -460,8 +460,8 @@ func main() {
 
 	//---------------------------------------Start Monitor
 	TCPInterval := utils.SelectTime(viper.GetString("monitor.unitTCP"), viper.GetInt("monitor.TCPInterval"))
-	RecreateCertsInterval := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.recreateCertsInterval"))
-	CheckValidCertsInterval := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.certsValidationInterval"))
+	RecreateCertsInterval := utils.SelectTime(viper.GetString("monitor.unitRecreateCerts"), viper.GetInt("monitor.RecreateCertsInterval"))
+	CheckValidCertsInterval := utils.SelectTime(viper.GetString("monitor.unitCheckValidCerts"), viper.GetInt("monitor.CheckValidCertsInterval"))
 	go check.Monitore(TCPInterval, RecreateCertsInterval, CheckValidCertsInterval)
 
 	//---------------------------------------Start Generate  Root and Sub CRL
@@ -508,9 +508,10 @@ func main() {
 	// Настраиваем маршруты
 	routes.Setup(app, staticFS)
 
-	// Запуск CRL сервера
+	// Запуск CRL и OCSP сервера (общий публичный listener)
 	crlApp := fiber.New()
 	routes.CRLsetup(crlApp)
+	routes.OCSPsetup(crlApp)
 	crlAddress := viper.GetString("app.hostname") + ":" + viper.GetString("app.crl_port")
 	crlProtocol := viper.GetString("app.crl_protocol")
 	go func() {
@@ -540,8 +541,9 @@ func main() {
 		estApp := fiber.New()
 		routes.ESTsetup(estApp)
 
-		clientCAPool, err := crypts.BuildESTClientCAPool(db)
-		if err != nil {
+		// Проверяем, что пул собирается: пустой список CA означает, что mTLS
+		// не сможет проверить ни одного клиента
+		if _, err := crypts.BuildESTClientCAPool(db); err != nil {
 			slog.Error("Error building EST client CA pool", "error", err)
 			os.Exit(1)
 		}
@@ -555,7 +557,17 @@ func main() {
 				CertKeyFile: keyFile,
 				TLSConfigFunc: func(tlsConfig *tls.Config) {
 					tlsConfig.ClientAuth = tls.VerifyClientCertIfGiven
-					tlsConfig.ClientCAs = clientCAPool
+					tlsConfig.ClientCAs = crypts.ESTClientCAPool(db)
+
+					// Пул берётся заново на каждое рукопожатие, иначе после
+					// пересоздания CA клиенты с новыми сертификатами не пройдут
+					// проверку до перезапуска приложения
+					tlsConfig.GetConfigForClient = func(*tls.ClientHelloInfo) (*tls.Config, error) {
+						cfg := tlsConfig.Clone()
+						cfg.GetConfigForClient = nil // без этого получится рекурсия
+						cfg.ClientCAs = crypts.ESTClientCAPool(db)
+						return cfg, nil
+					}
 				},
 			})
 			if err != nil {

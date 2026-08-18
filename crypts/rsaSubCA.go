@@ -133,6 +133,7 @@ func GenerateRSASubCA(data *models.CAData, db *sqlx.DB) error {
 		IsCA:                  true,
 		MaxPathLen:            0,
 		CRLDistributionPoints: []string{viper.GetString("CAcrl.rootCACrlURL")},
+		OCSPServer:            []string{viper.GetString("CAocsp.url")},
 	}
 
 	subCACertDER, err := x509.CreateCertificate(rand.Reader, template, rootCert, &subCAKey.PublicKey, rootKey)
@@ -184,9 +185,13 @@ func GenerateRSASubCA(data *models.CAData, db *sqlx.DB) error {
 		return fmt.Errorf("sub CA: error committing: %w", err)
 	}
 
-	// Сбрасываем кэш - иначе сертификаты будут подписаныСТАРЫМ Sub CA из памяти.
+	// Сбрасываем кэш - иначе сертификаты будут подписаны старым Sub CA из памяти.
 	ExtractCA.SubCAcert = nil
 	ExtractCA.SubCAKey = nil
+
+	// Сбрасываем пул доверенных CA для EST mTLS: иначе клиенты с сертификатами,
+	// выпущенными новым Sub CA, не пройдут проверку до перезапуска приложения.
+	ResetESTClientCAPool()
 
 	return nil
 }

@@ -21,7 +21,9 @@ type Mon struct {
 
 var Monitors = Mon{}
 
-func Monitore(TCPInterval, RecreateCertsInterval, CheckValidCertsInterval time.Duration) {
+// Monitore запускает мониторинг чекеров.
+// из настроек соответствующего чекера.
+func Monitore(tcpPollInterval, recreateCertsPollInterval, checkValidCertsPollInterval time.Duration) {
 	slog.Info("CheckMonitor: Starting monitoring module")
 
 	// Инициализируем время при запуске мониторинга
@@ -36,13 +38,13 @@ func Monitore(TCPInterval, RecreateCertsInterval, CheckValidCertsInterval time.D
 	checkMonitorCheckValidCerts()
 
 	// Создаём тикеры
-	tickerTCP := time.NewTicker(TCPInterval)
+	tickerTCP := time.NewTicker(tcpPollInterval)
 	defer tickerTCP.Stop()
 
-	tickerRecreateCerts := time.NewTicker(RecreateCertsInterval)
+	tickerRecreateCerts := time.NewTicker(recreateCertsPollInterval)
 	defer tickerRecreateCerts.Stop()
 
-	tickerCheckValidCerts := time.NewTicker(CheckValidCertsInterval)
+	tickerCheckValidCerts := time.NewTicker(checkValidCertsPollInterval)
 	defer tickerCheckValidCerts.Stop()
 
 	// Используем select для одновременного мониторинга всех каналов
@@ -83,6 +85,7 @@ func checkMonitorTCP() {
 func checkMonitorRecreateCerts() {
 	Monitors.MutexMonitor.Lock()
 	defer Monitors.MutexMonitor.Unlock()
+	// интервал чекера пересоздания (не монитора!) - служит порогом живости
 	recreateCertsInterval := utils.SelectTime(viper.GetString("recreateCerts.unit"), viper.GetInt("recreateCerts.recreateCertsInterval"))
 	recreateCertsTimeNow := time.Now()
 	recreateDuration := recreateCertsTimeNow.Sub(Monitors.RecreateCerts)
@@ -100,6 +103,7 @@ func checkMonitorRecreateCerts() {
 func checkMonitorCheckValidCerts() {
 	Monitors.MutexMonitor.Lock()
 	defer Monitors.MutexMonitor.Unlock()
+	// интервал чекера валидности (не монитора!) - служит порогом живости
 	CheckValidCertsInterval := utils.SelectTime(viper.GetString("certsValidation.unit"), viper.GetInt("certsValidation.certsValidationInterval"))
 	CheckValidCertsTimeNow := time.Now()
 	CheckValidCertsDuration := CheckValidCertsTimeNow.Sub(Monitors.CheckValidCerts)

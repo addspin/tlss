@@ -41,15 +41,17 @@ func StartCombinedCRLGeneration(updateInterval time.Duration, db *sqlx.DB) {
 	}
 }
 
-// getRevocationReason преобразует текстовую причину отзыва в числовой код CRLReason (RFC 5280)
+// GetRevocationReason преобразует текстовую причину отзыва в числовой код CRLReason (RFC 5280 §5.3.1).
+// Используется при построении CRL и в OCSP-ответах (RFC 6960 §4.2.1).
+// Вход нормализуется к нижнему регистру, поэтому все case записаны строчными буквами.
 // 0: unspecified, 1: keyCompromise, 2: cACompromise, 3: affiliationChanged, 4: superseded,
 // 5: cessationOfOperation, 6: certificateHold, 8: removeFromCRL, 9: privilegeWithdrawn, 10: aACompromise
-func getRevocationReason(reason string) int {
+func GetRevocationReason(reason string) int {
 	r := strings.ToLower(strings.TrimSpace(reason))
 	switch r {
 	case "", "unspecified":
 		return 0
-	case "keyCompromise":
+	case "keycompromise":
 		return 1
 	case "cacompromise":
 		return 2
@@ -121,13 +123,16 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	var revokedEntries []pkix.RevokedCertificate
 
 	// Получаем отозванные серверные сертификаты
+	// Только сертификаты, подписанные нашим Sub CA (Core CA). Сертификаты внешних CA
+	// не включаем: этот CRL подписан Core Sub CA и для них был бы неприменим,
+	// их статус отдаётся через OCSP.
 	var revokedServerCerts []models.CertsData
 	err = db.Select(&revokedServerCerts, `
-		SELECT 
-			id, cert_status, public_key, 
+		SELECT
+			id, cert_status, public_key,
 			data_revoke, reason_revoke, serial_number
-		FROM certs 
-		WHERE cert_status = 2
+		FROM certs
+		WHERE cert_status = 2 AND signing_ca_id = 0
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("sub CA CRL: warning - failed to get revoked server certificates: %v", err)
@@ -142,13 +147,14 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 	}
 
 	// Получаем отозванные клинтские сертификаты
+	// Аналогично серверным - только сертификаты, подписанные Core Sub CA
 	var revokedUserCerts []models.UserCertsData
 	err = db.Select(&revokedUserCerts, `
 		SELECT
 			id, cert_status, public_key,
 			data_revoke, reason_revoke, serial_number
 		FROM user_certs
-		WHERE cert_status = 2
+		WHERE cert_status = 2 AND signing_ca_id = 0
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("sub CA CRL: warning - failed to get revoked client certificates: %v", err)
@@ -195,7 +201,7 @@ func GenerateSubCACRL() (crlSubCABytes []byte, err error) {
 			LastUpdate:         time.Now().Format(time.RFC3339),
 			NextUpdate:         time.Now().Add(utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))).Format(time.RFC3339),
 			CrlNumber:          1,
-			CrlURL:             viper.GetString("CAcrl.crlURL"),
+			CrlURL:             viper.GetString("CAcrl.subCACrlURL"),
 		}
 		_, err = db.Exec(`
 			INSERT INTO sub_ca_crl_info (
@@ -272,7 +278,7 @@ func createRevokedEntry(serialNumber, dataRevoke, reasonRevoke string) (pkix.Rev
 	}
 
 	// Добавляем причину отзыва
-	reason := getRevocationReason(reasonRevoke)
+	reason := GetRevocationReason(reasonRevoke)
 	if reason != 0 { // unspecified обычно опускают
 		val, err := asn1.Marshal(asn1.Enumerated(reason))
 		if err != nil {
@@ -399,7 +405,7 @@ func GenerateRootCACRL() (crlRootBytes []byte, err error) {
 			LastUpdate:         time.Now().Format(time.RFC3339),
 			NextUpdate:         time.Now().Add(utils.SelectTime(viper.GetString("CAcrl.unit"), viper.GetInt("CAcrl.updateInterval"))).Format(time.RFC3339),
 			CrlNumber:          1,
-			CrlURL:             viper.GetString("CAcrl.crlURL"),
+			CrlURL:             viper.GetString("CAcrl.rootCACrlURL"),
 		}
 		_, err = db.Exec(`
 			INSERT INTO root_ca_crl_info (

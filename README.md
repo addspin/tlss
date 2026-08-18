@@ -8,12 +8,9 @@ Hello, TLSS is a small project aimed at the simplest possible work with certific
 
 https://github.com/user-attachments/assets/320e3ce7-9618-4c16-a88d-30ebb8369ae7
 
-**IMPORTANT:**
+📖 **Documentation:** [docs_en/](docs_en/) - initialization, production setup and technical reference.
 
-**When upgrading from version 1.4.0 to 1.4.1 READ CHANGELOG.md add/recreate config.yaml (keys will already be there)** 
-
-**When upgrading from version 1.3.0 to 1.4.0 READ CHANGELOG.md, add/recreate config.yaml (keys will already be there)**
-
+⚠️ **Upgrading?** Read [CHANGELOG.md](CHANGELOG.md) first - some versions require changes in `config.yaml`.
 
 ## Main features:
 
@@ -34,70 +31,10 @@ https://github.com/user-attachments/assets/320e3ce7-9618-4c16-a88d-30ebb8369ae7
 5) Creation of objects not linked to servers
 6) Control of recreation, validity
 7) CRL generation
-8) Reissuance of CA with recreation of all dependent objects (for core CA only)
-9) API for automation
-10) EST protocol support according to RFC 7030
-
-## How it works
-
-### Application Launch
-
-1) On the first application start, the console will ask 3 questions:
-- login;
-- password;
-- salt.
-
-2) After that, he first launch will create all necessary directories, generate a configuration file `config.yaml` and an SSH key will be generated for connecting to servers. 
-
-3) The initial launch uses the default configuration and starts on an unsecured port, you need to make appropriate adjustments to your taste.
-
-4) On the first login, you will land on the root/intermediate certificate generation page, without this step certificate creation will be impossible.
-
-## Features
-
-The login window greets you with two options, Login or Overview.
-
-
-
-Without authorization, capabilities are limited to two sections:
-1) Home with Overview subsection - serves as statistics and general information
-2) Tools with Certificate Info subsection - allowing you to view certificate information, supporting selection through explorer or drop down.
-
-Certificate generation is divided into two sections performing the same-name tasks:
-
-1) Servers certs
-2) Clients certs
-
-The main differences between sections lie in additional capabilities and some certificate settings:
-
-## Servers certs section:
-
-- Add ssh key subsection adds the ability to create your own ssh keys and use them to connect servers where generated certificates can be stored.
-- Certificates are generated with TLS Web Server Authentication type
-- Domain is automatically added to SAN section, even if it remains unfilled
-- Creating server certificates makes it possible to save them on remote servers. For this, a server is added in the Add servers subsection, after which, when creating, you can set the "Save to server" switch.
-
-
-## Clients certs section:
-
-- Add OIDs subsection adds the ability to create an additional custom field in the certificate
-- Certificates are generated with TLS Web Client Authentication type
-
-In both cases, setting the switch to "Recreate" will automatically recreate the certificate both locally and on the updated server if it was created with the Save on server switch.
-
-## CA Revocation
-
-Revoking a root or intermediate certificate triggers a chain reaction that leads to revocation of all certificates signed by this CA, and certificates that were already revoked will be deleted. Certificate save on server will be recreated.
-
-## Creation/Revocation of Server or Client Certificates
-
-Certificate revocation options differ by type:
-
-Servers certs:
-- When revoking a server certificate and subsequent rollback, the certificate does not overwrite the existing one if it was generated, that is, each certificate is unique and exists autonomously. Creation behavior is similar.
-
-Clients certs:
-- Similar to server certificates.
+8) OCSP responder according to RFC 6960 and RFC 5019
+9) Reissuance of CA with recreation of all dependent objects (for core CA only)
+10) API for automation
+11) EST protocol support according to RFC 7030
 
 ## Possible bugs 🎃
 I cannot check everything, there may be more than one bug found, I apologize 🥺
@@ -110,71 +47,9 @@ I cannot check everything, there may be more than one bug found, I apologize �
 
 Привет, TLSS это небольшой проект, направленный на максимально простую работу с сертфиикатами, основная цель которого упростить развертывание и контроль сертификатов во внутренней инфраструктуре, и обеспечить простую переносимость данных.
 
-**ВАЖНО:**
+📖 **Документация:** [docs_ru/](docs_ru/) - инициализация, настройка для продовой среды и техническая справка.
 
-**При переходе с версии 1.3.0 на 1.4.0 добавьте в конфигурацию\пересоздайте (ключи уже будут там) следующие параметры:**
-
-Добавьте:
-```yaml
-estCSRAttrs:
-  rfc9908: true # true - использовать RFC 9908, false - использовать RFC 7030 / use RFC 9908, false - use RFC 7030
-```
-
-Внесите изменения в уже существующий пункт: 
-```yaml
-CAcrl:
-  subCACrlURL: https://tlss.lv.local:43000/api/v1/crl/subca/pem # CRL подписанный Sub CA, для конечных сертификатов / CRL signed by Sub CA, for end-entity certs
-  rootCACrlURL: https://tlss.lv.local:43000/api/v1/crl/rootca/pem # CRL подписанный Root CA, для Sub CA сертификатов / CRL signed by Root CA, for Sub CA certs
-  unit: hours # minutes, seconds, hours
-  updateInterval: 24 # interval of CRL update / интервал обновления CRL
-```
-
-## Last update - 19.05.26:
-Подробности ниже: 
-
-**Add:** Добавлена поддержка протокола EST (RFC 7030)
-Согласно RFC 7030 поддерживаются следующие URIs:
-
-Обязательные:
-- Distribution of CA -/.well-known/est/cacerts/
-- Enrollment of Clients - /.well-known/est/simpleenroll
-- Re-enrollment of Clients - /.well-known/est/simplereenroll
-Опциональные:
- - CSR Attributes - /.well-known/est/csrattrs (из-за разницы в структуре оригинальной RFC 7030 и дополнения в RFC 9908, в конфигурации добавлен пункт estCSRAttrs ) 
- Требуется внести для нормальной работы приложения 
- ```yaml
-estCSRAttrs:
-  rfc9908: true # true - использовать RFC 9908, false - использовать RFC 7030 / use RFC 9908, false - use RFC 7030
- ```
-
-
-**Update:** Добавлена конфигурация указывающая на эндпоинты для root ca \ sub ca для получения crl (согласно RFC 5280 каждый сертификат указывает CDP (**CRL Distribution Point**) на CRL своего издателя). Бандл так же сохраняется. 
-
-**ВАЖНО:**
-
-Из-за того что я забыл добавить в конфигурацию ссылки на CDP для root ca\sub ca, а вместо них оставил ссылку на бандл, ваш текущий подписывающий сертификат будет без него, как следствие все выпущенные сертификаты при полной проверке например через openssl **`openssl verify -crl_check_all`** выдадут ошибку. К сожалению единственный  путь, это перевыпустить sub ca после изменения в конфигурации.
-Текущий валидный конфиг содержит следующие параметры для CDP:
-```yaml
-CAcrl:
-  subCACrlURL: https://tlss.lv.local:43000/api/v1/crl/subca/pem # CRL подписанный Sub CA, для конечных сертификатов / CRL signed by Sub CA, for end-entity certs
-  rootCACrlURL: https://tlss.lv.local:43000/api/v1/crl/rootca/pem # CRL подписанный Root CA, для Sub CA сертификатов / CRL signed by Root CA, for Sub CA certs
-  unit: hours # minutes, seconds, hours
-  updateInterval: 24 # interval of CRL update / интервал обновления CRL
-```
-
-**Fix:** При создании нового Sub ca кеш не сбрасывался, что приводило к пересозданию сертификатов с подписью отозванного Sub ca
-
-**Fix:** Не обновлялся CRL после пересоздания Sub ca (требовалось ждать, следующего обновления)
-
-**Fix:** Обновления метки времени (next update) в crl 
-
-**Fix:** Фикс отображения серийного номера сертификата  в Certificate Info, согласован с БД и отображением в openssl
-
-**Update:** revoke\rollback сертификатов сразу обновляет CRL не дожидаясь глобального обновления.
-
-**Add:** Добавлена информация  в Certificate Info для отладки цепочек:
-- **Subject Key Identifier** - для CA сертификатов это идентификатор их собственного ключа
-- **Authority Key Identifier** - у конечных сертификатов и Sub CA указывает на ключ издателя (`SKI` родителя)
+⚠️ **Обновляетесь?** Сначала прочитайте [CHANGELOG.md](CHANGELOG.md) - некоторые версии требуют изменений в `config.yaml`.
 
 ## Основные особенности
 
@@ -193,22 +68,12 @@ CAcrl:
 5) Создание объектов не связаных с серверами
 6) Контроль пересоздания, валидности
 7) Генерация CRL
-8) Превыпуск CA с пересозданием всех заисимых объектов 
-9) API для автоматизации
-10) Поддержка протокола EST RFC 7030
-
-## Начало использования
-
-1) Первый запуск создает все каталоги и генерирует конфиграционный файл `config.yaml`, вероятно вам захочется отредактировать следующие поля:
-   - hostname
-   - protocol
-   - authConfig
-2) После первой авторизации в UI, вы попадете на страницу генерации CA\SubCA, сгененируйте их или дальнейшее создание сертификатов будет невозможно 
+8) OCSP респондер согласно RFC 6960 и RFC 5019
+9) Превыпуск CA с пересозданием всех заисимых объектов
+10) API для автоматизации
+11) Поддержка протокола EST RFC 7030
 
 ## Возможные баги 🎃
 Я не в силах проверить все сразу, возможно найдется не один баг, прошу прощения 🥺
 
 ## Лицензия MIT 🎉
-
-
-

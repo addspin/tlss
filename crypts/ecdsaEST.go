@@ -96,6 +96,9 @@ func GenerateESTECDSACertificate(data *models.ESTCert, db *sqlx.DB) (certPem, ke
 		CRLDistributionPoints: []string{
 			viper.GetString("CAcrl.subCACrlURL"),
 		},
+		OCSPServer: []string{
+			viper.GetString("CAocsp.url"),
+		},
 	}
 
 	// Подписывающий CA
@@ -237,6 +240,9 @@ func RecreateESTECDSACertificate(data *models.ESTCert, db *sqlx.DB) error {
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("CAcrl.subCACrlURL"),
+		},
+		OCSPServer: []string{
+			viper.GetString("CAocsp.url"),
 		},
 	}
 

@@ -4,10 +4,58 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"log/slog"
+	"sync"
+	"time"
 
 	"github.com/addspin/tlss/models"
 	"github.com/jmoiron/sqlx"
 )
+
+// estCAPoolTTL - как долго переиспользуется собранный пул. Короткий срок
+// нужен, чтобы изменения в списке CA (загрузка внешнего CA, отзыв) подхватывались
+// без перезапуска. Пересоздание Sub CA сбрасывает кэш немедленно.
+const estCAPoolTTL = 30 * time.Second
+
+var estCAPoolCache struct {
+	mu      sync.Mutex
+	pool    *x509.CertPool
+	builtAt time.Time
+}
+
+// ESTClientCAPool возвращает пул доверенных CA для проверки клиентских сертификатов
+// в mTLS. Результат кэшируется на estCAPoolTTL, поэтому функцию можно вызывать
+// на каждое TLS-рукопожатие.
+//
+// При ошибке сборки возвращается прежний пул, если он есть: отдать пустой пул
+// означало бы отвергнуть всех клиентов до следующего успешного обновления.
+func ESTClientCAPool(db *sqlx.DB) *x509.CertPool {
+	estCAPoolCache.mu.Lock()
+	defer estCAPoolCache.mu.Unlock()
+
+	if estCAPoolCache.pool != nil && time.Since(estCAPoolCache.builtAt) < estCAPoolTTL {
+		return estCAPoolCache.pool
+	}
+
+	pool, err := BuildESTClientCAPool(db)
+	if err != nil {
+		slog.Error("ESTClientCAPool: failed to rebuild pool, keeping previous", "error", err)
+		return estCAPoolCache.pool
+	}
+
+	estCAPoolCache.pool = pool
+	estCAPoolCache.builtAt = time.Now()
+	return pool
+}
+
+// ResetESTClientCAPool сбрасывает кэш пула. Вызывается при пересоздании CA,
+// чтобы клиенты с новыми сертификатами проходили mTLS сразу, не дожидаясь TTL.
+func ResetESTClientCAPool() {
+	estCAPoolCache.mu.Lock()
+	estCAPoolCache.pool = nil
+	estCAPoolCache.builtAt = time.Time{}
+	estCAPoolCache.mu.Unlock()
+}
 
 // BuildESTClientCAPool собирает пул доверенных CA для верификации клиентских
 // сертификатов на EST endpoint. Включает внутренний Sub/Root CA и все внешние CA,

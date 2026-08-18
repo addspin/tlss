@@ -9,6 +9,7 @@ import (
 	certInfoController "github.com/addspin/tlss/controllers/certInfoController"
 	estControllers "github.com/addspin/tlss/controllers/estControllers"
 	loginControllers "github.com/addspin/tlss/controllers/loginControllers"
+	ocspControllers "github.com/addspin/tlss/controllers/ocspControllers"
 	overviewController "github.com/addspin/tlss/controllers/overviewController"
 	serverCertControllers "github.com/addspin/tlss/controllers/serverCertControllers"
 	sshControllers "github.com/addspin/tlss/controllers/sshControllers"
@@ -166,6 +167,14 @@ func ESTsetup(estApp *fiber.App) {
 
 	// simplereenroll - mTLS аутентификация через выпущенный ранее сертификат
 	estApp.Post("/.well-known/est/simplereenroll", middleware.ESTCertAuth(), estControllers.SimpleReenroll)
+}
+
+// OCSPsetup настраивает маршруты OCSP-респондера (RFC 6960).
+func OCSPsetup(ocspApp *fiber.App) {
+	// POST - DER-encoded OCSPRequest в теле
+	ocspApp.Post("/ocsp", ocspControllers.OCSPResponder)
+	// GET - base64(DER) с URL-кодированием в пути
+	ocspApp.Get("/ocsp/*", ocspControllers.OCSPResponder)
 }
 
 func CRLsetup(crlApp *fiber.App) {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/spf13/viper"
 )
 
 // SignCSR верифицирует PKCS#10 CSR и подписывает его указанным CA.
@@ -59,6 +60,13 @@ func SignCSR(csrDER []byte, db *sqlx.DB, signingCAId int, ttlDays int) ([]byte, 
 		IPAddresses:    csr.IPAddresses,
 		EmailAddresses: csr.EmailAddresses,
 		URIs:           csr.URIs,
+		// Точки проверки отзыва: CRL по RFC 5280 §4.2.1.13, OCSP по §4.2.2.1
+		CRLDistributionPoints: []string{
+			viper.GetString("CAcrl.subCACrlURL"),
+		},
+		OCSPServer: []string{
+			viper.GetString("CAocsp.url"),
+		},
 	}
 
 	certDER, err := x509.CreateCertificate(rand.Reader, template, issuerCert, csr.PublicKey, issuerKey)

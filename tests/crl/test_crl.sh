@@ -36,6 +36,54 @@ if [[ ! -f "$DB" ]]; then
   exit 1
 fi
 
+# to_epoch переводит дату из вывода openssl ("May 18 19:59:18 2026 GMT") в unix-время.
+# Поддерживает BSD date (macOS) и GNU date (Linux); при неудаче печатает пустую строку.
+to_epoch() {
+  local s="$1"
+  date -j -f "%b %e %H:%M:%S %Y %Z" "$s" +%s 2>/dev/null && return 0
+  date -d "$s" +%s 2>/dev/null && return 0
+  echo ""
+}
+
+# check_crl_validity_window проверяет, что nextUpdate сдвинут относительно thisUpdate
+# и совпадает с CAcrl.updateInterval из конфигурации.
+check_crl_validity_window() {
+  local crl_file="$1" label="$2"
+  local last next last_epoch next_epoch delta_hours
+
+  last=$(openssl crl -in "$crl_file" -noout -lastupdate 2>/dev/null | sed 's/^lastUpdate=//')
+  next=$(openssl crl -in "$crl_file" -noout -nextupdate 2>/dev/null | sed 's/^nextUpdate=//')
+
+  if [[ -z "$next" ]]; then
+    echo "   ❌ $label CRL: nextUpdate отсутствует (RFC 5280 рекомендует его задавать)"
+    return
+  fi
+  if [[ "$last" == "$next" ]]; then
+    echo "   ❌ $label CRL: nextUpdate == thisUpdate — интервал не применён"
+    echo "      Проверьте ключ CAcrl.updateInterval в config.yaml"
+    return
+  fi
+
+  last_epoch=$(to_epoch "$last")
+  next_epoch=$(to_epoch "$next")
+  if [[ -z "$last_epoch" || -z "$next_epoch" ]]; then
+    echo "   ✅ $label CRL: nextUpdate сдвинут ($last → $next)"
+    return
+  fi
+
+  delta_hours=$(( (next_epoch - last_epoch) / 3600 ))
+  if [[ -n "$EXPECTED_INTERVAL" && "$delta_hours" == "$EXPECTED_INTERVAL" ]]; then
+    echo "   ✅ $label CRL: окно валидности $delta_hours ч (совпадает с config)"
+  elif [[ -n "$EXPECTED_INTERVAL" ]]; then
+    echo "   ⚠️  $label CRL: окно валидности $delta_hours ч, в config задано $EXPECTED_INTERVAL ч"
+  else
+    echo "   ✅ $label CRL: окно валидности $delta_hours ч"
+  fi
+}
+
+# Ожидаемый интервал из config.yaml (если файл доступен)
+EXPECTED_INTERVAL=$(awk '/^CAcrl:/{f=1} f&&/updateInterval:/{print $2; exit}' "$PROJECT_ROOT/config.yaml" 2>/dev/null || echo "")
+
 echo "═══════════════════════════════════════════════════════════════"
 echo " TLSS CRL TEST"
 echo " URL:  $BASE_URL
@@ -135,6 +183,11 @@ else
 fi
 echo "   AKI cert == AKI CRL signer: $ISSUER_MATCH"
 
+# Проверка что nextUpdate реально сдвинут относительно thisUpdate.
+# Ловит регрессию, когда интервал читается из несуществующего ключа конфига
+# и NextUpdate вычисляется как now.Add(0).
+check_crl_validity_window "$WORK_DIR/subca.crl" "Sub CA"
+
 # ─── 5. Содержимое Root CA CRL ──────────────────────────────────────
 echo ""
 echo "📋 Шаг 5: Root CA CRL (отозванные Sub CA)"
@@ -143,6 +196,8 @@ openssl crl -in "$WORK_DIR/rootca.crl" -text -noout | \
 
 REVOKED_IN_ROOTCA=$(openssl crl -in "$WORK_DIR/rootca.crl" -text -noout | grep -c "Serial Number:" || true)
 echo "   Записей: $REVOKED_IN_ROOTCA"
+
+check_crl_validity_window "$WORK_DIR/rootca.crl" "Root CA"
 
 # ─── 6. Экспорт CA chain из БД + проверка CDP в Sub CA ─────────────
 echo ""

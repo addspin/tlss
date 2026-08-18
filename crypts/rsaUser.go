@@ -160,6 +160,9 @@ func GenerateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) (certPe
 		CRLDistributionPoints: []string{
 			viper.GetString("CAcrl.subCACrlURL"),
 		},
+		OCSPServer: []string{
+			viper.GetString("CAocsp.url"),
+		},
 	}
 	// Получаем подписывающий CA сертификат и ключ
 	var subCACert *x509.Certificate
@@ -388,6 +391,9 @@ func RecreateUserRSACertificate(data *models.UserCertsData, db *sqlx.DB) error {
 		EmailAddresses:        san.EmailAddresses,
 		CRLDistributionPoints: []string{
 			viper.GetString("CAcrl.subCACrlURL"),
+		},
+		OCSPServer: []string{
+			viper.GetString("CAocsp.url"),
 		},
 	}
 	// Получаем подписывающий CA сертификат и ключ

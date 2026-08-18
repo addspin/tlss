@@ -47,7 +47,10 @@ func ESTCertAuth() fiber.Handler {
 			return c.Status(403).SendString("Certificate expired")
 		}
 
+		// Сам сертификат нужен обработчику simplereenroll: по RFC 7030
+		// Subject и SAN в новом CSR обязаны совпадать с предъявленными
 		c.Locals("est_cert", estCert)
+		c.Locals("est_client_cert", clientCert)
 		return c.Next()
 	}
 }

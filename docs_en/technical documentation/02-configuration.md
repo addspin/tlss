@@ -102,7 +102,8 @@ window inside the CRL.
 ```yaml
 CAocsp:
   url: http://tlss.lv.local:8080/ocsp
-  responseValidity: 24   # hours, nextUpdate in the response
+  unit: hours
+  responseValidity: 24   # nextUpdate in the response
 ```
 
 Here the address is **shared across the whole hierarchy**, unlike CRL. The responder

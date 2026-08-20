@@ -124,7 +124,8 @@ CAcrl:
 
 ```yaml
 CAocsp:
-  responseValidity: 24   # часы
+  unit: hours
+  responseValidity: 24
 ```
 
 Определяет `nextUpdate` в ответе и время кэширования на прокси. Чем меньше значение,

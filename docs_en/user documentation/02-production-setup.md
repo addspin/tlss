@@ -126,7 +126,8 @@ so the interval only affects scheduled updates.
 
 ```yaml
 CAocsp:
-  responseValidity: 24   # hours
+  unit: hours
+  responseValidity: 24
 ```
 
 Defines `nextUpdate` in the response and the caching time on proxies. The lower the

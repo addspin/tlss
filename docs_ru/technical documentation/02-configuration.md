@@ -99,7 +99,8 @@ CAcrl:
 ```yaml
 CAocsp:
   url: http://tlss.lv.local:8080/ocsp
-  responseValidity: 24   # часы, nextUpdate в ответе
+  unit: hours
+  responseValidity: 24   # nextUpdate в ответе
 ```
 
 Здесь адрес **один на всю иерархию** - в отличие от CRL. Респондер определяет

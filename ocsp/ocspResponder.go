@@ -21,6 +21,7 @@ import (
 	"github.com/addspin/tlss/crl"
 	"github.com/addspin/tlss/crypts"
 	"github.com/addspin/tlss/models"
+	"github.com/addspin/tlss/utils"
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 	xocsp "golang.org/x/crypto/ocsp"
@@ -90,7 +91,7 @@ func BuildResponse(db *sqlx.DB, reqDER []byte) Result {
 		return Result{DER: xocsp.UnauthorizedErrorResponse}
 	}
 
-	validity := time.Duration(viper.GetInt("CAocsp.responseValidity")) * time.Hour
+	validity := utils.SelectTime(viper.GetString("CAocsp.unit"), viper.GetInt("CAocsp.responseValidity"))
 	if validity <= 0 {
 		validity = 24 * time.Hour
 	}

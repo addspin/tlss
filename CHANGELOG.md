@@ -5,6 +5,7 @@
 ```yaml
 CAocsp:
   url: http://tlss.lv.local:8080/ocsp # AIA (id-ad-ocsp) for all issued certs
+  unit: hours # minutes, seconds, hours
   responseValidity: 24 # hours, response validity (nextUpdate)
 ```
 - The AIA extension is written only into **newly issued** certificates. Existing ones

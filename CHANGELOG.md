@@ -1,3 +1,67 @@
+## [v1.5.1] - 24.08.26
+
+**IMPORTANT:**
+- Building now requires **Go 1.27.0 or later** (`go` directive in `go.mod` raised from
+  `1.25.0`). With `GOTOOLCHAIN=auto` the correct toolchain is downloaded automatically;
+  older toolchains will refuse to build the module directly.
+
+Security-only release: no functional changes, no configuration changes, no database
+migrations.
+
+**Security:**
+
+Two GitHub Dependabot alerts in `github.com/gofiber/fiber/v3` (fixed in v3.3.0):
+- `X-Real-IP` spoofing in `BalancerForward` — the proxy helper used `Header.Add()`
+  instead of `Header.Set()`, appending the real client IP as a second header value
+  instead of replacing an attacker-supplied one. Upstream servers reading the first
+  value would trust the spoofed IP for rate limiting, ACLs and audit logs
+- Username enumeration via a timing oracle in the `BasicAuth` default authorizer —
+  short-circuit evaluation skipped the bcrypt comparison for unknown users, producing
+  a ~1,000,000:1 timing difference between existing and non-existing usernames
+
+Neither was reachable from TLSS: `middleware/proxy` and `middleware/basicauth` are not
+imported by this project. Updated regardless.
+
+Twenty-two Go standard library vulnerabilities reported by `govulncheck` against
+Go 1.25.5, all closed by the toolchain upgrade. Most relevant to a CA are the ASN.1
+and X.509 issues, which are reachable from client-supplied CSRs and certificates, and
+the `html/template` escaper bypasses, which are reachable from every rendered page:
+- `encoding/asn1` — GO-2026-5972 (missing recursion depth limit; a malicious CSR
+  submitted to the EST endpoints could exhaust the stack)
+- `crypto/x509` — GO-2026-5037, GO-2026-4947, GO-2026-4946 (inefficient hostname
+  parsing, unexpected work during chain building, inefficient policy validation)
+- `html/template` — GO-2026-6091, GO-2026-4982, GO-2026-4980, GO-2026-4865,
+  GO-2026-4603 (XSS through escaper and JavaScript context tracking bypasses)
+- `crypto/tls` — GO-2026-6090, GO-2026-5856, GO-2026-4870, GO-2026-4340, GO-2026-4337
+  (post-handshake message flooding, Encrypted Client Hello privacy leak, KeyUpdate
+  denial of service, wrong encryption level, unexpected session resumption)
+- `net/url` — GO-2026-6218, GO-2026-4601, GO-2026-4341 (quadratic complexity in
+  `resolvePath`, IPv6 host literal parsing, memory exhaustion in query parsing)
+- `net/http` — GO-2026-5026, GO-2026-4918 (Punycode label handling, infinite loop on
+  a bad HTTP/2 `SETTINGS_MAX_FRAME_SIZE`)
+- `net/textproto` — GO-2026-5039 (unescaped input in errors)
+- `net` — GO-2026-4971 (panic on a NUL byte, Windows only)
+- `os` — GO-2026-4602 (`FileInfo` escaping from a `Root`)
+
+One vulnerability in a dependency:
+- `golang.org/x/text` — GO-2026-5970, infinite loop on invalid input, reachable through
+  Unicode normalization during ZIP bundle creation. Fixed in v0.39.0
+
+**Update:**
+- Go toolchain 1.25.5 -> 1.27.0
+- `github.com/gofiber/fiber/v3` v3.2.0 -> v3.5.0
+- `github.com/spf13/viper` v1.20.0-alpha.6 -> v1.21.0 (off a pre-release version)
+- `golang.org/x/crypto` v0.52.0 -> v0.54.0
+- Indirect dependencies: `golang.org/x/text` v0.37.0 -> v0.40.0, `golang.org/x/net`
+  v0.55.0 -> v0.57.0, `golang.org/x/sys` v0.45.0 -> v0.47.0, `github.com/valyala/fasthttp`
+  v1.70.0 -> v1.73.0, `github.com/klauspost/compress` v1.18.5 -> v1.19.2,
+  `github.com/gofiber/schema` v1.7.1 -> v1.8.3, `github.com/gofiber/utils/v2` v2.0.4 ->
+  v2.4.1, plus the viper dependency tree
+- CI (`.github/workflows/go.yml`): the Linux amd64 build container moved from
+  `golang:1.25-alpine` to `golang:1.27-alpine`; the Linux arm64 and macOS jobs now use
+  `go-version-file: 'go.mod'` instead of a hardcoded `go-version: '1.25.3'`, so the
+  toolchain version is defined in one place and cannot drift from the module
+
 ## [v1.5.0] - 18.08.26
 
 **IMPORTANT:**

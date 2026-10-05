@@ -213,6 +213,7 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 	currentTime := time.Now().Format(time.RFC3339)
 	reasonRevoke := data.ReasonRevoke
 	typeCA := data.TypeCA
+	oldID := data.Id
 	revokeStatus := 2  // 2 - revoked
 	validStatus := 0   // 0 - valid
 	expiredStatus := 1 // 1 - expired
@@ -240,6 +241,7 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 		if err != nil {
 			return fmt.Errorf("RevokeCACertWithData: root ca: Error generating Root CA: %w", err)
 		}
+		clearRecreateFlag(db, oldID)
 
 		// 2) Пересоздание валидных сертфикатов
 		// Получаем все валидные сертификаты для пересоздания с новыми CA
@@ -337,6 +339,7 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 		if err != nil {
 			return fmt.Errorf("RevokeCACertWithData: sub ca: Error generating Sub CA: %w", err)
 		}
+		clearRecreateFlag(db, oldID)
 
 		// 2) Пересоздание валидных сертфикатов
 		// Получаем все валидные сертификаты для пересоздания с новыми CA
@@ -414,6 +417,14 @@ func CreateCACertRSA(data *models.CAData, db *sqlx.DB) error {
 		return nil
 	}
 	return fmt.Errorf("RevokeCACertWithData: unsupported CA type: %s", typeCA)
+}
+
+// clearRecreateFlag снимает recreate с перевыпущенного истёкшего CA, иначе чекер RecreateCerts
+// пересоздаёт CA на каждом цикле. Новый CA наследует recreate из data при вставке.
+func clearRecreateFlag(db *sqlx.DB, id int) {
+	if _, err := db.Exec(`UPDATE ca_certs SET recreate = 0 WHERE id = ? AND cert_status = 1`, id); err != nil {
+		slog.Error("CreateCACertRSA: failed to clear recreate flag on expired CA", "id", id, "error", err)
+	}
 }
 
 // Функция для обработки server certificates

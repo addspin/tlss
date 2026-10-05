@@ -1,3 +1,8 @@
+## [v1.5.2] - 06.10.26
+
+**IMPORTANT:**
+- Fix in CA\SubCA renewal process, which would cause the all certs revoked loops.
+
 ## [v1.5.1] - 24.08.26
 
 **IMPORTANT:**
